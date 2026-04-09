@@ -10,7 +10,9 @@ import {
   LogOut,
   Building2,
   Menu,
-  X
+  X,
+  Bell,
+  BarChart3
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
@@ -38,6 +40,8 @@ const Layout = () => {
     { path: '/properties', label: 'Properties', icon: Building2 },
     { path: '/contracts', label: 'Contracts', icon: FileText },
     { path: '/invoices', label: 'Invoices', icon: Receipt },
+    { path: '/notifications', label: 'Notifications', icon: Bell },
+    { path: '/reports', label: 'Reports', icon: BarChart3 },
   ];
 
   return (

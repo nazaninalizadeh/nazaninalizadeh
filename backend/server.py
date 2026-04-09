@@ -856,8 +856,16 @@ async def send_email_endpoint(
         logger.error(f"Failed to send email: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
 
-# Include router
+# Include routers
 app.include_router(api_router)
+
+# Import and include Phase 2 routes
+try:
+    from phase2_routes import router as phase2_router
+    app.include_router(phase2_router)
+    logger.info("Phase 2 routes loaded successfully")
+except Exception as e:
+    logger.warning(f"Phase 2 routes not loaded: {e}")
 
 app.add_middleware(
     CORSMiddleware,

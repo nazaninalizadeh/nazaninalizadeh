@@ -11,6 +11,8 @@ import LandlordDetail from './pages/LandlordDetail';
 import Properties from './pages/Properties';
 import Contracts from './pages/Contracts';
 import Invoices from './pages/Invoices';
+import Notifications from './pages/Notifications';
+import Reports from './pages/Reports';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import '@/App.css';
@@ -37,6 +39,8 @@ function App() {
             <Route path="properties" element={<Properties />} />
             <Route path="contracts" element={<Contracts />} />
             <Route path="invoices" element={<Invoices />} />
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
