@@ -251,6 +251,76 @@ class ChangePasswordRequest(BaseModel):
 auth_router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 
+@auth_router.post("/login")
+async def login_direct(body: LoginStep1Request, req: Request, response: Response):
+    """Direct login without OTP - email + password + CAPTCHA only."""
+    ip = req.client.host if req.client else "unknown"
+    ua = req.headers.get("user-agent", "unknown")
+    email = body.email.lower().strip()
+
+    if not _check_rate_limit(ip):
+        await log_activity(email, "rate_limited", ip, ua)
+        raise HTTPException(status_code=429, detail="Troppe richieste. Riprova piu tardi.")
+
+    if body.captcha_token:
+        valid = await verify_captcha(body.captcha_token)
+        if not valid:
+            raise HTTPException(status_code=400, detail="Verifica CAPTCHA non riuscita.")
+
+    if email not in ALLOWED_ADMINS:
+        await log_activity(email, "rejected_not_whitelisted", ip, ua)
+        raise HTTPException(status_code=403, detail="Accesso non autorizzato.")
+
+    bf_key = f"{ip}:{email}"
+    if await is_locked_out(bf_key):
+        await log_activity(email, "blocked_brute_force", ip, ua)
+        raise HTTPException(status_code=429, detail="Account temporaneamente bloccato. Riprova tra 15 minuti.")
+
+    user = await db.users.find_one({"email": email})
+    if not user or not verify_password(body.password, user["password_hash"]):
+        await record_failed_attempt(bf_key)
+        await log_activity(email, "invalid_credentials", ip, ua)
+        raise HTTPException(status_code=401, detail="Email o password non validi.")
+
+    user_id = str(user["_id"])
+
+    await db.sessions.update_many(
+        {"admin_id": user_id, "is_active": True},
+        {"$set": {"is_active": False, "expired_reason": "new_device_login"}},
+    )
+
+    session_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    await db.sessions.insert_one({
+        "session_id": session_id,
+        "admin_id": user_id,
+        "admin_email": email,
+        "ip_address": ip,
+        "user_agent": ua[:200],
+        "is_active": True,
+        "created_at": now,
+        "last_active": now,
+    })
+
+    access_token = create_access_token(user_id, email, session_id)
+    refresh_token = create_refresh_token(user_id, session_id)
+
+    response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=1800, path="/")
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=False, samesite="lax", max_age=604800, path="/")
+
+    await clear_failed_attempts(bf_key)
+    await log_activity(email, "login_success", ip, ua, f"session={session_id}")
+    await NotificationService.send_login_alert(email, ip, ua)
+
+    return {
+        "id": user_id,
+        "email": user["email"],
+        "name": user.get("name", ""),
+        "role": user.get("role", ""),
+        "created_at": user.get("created_at", ""),
+    }
+
+
 @auth_router.post("/login-step1")
 async def login_step1(body: LoginStep1Request, req: Request):
     ip = req.client.host if req.client else "unknown"

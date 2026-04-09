@@ -101,6 +101,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Direct login (no OTP)
+  const login = async (email, password, captchaToken) => {
+    const { data } = await axios.post(
+      `${API_URL}/auth/login`,
+      { email, password, captcha_token: captchaToken || '' },
+      { withCredentials: true }
+    );
+    setUser(data);
+    return data;
+  };
+
   // Step 1: Email + Password → returns login_session_id
   const loginStep1 = async (email, password, captchaToken) => {
     const { data } = await axios.post(
@@ -141,7 +152,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginStep1, verifyOtp, logout, changePassword }}>
+    <AuthContext.Provider value={{ user, loading, login, loginStep1, verifyOtp, logout, changePassword }}>
       {children}
     </AuthContext.Provider>
   );
