@@ -691,61 +691,32 @@ async def get_invoice(invoice_id: str, user: dict = Depends(get_current_user)):
 
 @api_router.get("/invoices/{invoice_id}/pdf")
 async def generate_invoice_pdf(invoice_id: str, user: dict = Depends(get_current_user)):
+    """Generate luxury invoice PDF - Consulenze immobiliari style"""
+    from invoice_generator import generate_luxury_invoice_pdf
+    
     invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-    elements = []
-    styles = getSampleStyleSheet()
+    # آماده‌سازی داده برای فاکتور لوکس
+    invoice_data = {
+        'invoice_number': invoice['invoice_number'].replace('INV-', ''),
+        'date': invoice['issue_date'][:10].replace('-', '/'),
+        'time': datetime.now(timezone.utc).strftime('%H:%M'),
+        'recipient_name': invoice['tenant_name'],
+        'amount': invoice['amount'],
+        'description': invoice['description'] or f"Affitto di {invoice['invoice_type']}",
+        'currency': '€'
+    }
     
-    # Title
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#1D4ED8'),
-        spaceAfter=30,
-        alignment=1
-    )
-    elements.append(Paragraph("INVOICE", title_style))
-    elements.append(Spacer(1, 0.3*inch))
-    
-    # Invoice details
-    data = [
-        ["Invoice Number:", invoice['invoice_number']],
-        ["Tenant Name:", invoice['tenant_name']],
-        ["Property Address:", invoice['property_address']],
-        ["Invoice Type:", invoice['invoice_type'].title()],
-        ["Issue Date:", invoice['issue_date'][:10]],
-        ["Due Date:", invoice['due_date']],
-        ["Amount:", f"${invoice['amount']:.2f}"],
-        ["Payment Status:", invoice['payment_status'].upper()],
-        ["Description:", invoice['description']],
-    ]
-    
-    table = Table(data, colWidths=[2*inch, 4*inch])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#F1F5F9')),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 11),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E2E8F0'))
-    ]))
-    elements.append(table)
-    
-    doc.build(elements)
-    buffer.seek(0)
+    # ساخت PDF لوکس
+    pdf_buffer = generate_luxury_invoice_pdf(invoice_data)
     
     return Response(
-        content=buffer.getvalue(),
+        content=pdf_buffer.getvalue(),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=invoice_{invoice['invoice_number']}.pdf"
+            "Content-Disposition": f"attachment; filename=ricevuta_{invoice['invoice_number']}.pdf"
         }
     )
 
