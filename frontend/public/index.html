@@ -23,19 +23,56 @@
         -->
         <title>PropertyOps | Gestione Immobiliare</title>
         <script>
-        // Suppress PostHog recorder errors
-        window.addEventListener("error",function(e){
-            if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){
-                e.stopImmediatePropagation();e.preventDefault()
+        // Comprehensive error suppression for PostHog and other third-party issues
+        window.addEventListener("error", function(e) {
+            // Suppress DataCloneError
+            if (e.error instanceof DOMException && e.error.name === "DataCloneError" && 
+                e.message && e.message.includes("PerformanceServerTiming")) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return true;
             }
-            // Suppress PostHog errors
-            if(e.message && e.message.includes('posthog')) {
-                e.stopImmediatePropagation();e.preventDefault();
+            // Suppress ALL PostHog errors
+            if (e.message && e.message.toLowerCase().includes('posthog')) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return true;
             }
-            if(e.filename && e.filename.includes('posthog')) {
-                e.stopImmediatePropagation();e.preventDefault();
+            if (e.filename && e.filename.includes('posthog')) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return true;
             }
-        },true);
+            // Suppress bufferBelongsToIframe specifically
+            if (e.message && e.message.includes('bufferBelongsToIframe')) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return true;
+            }
+        }, true);
+        
+        // Additional unhandledrejection suppression
+        window.addEventListener("unhandledrejection", function(e) {
+            if (e.reason && e.reason.message && 
+                (e.reason.message.includes('posthog') || e.reason.message.includes('bufferBelongsToIframe'))) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return true;
+            }
+        });
+        
+        // Console error override to suppress PostHog console errors
+        (function() {
+            var originalError = console.error;
+            console.error = function() {
+                var args = Array.prototype.slice.call(arguments);
+                var message = args.join(' ');
+                if (message.includes('posthog') || message.includes('bufferBelongsToIframe')) {
+                    return; // Suppress
+                }
+                originalError.apply(console, args);
+            };
+        })();
         </script>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
     </head>

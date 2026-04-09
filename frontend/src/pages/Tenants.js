@@ -57,7 +57,8 @@ const Tenants = () => {
       });
       setTenants(data);
     } catch (error) {
-      toast.error('Failed to load tenants');
+      toast.error('Impossibile caricare gli inquilini');
+      console.error('Fetch tenants error:', error);
     } finally {
       setLoading(false);
     }
@@ -70,31 +71,33 @@ const Tenants = () => {
         await axios.put(`${API_URL}/tenants/${editingTenant.id}`, formData, {
           withCredentials: true,
         });
-        toast.success('Tenant updated successfully');
+        toast.success('Inquilino aggiornato con successo');
       } else {
         await axios.post(`${API_URL}/tenants`, formData, {
           withCredentials: true,
         });
-        toast.success('Tenant created successfully');
+        toast.success('Inquilino creato con successo');
       }
       setDialogOpen(false);
       resetForm();
       fetchTenants();
     } catch (error) {
-      toast.error('Failed to save tenant');
+      toast.error('Impossibile salvare l\'inquilino');
+      console.error('Save tenant error:', error.response?.data || error);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this tenant?')) return;
+    if (!window.confirm('Sei sicuro di voler eliminare questo inquilino?')) return;
     try {
       await axios.delete(`${API_URL}/tenants/${id}`, {
         withCredentials: true,
       });
-      toast.success('Tenant deleted successfully');
+      toast.success('Inquilino eliminato con successo');
       fetchTenants();
     } catch (error) {
-      toast.error('Failed to delete tenant');
+      toast.error('Impossibile eliminare l\'inquilino');
+      console.error('Delete tenant error:', error);
     }
   };
 
