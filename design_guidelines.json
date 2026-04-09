@@ -1,0 +1,137 @@
+{
+  "theme": "Light",
+  "archetype": "4 (Swiss & High-Contrast) - Adapted for Corporate Authority & Trust",
+  "domain": "Property Rental & Tenant Management Dashboard",
+  "typography": {
+    "fonts": {
+      "heading": "Outfit, sans-serif",
+      "body": "IBM Plex Sans, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl font-semibold tracking-tight text-slate-900",
+      "h2": "text-2xl sm:text-3xl font-medium tracking-tight text-slate-900",
+      "h3": "text-xl sm:text-2xl font-medium tracking-tight text-slate-800",
+      "h4": "text-lg sm:text-xl font-medium text-slate-800",
+      "body": "text-base leading-relaxed text-slate-600",
+      "small_label": "text-xs font-semibold tracking-[0.05em] uppercase text-slate-500"
+    },
+    "notes": "Do not use 'Inter' for headings. Use 'Outfit' to impart a modern, premium corporate feel. Text tracking must be tight for headings."
+  },
+  "colors": {
+    "background": {
+      "app": "#F8FAFC",
+      "sidebar": "#FFFFFF",
+      "card": "#FFFFFF",
+      "table_header": "#F1F5F9"
+    },
+    "primary": {
+      "DEFAULT": "#1D4ED8",
+      "hover": "#1E40AF",
+      "active": "#1E3A8A",
+      "light": "#EFF6FF"
+    },
+    "text": {
+      "primary": "#0F172A",
+      "secondary": "#475569",
+      "tertiary": "#64748B",
+      "inverse": "#FFFFFF"
+    },
+    "borders": {
+      "DEFAULT": "#E2E8F0",
+      "focus": "#93C5FD"
+    },
+    "status": {
+      "success": {
+        "bg": "#DCFCE7",
+        "text": "#166534",
+        "border": "#BBF7D0"
+      },
+      "warning": {
+        "bg": "#FEF9C3",
+        "text": "#854D0E",
+        "border": "#FEF08A"
+      },
+      "error": {
+        "bg": "#FEE2E2",
+        "text": "#991B1B",
+        "border": "#FECACA"
+      },
+      "info": {
+        "bg": "#E0F2FE",
+        "text": "#075985",
+        "border": "#BAE6FD"
+      }
+    }
+  },
+  "spacing_and_layout": {
+    "container_padding": "p-6 lg:p-8",
+    "section_gap": "gap-6 lg:gap-8",
+    "grid_strategy": "MODE B: THE CONTROL ROOM GRID",
+    "grid_classes": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+    "cards": {
+      "padding": "p-5 or p-6",
+      "radius": "rounded-xl",
+      "border": "border border-slate-200",
+      "shadow": "shadow-sm shadow-slate-200/50"
+    },
+    "notes": "Maintain strict optical alignment. Use generous padding inside containers. Avoid dense stacking without at least a gap-4 separator."
+  },
+  "surfaces": {
+    "headers": "Solid background (bg-white) with a hard bottom border (border-b border-slate-200). Use sticky positioning with z-40.",
+    "cards": "Flat background (bg-white), 1px subtle border, very soft shadow (shadow-sm). On hover, do not add heavy shadows; instead, darken the border slightly if interactive.",
+    "modals": "Use glassmorphism for the overlay (bg-slate-900/40 backdrop-blur-sm). The modal itself should be solid white with a 1px border and a crisp shadow-xl."
+  },
+  "components": {
+    "strategy": "Shadcn UI heavily customized to match the Swiss & High-Contrast archetype. Prioritize flat, rectangular forms over excessive roundness.",
+    "tables": "Use Shadcn Table. Headers should have a light gray background (bg-slate-50). Rows must have hover states (hover:bg-slate-50/50) with border-b. Text in tables must be slightly smaller (text-sm) for density.",
+    "forms": "Use Shadcn Form, Input, Select. Inputs should have rounded-lg, border-slate-200, and focus:ring-primary focus:border-primary. Do not use native HTML selects.",
+    "charts": "Use Recharts or Shadcn Charts. Limit chart colors to the primary blue palette and neutral slates to maintain the corporate feel.",
+    "buttons": "Primary: Solid Blue (bg-blue-700 text-white hover:bg-blue-800). Secondary: Outline (border-slate-300 text-slate-700 hover:bg-slate-50). Radii should be rounded-lg.",
+    "badges": "Use rounded-md, flat background, and high contrast text for status indicators."
+  },
+  "motion": {
+    "hover": "Subtle transitions on borders and backgrounds (transition-colors duration-200).",
+    "page_load": "Staggered fade-in for list items and grid cards using Framer Motion or pure CSS keyframes.",
+    "interaction": "No bouncy animations. Use crisp, ease-out transitions for dropdowns and dialogs."
+  },
+  "icons": {
+    "library": "lucide-react",
+    "style": "Stroke width 1.5 for a clean, professional look. Size typically 18px or 20px.",
+    "usage": "Use consistently across the sidebar, table actions, and metric cards."
+  },
+  "image_urls": {
+    "login_hero": {
+      "url": "https://images.unsplash.com/photo-1760246964044-1384f71665b9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjb3Jwb3JhdGUlMjBvZmZpY2UlMjBidWlsZGluZyUyMGV4dGVyaW9yfGVufDB8fHx8MTc3NTczMDUwNHww&ixlib=rb-4.1.0&q=85",
+      "description": "Modern office building exterior at dusk. Use for the login page background or split-screen auth side."
+    },
+    "avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1762522927402-f390672558d8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNTl8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXR8ZW58MHx8fHwxNzc1NzMwNTA0fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Professional male avatar."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1689600944138-da3b150d9cb8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNTl8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXR8ZW58MHx8fHwxNzc1NzMwNTA0fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Professional female avatar."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1655249481446-25d575f1c054?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNTl8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXR8ZW58MHx8fHwxNzc1NzMwNTA0fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Professional female avatar in blue dress."
+      }
+    ]
+  },
+  "accessibility": {
+    "contrast": "Ensure all text, especially on badges and primary buttons, meets WCAG AA 4.5:1 ratio against backgrounds.",
+    "focus": "All interactive elements must have a visible focus state (focus:ring-2 focus:ring-blue-300 focus:outline-none).",
+    "testing": "All interactive and key informational elements MUST include a data-testid attribute formatted as kebab-case based on role."
+  },
+  "instructions_to_main_agent": [
+    "Prioritize a clean, minimal, premium dashboard look with a white/light gray background and high-trust Blue as the primary color.",
+    "Implement Role-Based Access Control logic efficiently, keeping the sidebar items reactive to the user's role.",
+    "Use Shadcn UI components extensively for Tables, Modals, Forms, and Dropdowns. Do not write complex interactive UI elements from scratch.",
+    "Maintain strict border colors (border-slate-200) and card backgrounds (bg-white) to emulate a premium, 'Control Room' Swiss layout.",
+    "Ensure 'Outfit' font is applied strictly to headings and 'IBM Plex Sans' to body content. If unavailable via Google Fonts, fallback to system sans-serif but define them clearly in CSS.",
+    "In the Login screen, implement a split layout where the left/right side uses the login_hero image with an overlay, and the form remains on a clean white surface.",
+    "Apply `data-testid` attributes to all forms, buttons, table rows, and key navigational elements for robust testing."
+  ]
+}
