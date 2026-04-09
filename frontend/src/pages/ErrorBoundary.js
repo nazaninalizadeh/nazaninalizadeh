@@ -24,7 +24,7 @@ class ErrorBoundary extends React.Component {
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-8">
           <div className="max-w-2xl w-full bg-white rounded-xl border border-red-200 p-8">
             <h1 className="text-2xl font-semibold text-red-900 mb-4">
-              Something went wrong
+              Qualcosa è andato storto
             </h1>
             <div className="bg-red-50 p-4 rounded-lg mb-4">
               <p className="text-sm font-mono text-red-800">
@@ -41,9 +41,9 @@ class ErrorBoundary extends React.Component {
             </details>
             <button
               onClick={() => window.location.href = '/login'}
-              className="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800"
+              className="px-4 py-2 bg-rose-700 text-white rounded-lg hover:bg-rose-800"
             >
-              Go to Login
+              Vai al Login
             </button>
           </div>
         </div>
