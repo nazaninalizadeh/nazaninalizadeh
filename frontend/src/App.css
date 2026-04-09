@@ -1,28 +1,252 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
 
 * {
   box-sizing: border-box;
 }
 
 body {
-  font-family: 'IBM Plex Sans', sans-serif;
-  background-color: #F8FAFC;
+  font-family: 'Montserrat', 'IBM Plex Sans', sans-serif;
+  background: linear-gradient(135deg, #FAF7F0 0%, #F5F1E8 100%);
   margin: 0;
   padding: 0;
+  min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Playfair Display', serif;
+  color: #9F1239;
 }
 
 .App {
   min-height: 100vh;
+  background: linear-gradient(135deg, #FAF7F0 0%, #F5F1E8 100%);
 }
 
 .font-heading {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Playfair Display', serif;
+}
+
+.font-body {
+  font-family: 'Montserrat', sans-serif;
 }
 
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* ===== Luxury Animations ===== */
+
+@keyframes luxuryFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes goldShine {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(184, 134, 11, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(184, 134, 11, 0.6);
+  }
+}
+
+.luxury-fade-in {
+  animation: luxuryFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.gold-shine {
+  animation: goldShine 3s ease-in-out infinite;
+}
+
+/* ===== Page Transitions ===== */
+
+.page-enter {
+  opacity: 0;
+  transform: translateX(50px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== Custom Luxury Elements ===== */
+
+.luxury-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #9F1239 0%, #DC2626 50%, #B8860B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.luxury-subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.25rem;
+  color: #8B6F47;
+  letter-spacing: 0.03em;
+}
+
+.luxury-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(184, 134, 11, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(159, 18, 57, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.luxury-gradient-bg {
+  background: linear-gradient(135deg, 
+    rgba(159, 18, 57, 0.02) 0%, 
+    rgba(184, 134, 11, 0.02) 50%, 
+    rgba(159, 18, 57, 0.02) 100%);
+}
+
+/* ===== Luxury Borders ===== */
+
+.border-luxury {
+  border: 1px solid rgba(184, 134, 11, 0.2);
+  border-image: linear-gradient(135deg, #9F1239, #B8860B, #9F1239) 1;
+}
+
+.border-luxury-thick {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, #9F1239, #B8860B) border-box;
+}
+
+/* ===== Hover Effects ===== */
+
+.hover-lift {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 16px 48px rgba(159, 18, 57, 0.2);
+}
+
+.hover-glow {
+  transition: all 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 
+    0 0 20px rgba(159, 18, 57, 0.4),
+    0 0 40px rgba(184, 134, 11, 0.2);
+}
+
+/* ===== Text Decorations ===== */
+
+.text-luxury {
+  background: linear-gradient(135deg, #9F1239 0%, #BE123C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+.text-gold {
+  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+/* ===== Premium Shadows ===== */
+
+.shadow-luxury {
+  box-shadow: 
+    0 4px 20px rgba(159, 18, 57, 0.1),
+    0 0 0 1px rgba(184, 134, 11, 0.05) inset;
+}
+
+.shadow-luxury-lg {
+  box-shadow: 
+    0 12px 40px rgba(159, 18, 57, 0.15),
+    0 0 0 1px rgba(184, 134, 11, 0.1) inset;
+}
+
+.shadow-luxury-xl {
+  box-shadow: 
+    0 24px 64px rgba(159, 18, 57, 0.2),
+    0 0 0 1px rgba(184, 134, 11, 0.15) inset;
+}
+
+/* ===== Icon Animations ===== */
+
+.icon-bounce {
+  transition: transform 0.3s ease;
+}
+
+.icon-bounce:hover {
+  transform: scale(1.2);
+  animation: bounce 0.6s;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: scale(1.2) translateY(0); }
+  50% { transform: scale(1.2) translateY(-5px); }
+}
+
+/* ===== Loading States ===== */
+
+.skeleton-luxury {
+  background: linear-gradient(
+    90deg,
+    #FAF7F0 25%,
+    #F5F1E8 50%,
+    #FAF7F0 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== Responsive Typography ===== */
+
+@media (max-width: 768px) {
+  .luxury-title {
+    font-size: 2rem;
+  }
+  
+  .luxury-subtitle {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .luxury-title {
+    font-size: 1.5rem;
+  }
 }

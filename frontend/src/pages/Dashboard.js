@@ -96,18 +96,18 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-rose-700 border-r-transparent" />
+        <div className="luxury-spinner h-12 w-12"></div>
       </div>
     );
   }
 
   return (
-    <div data-testid="dashboard-page">
-      <div className="mb-8">
-        <h1 className="text-4xl font-semibold font-heading text-slate-900 mb-2" data-testid="dashboard-title">
+    <div data-testid="dashboard-page" className="luxury-fade-in">
+      <div className="mb-10">
+        <h1 className="luxury-title mb-3" data-testid="dashboard-title">
           Dashboard
         </h1>
-        <p className="text-slate-600">Panoramica del tuo sistema di gestione immobiliare</p>
+        <p className="luxury-subtitle">Panoramica del sistema di gestione immobiliare</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -116,16 +116,16 @@ const Dashboard = () => {
           return (
             <div
               key={stat.label}
-              className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+              className="stats-card hover-lift"
               data-testid={stat.testId}
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg ${stat.color}`}>
-                  <Icon size={24} />
+                <div className={`p-3 rounded-xl ${stat.color} shadow-md`}>
+                  <Icon size={28} strokeWidth={2.5} />
                 </div>
               </div>
-              <h3 className="text-2xl font-semibold text-slate-900 mb-1">{stat.value}</h3>
-              <p className="text-sm text-slate-600">{stat.label}</p>
+              <h3 className="text-3xl font-bold text-slate-900 mb-2 font-heading">{stat.value}</h3>
+              <p className="text-sm text-slate-600 font-medium">{stat.label}</p>
             </div>
           );
         })}
