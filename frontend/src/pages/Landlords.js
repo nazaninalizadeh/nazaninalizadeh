@@ -51,7 +51,13 @@ const Landlords = () => {
       });
       setLandlords(data);
     } catch (error) {
-      toast.error('Failed to load landlords');
+      if (error.response?.status === 401) {
+        toast.error('Sessione scaduta. Effettua nuovamente il login.');
+        setTimeout(() => window.location.href = '/login', 2000);
+      } else {
+        toast.error('Impossibile caricare i proprietari');
+      }
+      console.error('Fetch landlords error:', error);
     } finally {
       setLoading(false);
     }
@@ -64,31 +70,43 @@ const Landlords = () => {
         await axios.put(`${API_URL}/landlords/${editingLandlord.id}`, formData, {
           withCredentials: true,
         });
-        toast.success('Landlord updated successfully');
+        toast.success('Proprietario aggiornato con successo');
       } else {
         await axios.post(`${API_URL}/landlords`, formData, {
           withCredentials: true,
         });
-        toast.success('Landlord created successfully');
+        toast.success('Proprietario creato con successo');
       }
       setDialogOpen(false);
       resetForm();
       fetchLandlords();
     } catch (error) {
-      toast.error('Failed to save landlord');
+      if (error.response?.status === 401) {
+        toast.error('Sessione scaduta. Effettua nuovamente il login.');
+        setTimeout(() => window.location.href = '/login', 2000);
+      } else {
+        toast.error('Impossibile salvare il proprietario');
+      }
+      console.error('Save landlord error:', error.response?.data || error);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this landlord?')) return;
+    if (!window.confirm('Sei sicuro di voler eliminare questo proprietario?')) return;
     try {
       await axios.delete(`${API_URL}/landlords/${id}`, {
         withCredentials: true,
       });
-      toast.success('Landlord deleted successfully');
+      toast.success('Proprietario eliminato con successo');
       fetchLandlords();
     } catch (error) {
-      toast.error('Failed to delete landlord');
+      if (error.response?.status === 401) {
+        toast.error('Sessione scaduta. Effettua nuovamente il login.');
+        setTimeout(() => window.location.href = '/login', 2000);
+      } else {
+        toast.error('Impossibile eliminare il proprietario');
+      }
+      console.error('Delete landlord error:', error);
     }
   };
 
