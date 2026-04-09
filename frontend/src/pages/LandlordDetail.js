@@ -160,10 +160,10 @@ const LandlordDetail = () => {
             <div className="space-y-4">
               <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
-                  <Building2 size={18} className="text-blue-700" />
-                  <p className="text-xs text-blue-700 font-semibold uppercase">Properties</p>
+                  <Building2 size={18} className="text-rose-700" />
+                  <p className="text-xs text-rose-700 font-semibold uppercase">Properties</p>
                 </div>
-                <p className="text-2xl font-semibold text-blue-900">
+                <p className="text-2xl font-semibold text-rose-900">
                   {properties.length}
                 </p>
               </div>

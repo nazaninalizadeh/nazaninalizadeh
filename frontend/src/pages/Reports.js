@@ -52,12 +52,12 @@ const Reports = () => {
                   ${reportData.total_monthly_income?.toFixed(2)}
                 </p>
               </div>
-              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+              <div className="bg-blue-50 p-6 rounded-lg border border-rose-200">
                 <div className="flex items-center gap-3 mb-2">
-                  <FileText className="text-blue-700" size={24} />
-                  <p className="text-sm font-semibold text-blue-700 uppercase">Active Contracts</p>
+                  <FileText className="text-rose-700" size={24} />
+                  <p className="text-sm font-semibold text-rose-700 uppercase">Active Contracts</p>
                 </div>
-                <p className="text-3xl font-bold text-blue-900">{reportData.active_contracts}</p>
+                <p className="text-3xl font-bold text-rose-900">{reportData.active_contracts}</p>
               </div>
             </div>
 
@@ -125,12 +125,12 @@ const Reports = () => {
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+              <div className="bg-blue-50 p-6 rounded-lg border border-rose-200">
                 <div className="flex items-center gap-3 mb-2">
-                  <Building2 className="text-blue-700" size={24} />
-                  <p className="text-sm font-semibold text-blue-700 uppercase">Total Properties</p>
+                  <Building2 className="text-rose-700" size={24} />
+                  <p className="text-sm font-semibold text-rose-700 uppercase">Total Properties</p>
                 </div>
-                <p className="text-3xl font-bold text-blue-900">{reportData.total_properties}</p>
+                <p className="text-3xl font-bold text-rose-900">{reportData.total_properties}</p>
               </div>
               <div className="bg-green-50 p-6 rounded-lg border border-green-200">
                 <div className="flex items-center gap-3 mb-2">
@@ -178,12 +178,12 @@ const Reports = () => {
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+              <div className="bg-blue-50 p-6 rounded-lg border border-rose-200">
                 <div className="flex items-center gap-3 mb-2">
-                  <DollarSign className="text-blue-700" size={24} />
-                  <p className="text-sm font-semibold text-blue-700 uppercase">Total Deposits</p>
+                  <DollarSign className="text-rose-700" size={24} />
+                  <p className="text-sm font-semibold text-rose-700 uppercase">Total Deposits</p>
                 </div>
-                <p className="text-3xl font-bold text-blue-900">
+                <p className="text-3xl font-bold text-rose-900">
                   ${reportData.total_deposits?.toFixed(2)}
                 </p>
               </div>
@@ -209,7 +209,7 @@ const Reports = () => {
 
             <div className="bg-white rounded-xl border border-slate-200 p-6">
               <div className="flex items-center gap-3">
-                <Users className="text-blue-700" size={24} />
+                <Users className="text-rose-700" size={24} />
                 <div>
                   <p className="text-sm font-semibold text-slate-700">Total Tenants</p>
                   <p className="text-2xl font-bold text-slate-900">{reportData.tenant_count}</p>
@@ -252,7 +252,7 @@ const Reports = () => {
           <Button
             onClick={generateReport}
             disabled={loading}
-            className="bg-blue-700 hover:bg-blue-800"
+            className="bg-rose-700 hover:bg-rose-800"
             data-testid="generate-report-button"
           >
             {loading ? 'Generating...' : 'Generate Report'}

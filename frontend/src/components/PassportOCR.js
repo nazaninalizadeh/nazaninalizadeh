@@ -69,7 +69,7 @@ const PassportOCR = ({ onExtracted }) => {
                 className="max-h-48 mx-auto rounded-lg"
               />
               {loading && (
-                <div className="flex items-center justify-center gap-2 text-blue-700">
+                <div className="flex items-center justify-center gap-2 text-rose-700">
                   <Loader2 className="animate-spin" size={20} />
                   <span>Extracting information...</span>
                 </div>
@@ -96,12 +96,12 @@ const PassportOCR = ({ onExtracted }) => {
       </div>
 
       {loading && (
-        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="p-4 bg-blue-50 rounded-lg border border-rose-200">
           <div className="flex items-center gap-3">
-            <FileText className="text-blue-700" size={20} />
+            <FileText className="text-rose-700" size={20} />
             <div>
-              <p className="text-sm font-medium text-blue-900">Processing Passport</p>
-              <p className="text-xs text-blue-700">Using AI to extract information...</p>
+              <p className="text-sm font-medium text-rose-900">Processing Passport</p>
+              <p className="text-xs text-rose-700">Using AI to extract information...</p>
             </div>
           </div>
         </div>

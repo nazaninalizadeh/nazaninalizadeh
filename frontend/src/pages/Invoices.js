@@ -177,7 +177,7 @@ const Invoices = () => {
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-700 hover:bg-blue-800" data-testid="add-invoice-button">
+            <Button className="bg-rose-700 hover:bg-rose-800" data-testid="add-invoice-button">
               <Plus size={18} className="mr-2" />
               Create Invoice
             </Button>
@@ -298,7 +298,7 @@ const Invoices = () => {
                 <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-blue-700 hover:bg-blue-800" data-testid="save-invoice-button">
+                <Button type="submit" className="bg-rose-700 hover:bg-rose-800" data-testid="save-invoice-button">
                   Create Invoice
                 </Button>
               </div>
@@ -361,7 +361,7 @@ const Invoices = () => {
                 <Button type="button" variant="outline" onClick={() => setPaymentDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-blue-700 hover:bg-blue-800" data-testid="save-payment-button">
+                <Button type="submit" className="bg-rose-700 hover:bg-rose-800" data-testid="save-payment-button">
                   Record Payment
                 </Button>
               </div>

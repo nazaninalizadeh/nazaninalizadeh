@@ -46,7 +46,7 @@ const Notifications = () => {
       case 'medium':
         return 'bg-orange-50 border-orange-200 text-orange-800';
       case 'low':
-        return 'bg-blue-50 border-blue-200 text-blue-800';
+        return 'bg-blue-50 border-rose-200 text-blue-800';
       default:
         return 'bg-slate-50 border-slate-200 text-slate-800';
     }

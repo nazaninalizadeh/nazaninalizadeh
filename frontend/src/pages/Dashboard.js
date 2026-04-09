@@ -28,7 +28,7 @@ const Dashboard = () => {
       });
       setStats(data);
     } catch (error) {
-      toast.error('Failed to load dashboard stats');
+      toast.error('Impossibile caricare le statistiche dashboard');
     } finally {
       setLoading(false);
     }
@@ -36,57 +36,57 @@ const Dashboard = () => {
 
   const statCards = [
     {
-      label: 'Total Tenants',
+      label: 'Totale Inquilini',
       value: stats?.total_tenants || 0,
       icon: Users,
-      color: 'bg-blue-50 text-blue-700',
+      color: 'bg-rose-50 text-rose-700',
       testId: 'stat-total-tenants'
     },
     {
-      label: 'Total Landlords',
+      label: 'Totale Proprietari',
       value: stats?.total_landlords || 0,
       icon: Home,
       color: 'bg-green-50 text-green-700',
       testId: 'stat-total-landlords'
     },
     {
-      label: 'Total Properties',
+      label: 'Totale Immobili',
       value: stats?.total_properties || 0,
       icon: Building2,
       color: 'bg-purple-50 text-purple-700',
       testId: 'stat-total-properties'
     },
     {
-      label: 'Occupied Properties',
+      label: 'Immobili Occupati',
       value: stats?.occupied_properties || 0,
       icon: Building2,
       color: 'bg-indigo-50 text-indigo-700',
       testId: 'stat-occupied-properties'
     },
     {
-      label: 'Active Contracts',
+      label: 'Contratti Attivi',
       value: stats?.active_contracts || 0,
       icon: FileText,
       color: 'bg-orange-50 text-orange-700',
       testId: 'stat-active-contracts'
     },
     {
-      label: 'Unpaid Invoices',
+      label: 'Fatture Non Pagate',
       value: stats?.unpaid_invoices || 0,
       icon: Receipt,
       color: 'bg-red-50 text-red-700',
       testId: 'stat-unpaid-invoices'
     },
     {
-      label: 'Monthly Income',
-      value: `$${stats?.total_monthly_income?.toFixed(2) || '0.00'}`,
+      label: 'Reddito Mensile',
+      value: `€${stats?.total_monthly_income?.toFixed(2) || '0.00'}`,
       icon: TrendingUp,
       color: 'bg-emerald-50 text-emerald-700',
       testId: 'stat-monthly-income'
     },
     {
-      label: 'Total Deposits',
-      value: `$${stats?.total_deposits?.toFixed(2) || '0.00'}`,
+      label: 'Totale Depositi',
+      value: `€${stats?.total_deposits?.toFixed(2) || '0.00'}`,
       icon: DollarSign,
       color: 'bg-cyan-50 text-cyan-700',
       testId: 'stat-total-deposits'
@@ -96,7 +96,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-700 border-r-transparent" />
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-rose-700 border-r-transparent" />
       </div>
     );
   }
@@ -107,7 +107,7 @@ const Dashboard = () => {
         <h1 className="text-4xl font-semibold font-heading text-slate-900 mb-2" data-testid="dashboard-title">
           Dashboard
         </h1>
-        <p className="text-slate-600">Overview of your property management system</p>
+        <p className="text-slate-600">Panoramica del tuo sistema di gestione immobiliare</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -154,7 +154,7 @@ const Tenants = () => {
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-700 hover:bg-blue-800" data-testid="add-tenant-button">
+            <Button className="bg-rose-700 hover:bg-rose-800" data-testid="add-tenant-button">
               <Plus size={18} className="mr-2" />
               Add Tenant
             </Button>
@@ -298,7 +298,7 @@ const Tenants = () => {
                 <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-blue-700 hover:bg-blue-800" data-testid="save-tenant-button">
+                <Button type="submit" className="bg-rose-700 hover:bg-rose-800" data-testid="save-tenant-button">
                   {editingTenant ? 'Update' : 'Create'} Tenant
                 </Button>
               </div>

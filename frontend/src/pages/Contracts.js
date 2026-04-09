@@ -146,7 +146,7 @@ const Contracts = () => {
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-700 hover:bg-blue-800" data-testid="add-contract-button">
+            <Button className="bg-rose-700 hover:bg-rose-800" data-testid="add-contract-button">
               <Plus size={18} className="mr-2" />
               Create Contract
             </Button>
@@ -252,7 +252,7 @@ const Contracts = () => {
                 <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-blue-700 hover:bg-blue-800" data-testid="save-contract-button">
+                <Button type="submit" className="bg-rose-700 hover:bg-rose-800" data-testid="save-contract-button">
                   Create Contract
                 </Button>
               </div>

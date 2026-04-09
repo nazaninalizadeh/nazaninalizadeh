@@ -203,10 +203,10 @@ const TenantDetail = () => {
             <div className="space-y-4">
               <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
-                  <DollarSign size={18} className="text-blue-700" />
-                  <p className="text-xs text-blue-700 font-semibold uppercase">Deposit Amount</p>
+                  <DollarSign size={18} className="text-rose-700" />
+                  <p className="text-xs text-rose-700 font-semibold uppercase">Deposit Amount</p>
                 </div>
-                <p className="text-2xl font-semibold text-blue-900">
+                <p className="text-2xl font-semibold text-rose-900">
                   ${tenant.deposit_amount.toFixed(2)}
                 </p>
               </div>

@@ -26,22 +26,22 @@ const Layout = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Logged out successfully');
+      toast.success('Disconnesso con successo');
       navigate('/login');
     } catch (error) {
-      toast.error('Failed to logout');
+      toast.error('Impossibile disconnettersi');
     }
   };
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/tenants', label: 'Tenants', icon: Users },
-    { path: '/landlords', label: 'Landlords', icon: Home },
-    { path: '/properties', label: 'Properties', icon: Building2 },
-    { path: '/contracts', label: 'Contracts', icon: FileText },
-    { path: '/invoices', label: 'Invoices', icon: Receipt },
-    { path: '/notifications', label: 'Notifications', icon: Bell },
-    { path: '/reports', label: 'Reports', icon: BarChart3 },
+    { path: '/tenants', label: 'Inquilini', icon: Users },
+    { path: '/landlords', label: 'Proprietari', icon: Home },
+    { path: '/properties', label: 'Immobili', icon: Building2 },
+    { path: '/contracts', label: 'Contratti', icon: FileText },
+    { path: '/invoices', label: 'Fatture', icon: Receipt },
+    { path: '/notifications', label: 'Notifiche', icon: Bell },
+    { path: '/reports', label: 'Report', icon: BarChart3 },
   ];
 
   return (
@@ -81,7 +81,7 @@ const Layout = () => {
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      ? 'bg-rose-50 text-rose-700 font-medium'
                       : 'text-slate-600 hover:bg-slate-50'
                   }`}
                   data-testid={`nav-${item.label.toLowerCase()}`}
