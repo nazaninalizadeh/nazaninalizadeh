@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext(null);
@@ -13,9 +13,76 @@ export const useAuth = () => {
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
+// Global axios interceptor for 401 handling
+let isRefreshing = false;
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Don't retry for refresh endpoint or if already retried
+    if (error.response?.status === 401 && 
+        !originalRequest._retry && 
+        !originalRequest.url?.includes('/auth/refresh') &&
+        !originalRequest.url?.includes('/auth/me')) {
+      
+      if (!isRefreshing) {
+        isRefreshing = true;
+        originalRequest._retry = true;
+        
+        try {
+          await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+          isRefreshing = false;
+          // Retry the original request
+          return axios(originalRequest);
+        } catch {
+          isRefreshing = false;
+          // Refresh failed - session is truly expired
+          window.dispatchEvent(new Event('auth:session-expired'));
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const inactivityTimerRef = useRef(null);
+
+  const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
+  const INACTIVITY_WARNING_MS = 7.5 * 60 * 60 * 1000; // 7.5 hours
+
+  const handleSessionExpired = useCallback(() => {
+    setUser(false);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('auth:session-expired', handleSessionExpired);
+    return () => window.removeEventListener('auth:session-expired', handleSessionExpired);
+  }, [handleSessionExpired]);
+
+  // Reset inactivity timer on user activity
+  useEffect(() => {
+    if (!user) return;
+
+    const resetTimer = () => {
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = setTimeout(() => {
+        handleSessionExpired();
+      }, SESSION_TIMEOUT_MS);
+    };
+
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach((e) => window.addEventListener(e, resetTimer));
+    resetTimer();
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, resetTimer));
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    };
+  }, [user, handleSessionExpired]);
 
   useEffect(() => {
     checkAuth();
@@ -27,17 +94,28 @@ export const AuthProvider = ({ children }) => {
         withCredentials: true,
       });
       setUser(data);
-    } catch (error) {
+    } catch {
       setUser(false);
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (email, password, captchaToken) => {
+  // Step 1: Email + Password → returns login_session_id
+  const loginStep1 = async (email, password, captchaToken) => {
     const { data } = await axios.post(
-      `${API_URL}/auth/login`,
-      { email, password, captcha_token: captchaToken },
+      `${API_URL}/auth/login-step1`,
+      { email, password, captcha_token: captchaToken || '' },
+      { withCredentials: true }
+    );
+    return data; // { message, login_session_id }
+  };
+
+  // Step 2: OTP Verification → sets user
+  const verifyOtp = async (loginSessionId, otpCode) => {
+    const { data } = await axios.post(
+      `${API_URL}/auth/verify-otp`,
+      { login_session_id: loginSessionId, otp_code: otpCode },
       { withCredentials: true }
     );
     setUser(data);
@@ -45,12 +123,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
+    try {
+      await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
+    } catch {
+      // ignore
+    }
     setUser(false);
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    const { data } = await axios.post(
+      `${API_URL}/auth/change-password`,
+      { current_password: currentPassword, new_password: newPassword },
+      { withCredentials: true }
+    );
+    return data;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, loginStep1, verifyOtp, logout, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

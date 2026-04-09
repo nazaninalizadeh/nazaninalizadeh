@@ -7,10 +7,10 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FAF7F0 0%, #F5F1E8 100%)' }}>
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-rose-700 border-r-transparent" />
-          <p className="mt-4 text-slate-600">Caricamento...</p>
+          <div className="luxury-spinner h-10 w-10 mx-auto" />
+          <p className="mt-4" style={{ color: '#8B7355' }}>Caricamento...</p>
         </div>
       </div>
     );

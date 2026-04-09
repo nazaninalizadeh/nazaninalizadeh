@@ -225,15 +225,15 @@ const Reports = () => {
   };
 
   return (
-    <div data-testid="reports-page">
-      <div className="mb-8">
-        <h1 className="text-4xl font-semibold font-heading text-slate-900 mb-2" data-testid="reports-title">
-          Reports
+    <div data-testid="reports-page" className="luxury-fade-in">
+      <div className="mb-10">
+        <h1 className="luxury-title mb-2" data-testid="reports-title">
+          Report
         </h1>
-        <p className="text-slate-600">Generate and view financial and operational reports</p>
+        <p className="luxury-subtitle">Genera e visualizza report finanziari e operativi</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+      <div className="luxury-card p-6 mb-6">
         <div className="flex items-end gap-4">
           <div className="flex-1">
             <label className="block text-sm font-medium text-slate-700 mb-2">Report Type</label>
@@ -262,10 +262,10 @@ const Reports = () => {
 
       {reportData && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="luxury-card p-6">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-xl font-semibold font-heading text-slate-900">
+                <h2 className="text-xl font-semibold font-heading" style={{ color: '#9F1239' }}>
                   {reportType.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                 </h2>
                 <p className="text-sm text-slate-600 mt-1">
@@ -280,10 +280,10 @@ const Reports = () => {
       )}
 
       {!reportData && !loading && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-          <FileText className="mx-auto text-slate-300 mb-4" size={64} />
-          <h3 className="text-lg font-medium text-slate-900 mb-2">No Report Generated</h3>
-          <p className="text-slate-600">Select a report type and click "Generate Report" to view data</p>
+        <div className="luxury-card p-14 text-center">
+          <FileText className="mx-auto mb-4" size={64} style={{ color: 'rgba(184, 134, 11, 0.3)' }} />
+          <h3 className="text-lg font-semibold mb-2" style={{ color: '#2C1810' }}>Nessun Report Generato</h3>
+          <p style={{ color: '#8B7355' }}>Seleziona un tipo di report e clicca "Genera Report" per visualizzare i dati</p>
         </div>
       )}
     </div>

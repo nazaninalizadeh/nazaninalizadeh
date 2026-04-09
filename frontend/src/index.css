@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,7 +12,7 @@
 
 body {
   margin: 0;
-  font-family: 'Montserrat', 'IBM Plex Sans', -apple-system, sans-serif;
+  font-family: 'DM Sans', -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #FAF7F0 0%, #F5F1E8 100%);
@@ -122,7 +122,7 @@ p {
 /* ===== دکمه‌های premium ===== */
 
 .btn-luxury {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -169,7 +169,7 @@ p {
 /* ===== اینپوت‌های لوکس ===== */
 
 .luxury-input {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   background: #FEFDFB;
   border: 1.5px solid rgba(184, 134, 11, 0.2);
   border-radius: 10px;
@@ -208,7 +208,7 @@ p {
 }
 
 .luxury-table thead th {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.75rem;
@@ -243,7 +243,7 @@ p {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .badge-success {
@@ -305,7 +305,7 @@ p {
 }
 
 .luxury-nav-item {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-weight: 500;
   font-size: 0.9rem;
   letter-spacing: 0.02em;
@@ -448,4 +448,24 @@ p {
     padding: 2rem 1rem;
     border-radius: 16px;
   }
+}
+
+/* ===== Notes font ===== */
+
+.notes-text,
+textarea,
+[id="notes"] {
+  font-family: 'Lora', 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #4A3B31;
+}
+
+/* ===== Login page overrides ===== */
+
+.login-brand-name {
+  color: white !important;
+  -webkit-text-fill-color: white !important;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 }

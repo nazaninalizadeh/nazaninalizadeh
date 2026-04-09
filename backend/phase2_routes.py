@@ -16,7 +16,8 @@ import asyncio
 import resend
 
 # Import from main server
-from server import db, get_current_user, RESEND_API_KEY, SENDER_EMAIL
+from database import db
+from auth import get_current_user
 
 router = APIRouter(prefix="/api")
 

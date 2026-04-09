@@ -61,19 +61,19 @@ const Notifications = () => {
   }
 
   return (
-    <div data-testid="notifications-page">
-      <div className="mb-8">
-        <h1 className="text-4xl font-semibold font-heading text-slate-900 mb-2" data-testid="notifications-title">
-          Notifications & Reminders
+    <div data-testid="notifications-page" className="luxury-fade-in">
+      <div className="mb-10">
+        <h1 className="luxury-title mb-2" data-testid="notifications-title">
+          Notifiche e Promemoria
         </h1>
-        <p className="text-slate-600">Stay updated on rent due dates, contract expiry, and passport renewals</p>
+        <p className="luxury-subtitle">Rimani aggiornato sulle scadenze affitti, contratti e passaporti</p>
       </div>
 
       {notifications.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-          <Bell className="mx-auto text-slate-300 mb-4" size={64} />
-          <h3 className="text-lg font-medium text-slate-900 mb-2">No Pending Notifications</h3>
-          <p className="text-slate-600">You're all caught up! No reminders or alerts at the moment.</p>
+        <div className="luxury-card p-14 text-center">
+          <Bell className="mx-auto mb-4" size={64} style={{ color: 'rgba(184, 134, 11, 0.3)' }} />
+          <h3 className="text-lg font-semibold mb-2" style={{ color: '#2C1810' }}>Nessuna Notifica</h3>
+          <p style={{ color: '#8B7355' }}>Sei in pari! Nessun promemoria o avviso al momento.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">

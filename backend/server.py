@@ -1,19 +1,16 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
 from dotenv import load_dotenv
+from pathlib import Path
+load_dotenv(Path(__file__).parent / '.env')
+
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
-from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
-import jwt
-import bcrypt
-import secrets
 from bson import ObjectId
-import resend
 import asyncio
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
@@ -23,102 +20,15 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.units import inch
 import base64
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
-
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
-
-# Resend configuration
-RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
-if RESEND_API_KEY:
-    resend.api_key = RESEND_API_KEY
-
-# JWT configuration
-JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
-JWT_ALGORITHM = "HS256"
-ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@propertyops.com')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@123')
+from database import db, client
+from auth import auth_router, get_current_user, seed_admins, ALLOWED_ADMINS
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 logger = logging.getLogger(__name__)
 
-# ============ Password & JWT Utilities ============
-def hash_password(password: str) -> str:
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
-    return hashed.decode("utf-8")
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
-
-def create_access_token(user_id: str, email: str) -> str:
-    payload = {
-        "sub": user_id,
-        "email": email,
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=30),
-        "type": "access"
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-def create_refresh_token(user_id: str) -> str:
-    payload = {
-        "sub": user_id,
-        "exp": datetime.now(timezone.utc) + timedelta(days=7),
-        "type": "refresh"
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-# ============ Auth Dependency ============
-async def get_current_user(request: Request) -> dict:
-    token = request.cookies.get("access_token")
-    if not token:
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            token = auth_header[7:]
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        if payload.get("type") != "access":
-            raise HTTPException(status_code=401, detail="Invalid token type")
-        user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        user["id"] = str(user["_id"])
-        user["_id"] = str(user["_id"])
-        user.pop("password_hash", None)
-        return user
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
 # ============ Models ============
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-    captcha_token: str
-
-class SendOTPRequest(BaseModel):
-    email: EmailStr
-    captcha_token: str
-
-class VerifyOTPRequest(BaseModel):
-    email: EmailStr
-    otp: str
-
-class UserResponse(BaseModel):
-    id: str
-    email: str
-    name: str
-    role: str
-    created_at: str
 
 class TenantCreate(BaseModel):
     full_name: str
@@ -269,94 +179,33 @@ class PaymentResponse(BaseModel):
 # ============ Startup & Admin Seeding ============
 @app.on_event("startup")
 async def startup_event():
-    # Create indexes
-    await db.users.create_index("email", unique=True)
+    # Create indexes for data collections
     await db.tenants.create_index("passport_number")
     await db.properties.create_index("property_code")
     await db.contracts.create_index("contract_number")
     await db.invoices.create_index("invoice_number")
-    
-    # Seed admin
-    existing_admin = await db.users.find_one({"email": ADMIN_EMAIL})
-    if existing_admin is None:
-        hashed = hash_password(ADMIN_PASSWORD)
-        await db.users.insert_one({
-            "email": ADMIN_EMAIL,
-            "password_hash": hashed,
-            "name": "Super Admin",
-            "role": "super_admin",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-        logger.info(f"Admin user created: {ADMIN_EMAIL}")
-    elif not verify_password(ADMIN_PASSWORD, existing_admin["password_hash"]):
-        await db.users.update_one(
-            {"email": ADMIN_EMAIL},
-            {"$set": {"password_hash": hash_password(ADMIN_PASSWORD)}}
-        )
-        logger.info(f"Admin password updated")
-    
-    # Write test credentials
-    Path("/app/memory").mkdir(exist_ok=True)
+
+    # Seed admins (from auth module)
+    await seed_admins()
+
+    # Write credentials file
+    from pathlib import Path as P
+    P("/app/memory").mkdir(exist_ok=True)
     with open("/app/memory/test_credentials.md", "w") as f:
         f.write("# Test Credentials\n\n")
-        f.write("## Admin Account\n")
-        f.write(f"- Email: {ADMIN_EMAIL}\n")
-        f.write(f"- Password: {ADMIN_PASSWORD}\n")
-        f.write(f"- Role: super_admin\n\n")
-        f.write("## API Endpoints\n")
-        f.write("- Login: POST /api/auth/login\n")
-        f.write("- Me: GET /api/auth/me\n")
-        f.write("- Logout: POST /api/auth/logout\n")
-
-# ============ Auth Routes ============
-@api_router.post("/auth/login")
-async def login(request: LoginRequest, response: Response):
-    email = request.email.lower()
-    user = await db.users.find_one({"email": email})
-    
-    if not user or not verify_password(request.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    
-    user_id = str(user["_id"])
-    access_token = create_access_token(user_id, email)
-    refresh_token = create_refresh_token(user_id)
-    
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=1800,
-        path="/"
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=604800,
-        path="/"
-    )
-    
-    return {
-        "id": user_id,
-        "email": user["email"],
-        "name": user["name"],
-        "role": user["role"],
-        "created_at": user["created_at"]
-    }
-
-@api_router.get("/auth/me")
-async def get_me(user: dict = Depends(get_current_user)):
-    return user
-
-@api_router.post("/auth/logout")
-async def logout(response: Response, user: dict = Depends(get_current_user)):
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/")
-    return {"message": "Logged out successfully"}
+        f.write("## Admin 1 (Super Admin)\n")
+        f.write(f"- Email: {os.environ.get('ADMIN1_EMAIL')}\n")
+        f.write(f"- Password: {os.environ.get('ADMIN1_PASSWORD')}\n")
+        f.write("- Role: super_admin\n\n")
+        f.write("## Admin 2\n")
+        f.write(f"- Email: {os.environ.get('ADMIN2_EMAIL')}\n")
+        f.write(f"- Password: {os.environ.get('ADMIN2_PASSWORD')}\n")
+        f.write("- Role: admin\n\n")
+        f.write("## Auth Flow\n")
+        f.write("- Step 1: POST /api/auth/login-step1 (email + password + captcha)\n")
+        f.write("- Step 2: POST /api/auth/verify-otp (login_session_id + otp_code)\n")
+        f.write("- OTP is logged to backend console (check backend logs)\n")
+        f.write("- GET /api/auth/me, POST /api/auth/logout\n")
 
 # ============ Tenant Routes ============
 @api_router.post("/tenants", response_model=TenantResponse)
@@ -807,28 +656,10 @@ async def send_email_endpoint(
     html_content: str,
     user: dict = Depends(get_current_user)
 ):
-    if not RESEND_API_KEY:
-        raise HTTPException(status_code=500, detail="Email service not configured")
-    
-    params = {
-        "from": SENDER_EMAIL,
-        "to": [recipient_email],
-        "subject": subject,
-        "html": html_content
-    }
-    
-    try:
-        email = await asyncio.to_thread(resend.Emails.send, params)
-        return {
-            "status": "success",
-            "message": f"Email sent to {recipient_email}",
-            "email_id": email.get("id")
-        }
-    except Exception as e:
-        logger.error(f"Failed to send email: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+    raise HTTPException(status_code=501, detail="Servizio email non ancora configurato. Contattare l'amministratore.")
 
 # Include routers
+app.include_router(auth_router)
 app.include_router(api_router)
 
 # Import and include Phase 2 routes
@@ -839,10 +670,13 @@ try:
 except Exception as e:
     logger.warning(f"Phase 2 routes not loaded: {e}")
 
+# CORS - must use specific origin with credentials
+frontend_url = os.environ.get('CORS_ORIGINS', 'http://localhost:3000')
+origins = [o.strip() for o in frontend_url.split(',') if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

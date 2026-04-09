@@ -141,208 +141,123 @@ const Properties = () => {
   );
 
   return (
-    <div data-testid="properties-page">
-      <div className="mb-8 flex items-center justify-between">
+    <div data-testid="properties-page" className="luxury-fade-in">
+      <div className="mb-10 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-semibold font-heading text-slate-900 mb-2" data-testid="properties-title">
-            Properties
+          <h1 className="luxury-title mb-2" data-testid="properties-title">
+            Immobili
           </h1>
-          <p className="text-slate-600">Manage your rental properties</p>
+          <p className="luxury-subtitle">Gestisci i tuoi immobili in affitto</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="bg-rose-700 hover:bg-rose-800" data-testid="add-property-button">
+            <Button className="btn-luxury" data-testid="add-property-button">
               <Plus size={18} className="mr-2" />
-              Add Property
+              Aggiungi Immobile
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl luxury-modal">
             <DialogHeader>
               <DialogTitle data-testid="property-dialog-title">
-                {editingProperty ? 'Edit Property' : 'Add New Property'}
+                {editingProperty ? 'Modifica Immobile' : 'Nuovo Immobile'}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="property-form">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="property_code">Property Code *</Label>
-                  <Input
-                    id="property_code"
-                    value={formData.property_code}
-                    onChange={(e) => setFormData({ ...formData, property_code: e.target.value })}
-                    required
-                    data-testid="property-code-input"
-                  />
+                  <Label htmlFor="property_code">Codice Immobile *</Label>
+                  <Input id="property_code" value={formData.property_code} onChange={(e) => setFormData({ ...formData, property_code: e.target.value })} required className="luxury-input" data-testid="property-code-input" />
                 </div>
                 <div>
-                  <Label htmlFor="property_type">Property Type *</Label>
-                  <Input
-                    id="property_type"
-                    value={formData.property_type}
-                    onChange={(e) => setFormData({ ...formData, property_type: e.target.value })}
-                    placeholder="Apartment, House, Villa, etc."
-                    required
-                  />
+                  <Label htmlFor="property_type">Tipo Immobile *</Label>
+                  <Input id="property_type" value={formData.property_type} onChange={(e) => setFormData({ ...formData, property_type: e.target.value })} placeholder="Appartamento, Casa, Villa, ecc." required className="luxury-input" />
                 </div>
                 <div className="col-span-2">
-                  <Label htmlFor="address">Address *</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    required
-                  />
+                  <Label htmlFor="address">Indirizzo *</Label>
+                  <Input id="address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} required className="luxury-input" />
                 </div>
                 <div>
-                  <Label htmlFor="landlord_id">Landlord *</Label>
-                  <Select
-                    value={formData.landlord_id}
-                    onValueChange={(value) => setFormData({ ...formData, landlord_id: value })}
-                    required
-                  >
-                    <SelectTrigger data-testid="landlord-select">
-                      <SelectValue placeholder="Select landlord" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {landlords.map((landlord) => (
-                        <SelectItem key={landlord.id} value={landlord.id}>
-                          {landlord.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                  <Label htmlFor="landlord_id">Proprietario *</Label>
+                  <Select value={formData.landlord_id} onValueChange={(value) => setFormData({ ...formData, landlord_id: value })} required>
+                    <SelectTrigger data-testid="landlord-select"><SelectValue placeholder="Seleziona proprietario" /></SelectTrigger>
+                    <SelectContent>{landlords.map((landlord) => (<SelectItem key={landlord.id} value={landlord.id}>{landlord.full_name}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="number_of_rooms">Number of Rooms *</Label>
-                  <Input
-                    id="number_of_rooms"
-                    type="number"
-                    min="1"
-                    value={formData.number_of_rooms}
-                    onChange={(e) => setFormData({ ...formData, number_of_rooms: parseInt(e.target.value) })}
-                    required
-                  />
+                  <Label htmlFor="number_of_rooms">Numero Stanze *</Label>
+                  <Input id="number_of_rooms" type="number" min="1" value={formData.number_of_rooms} onChange={(e) => setFormData({ ...formData, number_of_rooms: parseInt(e.target.value) })} required className="luxury-input" />
                 </div>
                 <div>
-                  <Label htmlFor="capacity">Capacity *</Label>
-                  <Input
-                    id="capacity"
-                    type="number"
-                    min="1"
-                    value={formData.capacity}
-                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
-                    required
-                  />
+                  <Label htmlFor="capacity">Capacit&agrave; *</Label>
+                  <Input id="capacity" type="number" min="1" value={formData.capacity} onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })} required className="luxury-input" />
                 </div>
                 <div>
-                  <Label htmlFor="rental_amount">Rental Amount *</Label>
-                  <Input
-                    id="rental_amount"
-                    type="number"
-                    step="0.01"
-                    value={formData.rental_amount}
-                    onChange={(e) => setFormData({ ...formData, rental_amount: parseFloat(e.target.value) })}
-                    required
-                  />
+                  <Label htmlFor="rental_amount">Importo Affitto *</Label>
+                  <Input id="rental_amount" type="number" step="0.01" value={formData.rental_amount} onChange={(e) => setFormData({ ...formData, rental_amount: parseFloat(e.target.value) })} required className="luxury-input" />
                 </div>
                 <div>
-                  <Label htmlFor="deposit_amount">Deposit Amount *</Label>
-                  <Input
-                    id="deposit_amount"
-                    type="number"
-                    step="0.01"
-                    value={formData.deposit_amount}
-                    onChange={(e) => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) })}
-                    required
-                  />
+                  <Label htmlFor="deposit_amount">Importo Deposito *</Label>
+                  <Input id="deposit_amount" type="number" step="0.01" value={formData.deposit_amount} onChange={(e) => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) })} required className="luxury-input" />
                 </div>
               </div>
               <div>
-                <Label htmlFor="additional_charges">Additional Charges</Label>
-                <Input
-                  id="additional_charges"
-                  value={formData.additional_charges}
-                  onChange={(e) => setFormData({ ...formData, additional_charges: e.target.value })}
-                  placeholder="e.g., Utilities, Maintenance, etc."
-                />
+                <Label htmlFor="additional_charges">Costi Aggiuntivi</Label>
+                <Input id="additional_charges" value={formData.additional_charges} onChange={(e) => setFormData({ ...formData, additional_charges: e.target.value })} placeholder="Es. Utenze, Manutenzione, ecc." className="luxury-input" />
               </div>
-              <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-rose-700 hover:bg-rose-800" data-testid="save-property-button">
-                  {editingProperty ? 'Update' : 'Create'} Property
-                </Button>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }} className="rounded-xl" style={{ borderColor: 'rgba(184, 134, 11, 0.2)' }}>Annulla</Button>
+                <Button type="submit" className="btn-luxury" data-testid="save-property-button">{editingProperty ? 'Aggiorna' : 'Crea'} Immobile</Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="p-4 border-b border-slate-200">
+      <div className="luxury-card overflow-hidden">
+        <div className="p-5" style={{ borderBottom: '1px solid rgba(184, 134, 11, 0.12)' }}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-            <Input
-              placeholder="Search by code, address, or landlord..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-              data-testid="search-property-input"
-            />
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
+            <Input placeholder="Cerca per codice, indirizzo o proprietario..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-11 luxury-input" data-testid="search-property-input" />
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center p-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-700 border-r-transparent" />
-          </div>
+          <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10"></div></div>
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Landlord</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Tenants</TableHead>
-                <TableHead>Rent</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Codice</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Indirizzo</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Tipo</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Proprietario</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Stato</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Inquilini</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Affitto</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredProperties.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-slate-500">
-                    No properties found
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-10" style={{ color: '#8B7355' }}>Nessun immobile trovato</TableCell></TableRow>
               ) : (
                 filteredProperties.map((property) => (
-                  <TableRow key={property.id} data-testid={`property-row-${property.id}`}>
-                    <TableCell className="font-medium">{property.property_code}</TableCell>
-                    <TableCell>{property.address}</TableCell>
-                    <TableCell>{property.property_type}</TableCell>
-                    <TableCell>{property.landlord_name}</TableCell>
+                  <TableRow key={property.id} className="hover:bg-rose-50/30 transition-colors" data-testid={`property-row-${property.id}`}>
+                    <TableCell className="font-medium" style={{ color: '#2C1810' }}>{property.property_code}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{property.address}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{property.property_type}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{property.landlord_name}</TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                        property.occupancy_status === 'occupied' ? 'bg-green-100 text-green-700' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {property.occupancy_status}
+                      <span className={`luxury-badge ${property.occupancy_status === 'occupied' ? 'badge-success' : ''}`} style={property.occupancy_status !== 'occupied' ? { background: '#f1f5f9', color: '#64748b' } : {}}>
+                        {property.occupancy_status === 'occupied' ? 'Occupato' : 'Libero'}
                       </span>
                     </TableCell>
-                    <TableCell>{property.current_tenants_count}/{property.capacity}</TableCell>
-                    <TableCell>${property.rental_amount.toFixed(2)}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{property.current_tenants_count}/{property.capacity}</TableCell>
+                    <TableCell className="font-medium" style={{ color: '#2C1810' }}>&euro;{property.rental_amount.toFixed(2)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(property)} data-testid={`edit-property-${property.id}`}>
-                          <Edit size={16} />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(property.id)} data-testid={`delete-property-${property.id}`}>
-                          <Trash2 size={16} className="text-red-600" />
-                        </Button>
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={() => openEditDialog(property)} data-testid={`edit-property-${property.id}`}><Edit size={16} style={{ color: '#B8860B' }} /></Button>
+                        <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={() => handleDelete(property.id)} data-testid={`delete-property-${property.id}`}><Trash2 size={16} className="text-red-500" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>

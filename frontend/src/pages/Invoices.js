@@ -167,24 +167,24 @@ const Invoices = () => {
   );
 
   return (
-    <div data-testid="invoices-page">
-      <div className="mb-8 flex items-center justify-between">
+    <div data-testid="invoices-page" className="luxury-fade-in">
+      <div className="mb-10 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-semibold font-heading text-slate-900 mb-2" data-testid="invoices-title">
-            Invoices
+          <h1 className="luxury-title mb-2" data-testid="invoices-title">
+            Fatture
           </h1>
-          <p className="text-slate-600">Manage invoices and payments</p>
+          <p className="luxury-subtitle">Gestisci fatture e pagamenti</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="bg-rose-700 hover:bg-rose-800" data-testid="add-invoice-button">
+            <Button className="btn-luxury" data-testid="add-invoice-button">
               <Plus size={18} className="mr-2" />
-              Create Invoice
+              Crea Fattura
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl luxury-modal">
             <DialogHeader>
-              <DialogTitle data-testid="invoice-dialog-title">Create New Invoice</DialogTitle>
+              <DialogTitle data-testid="invoice-dialog-title">Crea Nuova Fattura</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="invoice-form">
               <div className="grid grid-cols-2 gap-4">
@@ -298,8 +298,8 @@ const Invoices = () => {
                 <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-rose-700 hover:bg-rose-800" data-testid="save-invoice-button">
-                  Create Invoice
+                <Button type="submit" className="btn-luxury" data-testid="save-invoice-button">
+                  Crea Fattura
                 </Button>
               </div>
             </form>
@@ -361,8 +361,8 @@ const Invoices = () => {
                 <Button type="button" variant="outline" onClick={() => setPaymentDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-rose-700 hover:bg-rose-800" data-testid="save-payment-button">
-                  Record Payment
+                <Button type="submit" className="btn-luxury" data-testid="save-payment-button">
+                  Registra Pagamento
                 </Button>
               </div>
             </form>
@@ -370,36 +370,34 @@ const Invoices = () => {
         </DialogContent>
       </Dialog>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="p-4 border-b border-slate-200">
+      <div className="luxury-card overflow-hidden">
+        <div className="p-5" style={{ borderBottom: '1px solid rgba(184, 134, 11, 0.12)' }}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
             <Input
-              placeholder="Search by invoice number, tenant, or property..."
+              placeholder="Cerca per numero fattura, inquilino o immobile..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-11 luxury-input"
               data-testid="search-invoice-input"
             />
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center p-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-700 border-r-transparent" />
-          </div>
+          <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10"></div></div>
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Invoice Number</TableHead>
-                <TableHead>Tenant</TableHead>
-                <TableHead>Property</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">N. Fattura</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Inquilino</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Immobile</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Tipo</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Importo</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Scadenza</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Stato</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -419,11 +417,10 @@ const Invoices = () => {
                     <TableCell className="font-medium">${invoice.amount.toFixed(2)}</TableCell>
                     <TableCell>{invoice.due_date}</TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                        invoice.payment_status === 'paid' ? 'bg-green-100 text-green-700' :
-                        'bg-orange-100 text-orange-700'
+                      <span className={`luxury-badge ${
+                        invoice.payment_status === 'paid' ? 'badge-success' : 'badge-warning'
                       }`}>
-                        {invoice.payment_status}
+                        {invoice.payment_status === 'paid' ? 'Pagato' : 'Non Pagato'}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">

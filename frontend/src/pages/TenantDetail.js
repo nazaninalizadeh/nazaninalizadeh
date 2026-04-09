@@ -59,19 +59,19 @@ const TenantDetail = () => {
   }
 
   return (
-    <div data-testid="tenant-detail-page">
+    <div data-testid="tenant-detail-page" className="luxury-fade-in">
       <Link to="/tenants">
-        <Button variant="ghost" className="mb-6" data-testid="back-to-tenants">
+        <Button variant="ghost" className="mb-6 rounded-xl" style={{ color: '#9F1239' }} data-testid="back-to-tenants">
           <ArrowLeft size={18} className="mr-2" />
-          Back to Tenants
+          Torna agli Inquilini
         </Button>
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Tenant Profile */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h2 className="text-2xl font-semibold font-heading text-slate-900 mb-6" data-testid="tenant-name">
+          <div className="luxury-card p-7">
+            <h2 className="text-2xl font-semibold font-heading mb-6" style={{ color: '#9F1239' }} data-testid="tenant-name">
               {tenant.full_name}
             </h2>
 
@@ -129,10 +129,10 @@ const TenantDetail = () => {
           </div>
 
           {/* Contracts */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4 flex items-center gap-2">
+          <div className="luxury-card p-7">
+            <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
               <FileText size={20} />
-              Contracts
+              Contratti
             </h3>
             {contracts.length === 0 ? (
               <p className="text-slate-500 text-sm">No contracts found</p>
@@ -164,10 +164,10 @@ const TenantDetail = () => {
           </div>
 
           {/* Invoices */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4 flex items-center gap-2">
+          <div className="luxury-card p-7">
+            <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
               <Receipt size={20} />
-              Invoices
+              Fatture
             </h3>
             {invoices.length === 0 ? (
               <p className="text-slate-500 text-sm">No invoices found</p>
@@ -198,8 +198,8 @@ const TenantDetail = () => {
 
         {/* Financial Summary */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h3 className="text-lg font-semibold font-heading text-slate-900 mb-6">Financial Summary</h3>
+          <div className="luxury-card p-7">
+            <h3 className="text-lg font-semibold font-heading mb-6" style={{ color: '#9F1239' }}>Riepilogo Finanziario</h3>
             <div className="space-y-4">
               <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-center gap-3 mb-2">

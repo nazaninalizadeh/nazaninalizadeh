@@ -147,96 +147,103 @@ const Tenants = () => {
   );
 
   return (
-    <div data-testid="tenants-page">
-      <div className="mb-8 flex items-center justify-between">
+    <div data-testid="tenants-page" className="luxury-fade-in">
+      <div className="mb-10 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-semibold font-heading text-slate-900 mb-2" data-testid="tenants-title">
-            Tenants
+          <h1 className="luxury-title mb-2" data-testid="tenants-title">
+            Inquilini
           </h1>
-          <p className="text-slate-600">Manage your tenant profiles and information</p>
+          <p className="luxury-subtitle">Gestisci i profili e le informazioni degli inquilini</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="bg-rose-700 hover:bg-rose-800" data-testid="add-tenant-button">
+            <Button className="btn-luxury" data-testid="add-tenant-button">
               <Plus size={18} className="mr-2" />
-              Add Tenant
+              Aggiungi Inquilino
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto luxury-modal">
             <DialogHeader>
               <DialogTitle data-testid="tenant-dialog-title">
-                {editingTenant ? 'Edit Tenant' : 'Add New Tenant'}
+                {editingTenant ? 'Modifica Inquilino' : 'Nuovo Inquilino'}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="tenant-form">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="full_name">Full Name *</Label>
+                  <Label htmlFor="full_name">Nome Completo *</Label>
                   <Input
                     id="full_name"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                     required
+                    className="luxury-input"
                     data-testid="tenant-name-input"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="passport_number">Passport Number *</Label>
+                  <Label htmlFor="passport_number">Numero Passaporto *</Label>
                   <Input
                     id="passport_number"
                     value={formData.passport_number}
                     onChange={(e) => setFormData({ ...formData, passport_number: e.target.value })}
                     required
+                    className="luxury-input"
                     data-testid="tenant-passport-input"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="nationality">Nationality *</Label>
+                  <Label htmlFor="nationality">Nazionalit&agrave; *</Label>
                   <Input
                     id="nationality"
                     value={formData.nationality}
                     onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
                     required
+                    className="luxury-input"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="date_of_birth">Date of Birth *</Label>
+                  <Label htmlFor="date_of_birth">Data di Nascita *</Label>
                   <Input
                     id="date_of_birth"
                     type="date"
                     value={formData.date_of_birth}
                     onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
                     required
+                    className="luxury-input"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="passport_issue_date">Passport Issue Date *</Label>
+                  <Label htmlFor="passport_issue_date">Data Rilascio Passaporto *</Label>
                   <Input
                     id="passport_issue_date"
                     type="date"
                     value={formData.passport_issue_date}
                     onChange={(e) => setFormData({ ...formData, passport_issue_date: e.target.value })}
                     required
+                    className="luxury-input"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="passport_expiry_date">Passport Expiry Date *</Label>
+                  <Label htmlFor="passport_expiry_date">Data Scadenza Passaporto *</Label>
                   <Input
                     id="passport_expiry_date"
                     type="date"
                     value={formData.passport_expiry_date}
                     onChange={(e) => setFormData({ ...formData, passport_expiry_date: e.target.value })}
                     required
+                    className="luxury-input"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Phone *</Label>
+                  <Label htmlFor="phone">Telefono *</Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     required
+                    className="luxury-input"
                   />
                 </div>
                 <div>
@@ -247,6 +254,7 @@ const Tenants = () => {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
+                    className="luxury-input"
                     data-testid="tenant-email-input"
                   />
                 </div>
@@ -257,19 +265,21 @@ const Tenants = () => {
                     value={formData.whatsapp}
                     onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                     required
+                    className="luxury-input"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="occupation">Occupation *</Label>
+                  <Label htmlFor="occupation">Professione *</Label>
                   <Input
                     id="occupation"
                     value={formData.occupation}
                     onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
                     required
+                    className="luxury-input"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="deposit_amount">Deposit Amount *</Label>
+                  <Label htmlFor="deposit_amount">Importo Deposito *</Label>
                   <Input
                     id="deposit_amount"
                     type="number"
@@ -277,32 +287,35 @@ const Tenants = () => {
                     value={formData.deposit_amount}
                     onChange={(e) => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) })}
                     required
+                    className="luxury-input"
                   />
                 </div>
               </div>
               <div>
-                <Label htmlFor="address">Address *</Label>
+                <Label htmlFor="address">Indirizzo *</Label>
                 <Input
                   id="address"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   required
+                  className="luxury-input"
                 />
               </div>
               <div>
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes">Note</Label>
                 <Input
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="luxury-input notes-text"
                 />
               </div>
-              <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
-                  Cancel
+              <div className="flex justify-end gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }} className="rounded-xl" style={{ borderColor: 'rgba(184, 134, 11, 0.2)' }}>
+                  Annulla
                 </Button>
-                <Button type="submit" className="bg-rose-700 hover:bg-rose-800" data-testid="save-tenant-button">
-                  {editingTenant ? 'Update' : 'Create'} Tenant
+                <Button type="submit" className="btn-luxury" data-testid="save-tenant-button">
+                  {editingTenant ? 'Aggiorna' : 'Crea'} Inquilino
                 </Button>
               </div>
             </form>
@@ -310,15 +323,15 @@ const Tenants = () => {
         </Dialog>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="p-4 border-b border-slate-200">
+      <div className="luxury-card overflow-hidden">
+        <div className="p-5" style={{ borderBottom: '1px solid rgba(184, 134, 11, 0.12)' }}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
             <Input
-              placeholder="Search by name, passport, or email..."
+              placeholder="Cerca per nome, passaporto o email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-11 luxury-input"
               data-testid="search-tenant-input"
             />
           </div>
@@ -326,49 +339,49 @@ const Tenants = () => {
 
         {loading ? (
           <div className="flex items-center justify-center p-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-700 border-r-transparent" />
+            <div className="luxury-spinner h-10 w-10"></div>
           </div>
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Passport Number</TableHead>
-                <TableHead>Nationality</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Deposit</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Nome</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Passaporto</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Nazionalit&agrave;</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Email</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Telefono</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Deposito</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTenants.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-slate-500">
-                    No tenants found
+                  <TableCell colSpan={7} className="text-center py-10" style={{ color: '#8B7355' }}>
+                    Nessun inquilino trovato
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredTenants.map((tenant) => (
-                  <TableRow key={tenant.id} data-testid={`tenant-row-${tenant.id}`}>
-                    <TableCell className="font-medium">{tenant.full_name}</TableCell>
-                    <TableCell>{tenant.passport_number}</TableCell>
-                    <TableCell>{tenant.nationality}</TableCell>
-                    <TableCell>{tenant.email}</TableCell>
-                    <TableCell>{tenant.phone}</TableCell>
-                    <TableCell>${tenant.deposit_amount.toFixed(2)}</TableCell>
+                  <TableRow key={tenant.id} className="hover:bg-rose-50/30 transition-colors" data-testid={`tenant-row-${tenant.id}`}>
+                    <TableCell className="font-medium" style={{ color: '#2C1810' }}>{tenant.full_name}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{tenant.passport_number}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{tenant.nationality}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{tenant.email}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{tenant.phone}</TableCell>
+                    <TableCell className="font-medium" style={{ color: '#2C1810' }}>&euro;{tenant.deposit_amount.toFixed(2)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1">
                         <Link to={`/tenants/${tenant.id}`}>
-                          <Button variant="ghost" size="sm" data-testid={`view-tenant-${tenant.id}`}>
-                            <Eye size={16} />
+                          <Button variant="ghost" size="sm" className="rounded-lg hover:bg-rose-50" data-testid={`view-tenant-${tenant.id}`}>
+                            <Eye size={16} style={{ color: '#9F1239' }} />
                           </Button>
                         </Link>
-                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(tenant)} data-testid={`edit-tenant-${tenant.id}`}>
-                          <Edit size={16} />
+                        <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={() => openEditDialog(tenant)} data-testid={`edit-tenant-${tenant.id}`}>
+                          <Edit size={16} style={{ color: '#B8860B' }} />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(tenant.id)} data-testid={`delete-tenant-${tenant.id}`}>
-                          <Trash2 size={16} className="text-red-600" />
+                        <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={() => handleDelete(tenant.id)} data-testid={`delete-tenant-${tenant.id}`}>
+                          <Trash2 size={16} className="text-red-500" />
                         </Button>
                       </div>
                     </TableCell>

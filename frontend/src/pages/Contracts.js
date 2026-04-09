@@ -136,24 +136,24 @@ const Contracts = () => {
   );
 
   return (
-    <div data-testid="contracts-page">
-      <div className="mb-8 flex items-center justify-between">
+    <div data-testid="contracts-page" className="luxury-fade-in">
+      <div className="mb-10 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-semibold font-heading text-slate-900 mb-2" data-testid="contracts-title">
-            Contracts
+          <h1 className="luxury-title mb-2" data-testid="contracts-title">
+            Contratti
           </h1>
-          <p className="text-slate-600">Manage rental contracts and agreements</p>
+          <p className="luxury-subtitle">Gestisci contratti di affitto e accordi</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="bg-rose-700 hover:bg-rose-800" data-testid="add-contract-button">
+            <Button className="btn-luxury" data-testid="add-contract-button">
               <Plus size={18} className="mr-2" />
-              Create Contract
+              Crea Contratto
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto luxury-modal">
             <DialogHeader>
-              <DialogTitle data-testid="contract-dialog-title">Create New Contract</DialogTitle>
+              <DialogTitle data-testid="contract-dialog-title">Crea Nuovo Contratto</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="contract-form">
               <div className="grid grid-cols-2 gap-4">
@@ -252,8 +252,8 @@ const Contracts = () => {
                 <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-rose-700 hover:bg-rose-800" data-testid="save-contract-button">
-                  Create Contract
+                <Button type="submit" className="btn-luxury" data-testid="save-contract-button">
+                  Crea Contratto
                 </Button>
               </div>
             </form>
@@ -261,54 +261,52 @@ const Contracts = () => {
         </Dialog>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="p-4 border-b border-slate-200">
+      <div className="luxury-card overflow-hidden">
+        <div className="p-5" style={{ borderBottom: '1px solid rgba(184, 134, 11, 0.12)' }}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
             <Input
-              placeholder="Search by contract number, tenant, or property..."
+              placeholder="Cerca per numero contratto, inquilino o immobile..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-11 luxury-input"
               data-testid="search-contract-input"
             />
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center p-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-700 border-r-transparent" />
-          </div>
+          <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10"></div></div>
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Contract Number</TableHead>
-                <TableHead>Tenant</TableHead>
-                <TableHead>Property</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>End Date</TableHead>
-                <TableHead>Rent</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">N. Contratto</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Inquilino</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Immobile</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Inizio</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Fine</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Affitto</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Stato</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredContracts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-slate-500">
-                    No contracts found
+                  <TableCell colSpan={8} className="text-center py-10" style={{ color: '#8B7355' }}>
+                    Nessun contratto trovato
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredContracts.map((contract) => (
-                  <TableRow key={contract.id} data-testid={`contract-row-${contract.id}`}>
-                    <TableCell className="font-medium font-mono text-sm">{contract.contract_number}</TableCell>
-                    <TableCell>{contract.tenant_name}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{contract.property_address}</TableCell>
-                    <TableCell>{contract.start_date}</TableCell>
-                    <TableCell>{contract.end_date}</TableCell>
-                    <TableCell>${contract.rent_amount.toFixed(2)}</TableCell>
+                  <TableRow key={contract.id} className="hover:bg-rose-50/30 transition-colors" data-testid={`contract-row-${contract.id}`}>
+                    <TableCell className="font-medium font-mono text-sm" style={{ color: '#2C1810' }}>{contract.contract_number}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{contract.tenant_name}</TableCell>
+                    <TableCell className="max-w-[200px] truncate" style={{ color: '#4A3B31' }}>{contract.property_address}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{contract.start_date}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{contract.end_date}</TableCell>
+                    <TableCell className="font-medium" style={{ color: '#2C1810' }}>&euro;{contract.rent_amount.toFixed(2)}</TableCell>
                     <TableCell>
                       <Select
                         value={contract.status}
