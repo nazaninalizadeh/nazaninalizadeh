@@ -64,10 +64,20 @@ const Layout = () => {
       >
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-slate-200">
-            <h1 className="text-2xl font-semibold font-heading text-slate-900" data-testid="app-title">
-              PropertyOps
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">Rental Management</p>
+            <div className="flex items-center gap-3 mb-2">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 2L4 10v12c0 3.314 2.686 6 6 6h12c3.314 0 6-2.686 6-6V10L16 2z" fill="#9F1239" stroke="#9F1239" strokeWidth="1.5"/>
+                <rect x="12" y="18" width="8" height="10" fill="white"/>
+                <line x1="28" y1="8" x2="32" y2="8" stroke="#DC2626" strokeWidth="2"/>
+              </svg>
+              <div>
+                <h1 className="text-xl font-semibold font-heading text-rose-800" data-testid="app-title">
+                  Consulenze immobiliari
+                </h1>
+                <p className="text-xs text-slate-600">Via Vigonovese 114</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 uppercase tracking-wide">Affitta • Compra • Vende • Ristruttura</p>
           </div>
 
           <nav className="flex-1 p-4 space-y-1">

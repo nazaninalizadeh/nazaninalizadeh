@@ -60,9 +60,15 @@ const Login = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-br from-rose-900/90 to-red-900/90"></div>
         <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-12">
-          <h1 className="text-5xl font-semibold font-heading mb-4">PropertyOps</h1>
-          <p className="text-xl text-slate-200 text-center max-w-md">
-            Sistema professionale di gestione immobiliare e inquilini
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-6">
+            <path d="M40 5L10 25v30c0 8.284 6.716 15 15 15h30c8.284 0 15-6.716 15-15V25L40 5z" fill="white" stroke="white" strokeWidth="3"/>
+            <rect x="30" y="45" width="20" height="25" fill="#9F1239"/>
+            <line x1="70" y1="20" x2="80" y2="20" stroke="#DC2626" strokeWidth="4"/>
+          </svg>
+          <h1 className="text-5xl font-semibold font-heading mb-2">Consulenze immobiliari</h1>
+          <p className="text-sm text-slate-200 mb-2">Via Vigonovese 114</p>
+          <p className="text-xl text-slate-200 text-center max-w-md uppercase tracking-wide">
+            Affitta • Compra • Vende • Ristruttura
           </p>
         </div>
       </div>
