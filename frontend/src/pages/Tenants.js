@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
+import OcrScanner from '../components/OcrScanner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -114,6 +115,18 @@ const Tenants = () => {
               <DialogTitle>{editingTenant ? 'Modifica Inquilino' : 'Nuovo Inquilino'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* OCR Scanner */}
+              <div className="pb-3 mb-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
+                <OcrScanner onDataExtracted={(data) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    ...Object.fromEntries(Object.entries(data).filter(([_, v]) => v))
+                  }));
+                }} />
+                <p className="text-xs mt-2" style={{ color: '#8B7355' }}>
+                  Scansiona un passaporto o documento d'identita per compilare automaticamente i campi
+                </p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Nome Completo *</Label><Input value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} required className="luxury-input" data-testid="tenant-name-input" /></div>
                 <div><Label>Codice Fiscale</Label><Input value={formData.codice_fiscale} onChange={e => setFormData({ ...formData, codice_fiscale: e.target.value })} className="luxury-input" placeholder="RSSMRA85M01H501Z" /></div>
@@ -134,20 +147,20 @@ const Tenants = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Immobile Assegnato</Label>
-                  <Select value={formData.property_id} onValueChange={v => setFormData({ ...formData, property_id: v, room_id: '' })}>
+                  <Select value={formData.property_id || 'none'} onValueChange={v => setFormData({ ...formData, property_id: v === 'none' ? '' : v, room_id: '' })}>
                     <SelectTrigger><SelectValue placeholder="Seleziona immobile" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nessuno</SelectItem>
+                      <SelectItem value="none">Nessuno</SelectItem>
                       {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.property_code} - {p.address}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label>Stanza Assegnata</Label>
-                  <Select value={formData.room_id} onValueChange={v => setFormData({ ...formData, room_id: v })} disabled={!formData.property_id}>
+                  <Select value={formData.room_id || 'none'} onValueChange={v => setFormData({ ...formData, room_id: v === 'none' ? '' : v })} disabled={!formData.property_id}>
                     <SelectTrigger><SelectValue placeholder="Seleziona stanza" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nessuna</SelectItem>
+                      <SelectItem value="none">Nessuna</SelectItem>
                       {availableRooms.map(r => <SelectItem key={r.id} value={r.id}>Stanza {r.room_number} ({r.room_type})</SelectItem>)}
                     </SelectContent>
                   </Select>

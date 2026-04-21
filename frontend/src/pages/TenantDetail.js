@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, FileText, CreditCard, Upload, Trash2, Download } from 'lucide-react';
+import { ArrowLeft, FileText, CreditCard, Upload, Trash2, Download, ScrollText } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -97,6 +97,41 @@ const TenantDetail = () => {
                 <p>{tenant.notes}</p>
               </div>
             )}
+          </div>
+
+          {/* Hospitality PDF */}
+          <div className="luxury-card p-7">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold font-heading flex items-center gap-2" style={{ color: '#9F1239' }}>
+                <ScrollText size={20} /> Documento di Ospitalita
+              </h3>
+              <Button
+                className="btn-luxury"
+                data-testid="hospitality-pdf-button"
+                onClick={async () => {
+                  try {
+                    const response = await axios.get(`${API_URL}/hospitality/pdf/${id}`, {
+                      withCredentials: true,
+                      responseType: 'blob',
+                    });
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `ospitalita_${tenant.full_name?.replace(/\s/g, '_')}.pdf`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    toast.success('PDF Ospitalita scaricato');
+                  } catch {
+                    toast.error('Errore nel generare il PDF');
+                  }
+                }}
+              >
+                <Download size={16} className="mr-2" /> Scarica PDF Ospitalita
+              </Button>
+            </div>
+            <p className="text-xs mt-2" style={{ color: '#8B7355' }}>
+              Genera la dichiarazione di ospitalita per questo inquilino con tutti i dati necessari.
+            </p>
           </div>
 
           {/* Property & Room */}

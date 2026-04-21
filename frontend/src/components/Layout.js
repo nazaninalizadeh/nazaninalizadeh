@@ -14,7 +14,8 @@ import {
   Bell,
   BarChart3,
   DoorOpen,
-  CreditCard
+  CreditCard,
+  Sheet
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
@@ -46,6 +47,7 @@ const Layout = () => {
     { path: '/invoices', label: 'Fatture', icon: Receipt },
     { path: '/notifications', label: 'Notifiche', icon: Bell },
     { path: '/reports', label: 'Report', icon: BarChart3 },
+    { path: '/data-exchange', label: 'Gestione Dati', icon: Sheet },
   ];
 
   return (

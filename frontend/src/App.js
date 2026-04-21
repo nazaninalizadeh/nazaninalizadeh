@@ -16,6 +16,7 @@ import Rooms from './pages/Rooms';
 import Payments from './pages/Payments';
 import Notifications from './pages/Notifications';
 import Reports from './pages/Reports';
+import DataExchange from './pages/DataExchange';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import '@/App.css';
@@ -47,6 +48,7 @@ function App() {
               <Route path="invoices" element={<Invoices />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="data-exchange" element={<DataExchange />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

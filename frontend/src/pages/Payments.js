@@ -91,10 +91,10 @@ const Payments = () => {
               {tenantInvoices.length > 0 && (
                 <div>
                   <Label>Collegare a fattura (opzionale)</Label>
-                  <Select value={formData.invoice_id} onValueChange={v => setFormData({ ...formData, invoice_id: v })}>
+                  <Select value={formData.invoice_id || 'none'} onValueChange={v => setFormData({ ...formData, invoice_id: v === 'none' ? '' : v })}>
                     <SelectTrigger><SelectValue placeholder="Nessuna fattura" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nessuna</SelectItem>
+                      <SelectItem value="none">Nessuna</SelectItem>
                       {tenantInvoices.map(i => <SelectItem key={i.id} value={i.id}>{i.invoice_number} - &euro;{i.amount} ({i.payment_status})</SelectItem>)}
                     </SelectContent>
                   </Select>
