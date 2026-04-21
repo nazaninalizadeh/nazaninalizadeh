@@ -19,62 +19,56 @@
 ## Business Rules
 
 ### Deposit (CRITICAL)
-- Deposit is a **constant guarantee** amount
-- Deposit is NEVER reduced or subtracted
-- Deposit is NOT used to pay rent
-- Deposit stays the same value forever
+- Deposit is a **constant guarantee** amount - NEVER reduced
+- NOT used to pay rent
 
 ### Payment Logic
 - Tenants pay rent monthly, separately from deposit
-- Each payment is linked to a tenant
 - Payment status per tenant per month: Paid / Not Paid
-- Payment shows: amount, method (Cash/Bank Transfer), date
-- No remaining balance calculations
-- No negative numbers anywhere in the system
+- No remaining balance, no negative numbers
+
+### Data Connections
+- Tenant ↔ Property ↔ Room are linked
+- Payment ↔ Tenant is linked
+- All data visible across pages (Inquilini, Immobili, Pagamenti, Stanze)
 
 ---
 
 ## Implemented Features
 
-### Phase 1: Security (DONE - 2026-04-09)
-- 2 whitelisted admins, no signup, no demo
-- Direct login + CAPTCHA
-- Single-device session enforcement
-- Rate limiting, brute force protection, session timeout
-- Activity logging, password change
-- OTP infrastructure ready (disabled per user request)
+### Phase 1: Security (DONE)
+- 2 whitelisted admins, no signup
+- JWT + CAPTCHA + single-device sessions
+- Rate limiting, brute force protection
 
-### Phase 2: Complete System (DONE - 2026-04-21)
+### Phase 2: Complete System (DONE)
 - Full CRUD: Tenants, Landlords, Properties, Rooms, Contracts, Invoices, Payments
-- Document upload (passport, ID, other)
-- Room assignment and occupancy tracking
-- Contract and Invoice PDF generation
-- Notifications (overdue, upcoming, expiring)
-- Reports with PDF export
+- Document upload, Room assignment, Contract/Invoice PDFs
+- Notifications, Reports with PDF export
 
-### Phase 3: Advanced Features (DONE - 2026-04-21)
+### Phase 3: Advanced Features (DONE)
 - OCR Passport/ID scanning (OpenAI Vision gpt-4o-mini)
-- Hospitality PDF Template (Ospitalità)
+- Hospitality PDF Template (Ospitalita)
 - Excel/CSV Import & Export
 - Backend refactored to modular architecture
 
-### Phase 4: Simplified Payment Logic (DONE - 2026-04-21)
-- Removed total_paid, total_due, remaining_balance from tenants
-- Deposit is constant guarantee only
-- Current month payment status per tenant (Paid/Not Paid)
-- Payments page grouped by Property → Room → Tenant
-- Dashboard shows monthly stats (collected, paid count, not-paid count)
-- Green = Paid, Red = Not Paid throughout UI
-- No negative numbers anywhere
-- DB migration: removed legacy fields from all tenant records
+### Phase 4: Simplified Payment Logic (DONE)
+- Deposit constant, current month Paid/Not Paid per tenant
+- Payments grouped by Property → Room → Tenant
+- Dashboard with monthly stats
+
+### Phase 5: Data Connections Fix (DONE - 2026-04-21)
+- Payment form dropdown shows ALL tenants with name + property + room
+- Tenants page shows "Non assegnato" clearly for unassigned tenants
+- Properties page: expandable cards showing rooms with tenant names
+- All modules interconnected: Inquilini ↔ Proprieta ↔ Stanze ↔ Pagamenti
 
 ---
 
 ## Backlog
-
 ### P1
-- Real email integration (Resend/SendGrid) for OTP and notifications
-- WhatsApp Business API for reminders
+- Real email integration (Resend/SendGrid)
+- WhatsApp Business API
 
 ### P2
 - Persian UI option
@@ -85,17 +79,13 @@
 ## Architecture
 ```
 /app/backend/
-  server.py              # App setup (~90 lines)
-  auth.py                # Auth module
-  database.py            # MongoDB connection
-  notifications.py       # Notification service (console)
-  invoice_generator.py   # PDF invoice gen
-  models/schemas.py      # Pydantic models
-  routes/                # 14 route modules
-  services/              # OCR, Hospitality PDF, Excel
+  server.py, auth.py, database.py, notifications.py, invoice_generator.py
+  models/schemas.py
+  routes/ (14 modules)
+  services/ (OCR, Hospitality PDF, Excel)
   uploads/
-
 /app/frontend/src/
-  components/            # Layout, OcrScanner, ProtectedRoute
-  pages/                 # All pages including DataExchange
+  components/ (Layout, OcrScanner, ProtectedRoute)
+  pages/ (Dashboard, Tenants, TenantDetail, Landlords, Properties, Rooms, 
+          Payments, Contracts, Invoices, Notifications, Reports, DataExchange, Login)
 ```

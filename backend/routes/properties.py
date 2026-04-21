@@ -61,8 +61,6 @@ async def get_property(property_id: str, user: dict = Depends(get_current_user))
     p["occupied_rooms_count"] = occ
     p["vacant_rooms_count"] = len(rooms) - occ
     tenants = await db.tenants.find({"property_id": property_id}, {"_id": 0}).to_list(100)
-    for t in tenants:
-        t["remaining_balance"] = t.get("total_due", 0) - t.get("total_paid", 0)
     p["tenants"] = tenants
     return p
 
