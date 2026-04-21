@@ -32,6 +32,7 @@ from routes.notifications_routes import router as notifications_router
 from routes.ocr import router as ocr_router
 from routes.hospitality import router as hospitality_router
 from routes.data_exchange import router as data_exchange_router
+from routes.ricevuta import router as ricevuta_router
 
 app = FastAPI(title="PropertyOps API", version="2.0.0")
 
@@ -73,6 +74,7 @@ app.include_router(notifications_router)
 app.include_router(ocr_router)
 app.include_router(hospitality_router)
 app.include_router(data_exchange_router)
+app.include_router(ricevuta_router)
 
 # ============ CORS ============
 frontend_url = os.environ.get('CORS_ORIGINS', 'http://localhost:3000')

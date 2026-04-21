@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Plus, Home, DoorOpen, Search } from 'lucide-react';
+import { Plus, Home, DoorOpen, Search, Receipt } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -267,6 +267,18 @@ const Payments = () => {
                     {p.payment_method}
                   </span>
                   {p.notes && <span className="text-xs" style={{ color: '#94A3B8' }}>{p.notes}</span>}
+                  <Button variant="ghost" size="sm" className="rounded-lg hover:bg-rose-50 h-7 px-2"
+                    onClick={async () => {
+                      try {
+                        const resp = await axios.get(`${API}/ricevuta/from-payment/${p.id}`, { withCredentials: true, responseType: 'blob' });
+                        const url = window.URL.createObjectURL(new Blob([resp.data]));
+                        const a = document.createElement('a'); a.href = url; a.download = `ricevuta_${p.tenant_name || 'payment'}.pdf`; a.click();
+                        window.URL.revokeObjectURL(url);
+                        toast.success('Ricevuta scaricata');
+                      } catch { toast.error('Errore'); }
+                    }} data-testid={`ricevuta-btn-${p.id}`}>
+                    <Receipt size={14} style={{ color: '#9F1239' }} />
+                  </Button>
                 </div>
               </div>
             ))}

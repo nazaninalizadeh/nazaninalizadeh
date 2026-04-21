@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 7 – full-stack validation of the Hospitality rewrite, new Ricevuta PDF route and Payments-page receipt download. Backend: 13/13 pytest tests pass (auth, GET/POST /api/hospitality/records, POST validation 404s for bad tenant/property, GET /api/hospitality/pdf/{tenant_id} returns a real %PDF, GET /api/ricevuta/from-payment/{id} returns %PDF, POST /api/ricevuta/generate returns %PDF, 404 paths, dashboard + properties sanity). Frontend: login succeeds, sidebar shows exactly the 12 required items in correct order, Ospitalita page renders with 6 tenant cards + 6 Scarica-PDF buttons, NUOVA OSPITALITA opens a dialog containing OCR upload, inquilino/immobile selectors, Data Check-in/out, Dichiarante (Ospitante) section, Dettagli Immobile section and Note – form fields all present; clicking Scarica PDF actually downloads 'ospitalita_Mario_Rossi.pdf'. Payments page history area exposes 3 ricevuta-btn-<id> buttons (one per payment) and clicking one downloads 'ricevuta_<name>.pdf'. Immobili (/properties), Stanze (/rooms) and Inquilini (/tenants) all load without console errors. Zero console errors captured during the whole run.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Sidebar + Ospitalita title", "issues": ["Label is 'Ospitalita' (no accent). Italian spelling should be 'Ospitalità' – cosmetic only."]},
+      {"screen": "Stanze page", "issues": ["DB has 0 rooms so stats & both property cards render '0 occupate | 0 libere | 0 totali' with 'Nessuna stanza in questo immobile' – expected, not a bug, but main agent may want to seed rooms to make the page visually meaningful."]},
+      {"screen": "Nuova Ospitalita dialog", "issues": ["Date inputs are native browser pickers (<input type=date>) instead of the shadcn Calendar component – consistent with other pages but worth noting."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration7.py",
+    "/app/test_reports/pytest/iteration_7.xml"
+  ],
+  "action_items": [
+    "(Optional) Rename 'Ospitalita' → 'Ospitalità' in Layout.js nav item + Hospitality.js page title for correct Italian spelling.",
+    "(Optional, carried from iter-6) Add <DialogDescription/> inside Nuovo Pagamento DialogContent to silence the Radix a11y warning.",
+    "(Optional) Seed a few rooms so Stanze + Immobili visually show room counts > 0 (backend counters already return the right value, just no data).",
+    "(Optional) routes/hospitality.py line 121: when landlord name has a single token, ll_parts[0] is still ll_name – already handled but consider defaulting to empty host fields so the PDF stays blank for manual fill-in rather than showing the full name as surname."
+  ],
+  "critical_code_review_comments": [
+    "routes/ricevuta.py /from-payment: payment['amount'] is accessed twice without null-guarding; if a legacy payment has no amount field this will KeyError. Guard with payment.get('amount', 0).",
+    "services/ricevuta_pdf.py LOGO_PATH is loaded synchronously at request time from disk – fine for low traffic, but consider caching the PIL image if throughput grows.",
+    "routes/hospitality.py GET /records issues one DB round-trip per record for tenant + property enrichment (N+1). Acceptable for current (<10) records.",
+    "frontend Hospitality.js fetchAll catches with bare `catch { toast.error(...) }` losing the Error object – add `console.error(err)` for debuggability (same feedback as iter-6).",
+    "frontend Hospitality.js builds `API = process.env.REACT_APP_BACKEND_URL + '/api'` at module load; works today but will break hot-reload if env is updated – minor."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration7.py (new)",
+    "/app/test_reports/pytest/iteration_7.xml (new)"
+  ],
+  "success_rate": { "backend": "100% (13/13)", "frontend": "100% of requested flows" },
+  "test_credentials": { "admin": { "email": "alborz.sbd@gmail.com", "password": "1234@Admin" } },
+  "seed_data_creation": "One hospitality record inserted for Mario Rossi via POST /api/hospitality/records (notes='TEST_iter7_hospitality', check_in 2026-01-10, check_out 2026-07-10). Harmless; can be deleted via db.hospitality_records.delete_many({notes: {$regex: '^TEST_'}}).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: REACT_APP_BACKEND_URL=https://property-ops-16.preview.emergentagent.com python -m pytest backend/tests/test_iteration7.py -v . Backend has 2 properties, 0 rooms, 6 tenants, 3 payments, now 1 hospitality record (Mario Rossi TEST_iter7). All Hospitality + Ricevuta endpoints verified end-to-end (PDFs are real %PDF binaries ≥1.5 KB). Frontend download flows confirmed via Playwright's expect_download for both ospitalita and ricevuta. No console errors captured. Next agent should focus on: (a) rooms seeding / Stanze create-flow if main agent builds one, (b) OCR upload flow inside Nuova Ospitalita dialog (tested-ready via [data-testid=ocr-upload-button]), (c) full Crea e Salva submit from the dialog (tested-ready via the Crea e Salva button inside [role=dialog]).",
+  "rca_of_the_issue": "All features in the review request are present and working. (1) Hospitality records CRUD + PDF: verified by pytest + UI download. (2) Ricevuta PDF both from-payment and custom generate: verified. (3) Payments page receipts: 3 ricevuta-btn per payment confirmed in UI and download succeeds. (4) Sidebar 12 items in exact required order: confirmed via DOM query. (5) Immobili/Stanze/Inquilini pages load without error. Room counts on Immobili are 0 because DB has 0 rooms – that is not a bug, the endpoint returns correct aggregates (0 total / 0 occupate / 0 libere for both properties). If main agent wants the UI to visually show real counts it should seed rooms first."
+}
