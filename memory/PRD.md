@@ -5,7 +5,7 @@
 - Backend: FastAPI (Python) — Modular Architecture
 - Database: MongoDB
 - Auth: JWT + CAPTCHA + Single-device sessions
-- OCR: OpenAI Vision (gpt-4o-mini) via emergentintegrations
+- OCR: OpenAI Vision (gpt-4o-mini)
 - PDF: ReportLab
 - Excel: openpyxl
 
@@ -16,52 +16,49 @@
 
 ---
 
-## Business Rules
+## Architecture: Connected Data Model
 
-### Deposit (CRITICAL)
-- Deposit is a **constant guarantee** amount - NEVER reduced
-- NOT used to pay rent
+### Entity Relationships
+- Property → has many Rooms
+- Room → belongs to Property, has one Tenant (if occupied)
+- Tenant → assigned to Property + Room
+- Payment → belongs to Tenant
+- Landlord → owns Properties
+- Hospitality PDF → generated from Tenant + Property + Room + Landlord data
 
-### Payment Logic
-- Tenants pay rent monthly, separately from deposit
-- Payment status per tenant per month: Paid / Not Paid
-- No remaining balance, no negative numbers
-
-### Data Connections
-- Tenant ↔ Property ↔ Room are linked
-- Payment ↔ Tenant is linked
-- All data visible across pages (Inquilini, Immobili, Pagamenti, Stanze)
+### Dynamic Connections
+All pages read from the same data. Changes propagate automatically:
+- Tenant assignment → visible in Inquilini, Immobili, Stanze, Pagamenti, Ospitalita
+- Payment added → visible in Pagamenti, Inquilini (Stato Mese), Dashboard
+- Room created → visible in Stanze, Immobili (expanded detail)
 
 ---
 
-## Implemented Features
+## Navigation (Sidebar Order)
+1. Dashboard
+2. Immobili (Properties - unified, expandable with rooms/tenants)
+3. Stanze (Room management)
+4. Inquilini (Tenants with payment status)
+5. Pagamenti (Payments grouped by property)
+6. Ospitalita (Hospitality PDF generation)
+7. Contratti
+8. Fatture
+9. Proprietari (Landlords)
+10. Notifiche
+11. Report
+12. Gestione Dati (Import/Export)
 
-### Phase 1: Security (DONE)
-- 2 whitelisted admins, no signup
-- JWT + CAPTCHA + single-device sessions
-- Rate limiting, brute force protection
+---
 
-### Phase 2: Complete System (DONE)
-- Full CRUD: Tenants, Landlords, Properties, Rooms, Contracts, Invoices, Payments
-- Document upload, Room assignment, Contract/Invoice PDFs
-- Notifications, Reports with PDF export
+## Implemented Features (All DONE)
 
-### Phase 3: Advanced Features (DONE)
-- OCR Passport/ID scanning (OpenAI Vision gpt-4o-mini)
-- Hospitality PDF Template (Ospitalita)
-- Excel/CSV Import & Export
-- Backend refactored to modular architecture
-
-### Phase 4: Simplified Payment Logic (DONE)
-- Deposit constant, current month Paid/Not Paid per tenant
-- Payments grouped by Property → Room → Tenant
-- Dashboard with monthly stats
-
-### Phase 5: Data Connections Fix (DONE - 2026-04-21)
-- Payment form dropdown shows ALL tenants with name + property + room
-- Tenants page shows "Non assegnato" clearly for unassigned tenants
-- Properties page: expandable cards showing rooms with tenant names
-- All modules interconnected: Inquilini ↔ Proprieta ↔ Stanze ↔ Pagamenti
+### Security: Auth, sessions, rate limiting, brute force
+### CRUD: Tenants, Landlords, Properties, Rooms, Contracts, Invoices, Payments
+### OCR: Passport/ID scanning with OpenAI Vision
+### Hospitality: Ospitalita PDF with dedicated page
+### Excel/CSV: Import & Export for tenants, payments, occupancy
+### Simplified Payments: Deposit constant, monthly Paid/Not Paid
+### Connected Architecture: All modules share data model
 
 ---
 
@@ -69,23 +66,6 @@
 ### P1
 - Real email integration (Resend/SendGrid)
 - WhatsApp Business API
-
 ### P2
 - Persian UI option
 - Tenant self-service portal
-
----
-
-## Architecture
-```
-/app/backend/
-  server.py, auth.py, database.py, notifications.py, invoice_generator.py
-  models/schemas.py
-  routes/ (14 modules)
-  services/ (OCR, Hospitality PDF, Excel)
-  uploads/
-/app/frontend/src/
-  components/ (Layout, OcrScanner, ProtectedRoute)
-  pages/ (Dashboard, Tenants, TenantDetail, Landlords, Properties, Rooms, 
-          Payments, Contracts, Invoices, Notifications, Reports, DataExchange, Login)
-```
