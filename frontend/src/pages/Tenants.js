@@ -204,8 +204,12 @@ const Tenants = () => {
               ) : filteredTenants.map(tenant => (
                 <TableRow key={tenant.id} className="hover:bg-rose-50/30 transition-colors" data-testid={`tenant-row-${tenant.id}`}>
                   <TableCell className="font-medium" style={{ color: '#2C1810' }}>{tenant.full_name}</TableCell>
-                  <TableCell style={{ color: '#4A3B31' }}>{tenant.property_address || '-'}</TableCell>
-                  <TableCell style={{ color: '#4A3B31' }}>{tenant.room_number || '-'}</TableCell>
+                  <TableCell style={{ color: tenant.property_address ? '#4A3B31' : '#94A3B8' }}>
+                    {tenant.property_address || <span className="italic text-xs">Non assegnato</span>}
+                  </TableCell>
+                  <TableCell style={{ color: tenant.room_number ? '#4A3B31' : '#94A3B8' }}>
+                    {tenant.room_number ? `Stanza ${tenant.room_number}` : <span className="italic text-xs">Non assegnato</span>}
+                  </TableCell>
                   <TableCell style={{ color: '#4A3B31' }}>&euro;{(tenant.deposit_amount || 0).toFixed(0)}</TableCell>
                   <TableCell>
                     {tenant.payment_status === 'paid' ? (

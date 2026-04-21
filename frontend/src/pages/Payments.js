@@ -73,8 +73,8 @@ const Payments = () => {
     p.payment_method?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Only tenants with rooms for the payment form
-  const assignedTenants = tenants.filter(t => t.room_id);
+  // ALL tenants available for payment (not just assigned ones)
+  const allTenants = tenants;
 
   if (loading) return <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div>;
 
@@ -97,9 +97,9 @@ const Payments = () => {
                 <Select value={formData.tenant_id} onValueChange={v => setFormData({ ...formData, tenant_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Seleziona inquilino" /></SelectTrigger>
                   <SelectContent>
-                    {assignedTenants.map(t => (
+                    {allTenants.map(t => (
                       <SelectItem key={t.id} value={t.id}>
-                        {t.full_name} — {t.property_address || ''} / Stanza {t.room_number || ''}
+                        {t.full_name}{t.property_address ? ` — ${t.property_address}` : ''}{t.room_number ? ` / Stanza ${t.room_number}` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
