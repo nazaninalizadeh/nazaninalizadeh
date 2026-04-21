@@ -54,7 +54,7 @@ const TenantDetail = () => {
   if (loading) return <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div>;
   if (!tenant) return <div className="text-center p-12">Inquilino non trovato</div>;
 
-  const balance = (tenant.total_due || 0) - (tenant.total_paid || 0);
+  const balance = 0; // Removed: deposit is constant, not for rent
 
   return (
     <div data-testid="tenant-detail-page" className="luxury-fade-in">
@@ -215,28 +215,37 @@ const TenantDetail = () => {
           </div>
         </div>
 
-        {/* Sidebar - Financial */}
+        {/* Sidebar */}
         <div className="space-y-6">
+          {/* Current Month Status */}
           <div className="luxury-card p-7">
-            <h3 className="text-lg font-semibold font-heading mb-6" style={{ color: '#9F1239' }}>Riepilogo Finanziario</h3>
-            <div className="space-y-4">
-              <div className="py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-                <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Deposito</p>
-                <p className="text-xl font-bold" style={{ color: '#2C1810' }}>&euro;{(tenant.deposit_amount || 0).toFixed(2)}</p>
+            <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Stato Mese Corrente</h3>
+            {tenant.payment_status === 'paid' ? (
+              <div className="p-4 rounded-xl" style={{ background: '#ECFDF5', border: '1px solid rgba(5,150,105,0.2)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                  <span className="font-bold text-lg" style={{ color: '#059669' }}>Pagato</span>
+                </div>
+                <p className="text-2xl font-bold" style={{ color: '#059669' }}>&euro;{(tenant.month_paid_amount || 0).toFixed(2)}</p>
+                {tenant.month_payment_method && (
+                  <p className="text-sm mt-1" style={{ color: '#8B7355' }}>Metodo: {tenant.month_payment_method}</p>
+                )}
               </div>
-              <div className="py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-                <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Totale Dovuto</p>
-                <p className="text-xl font-bold" style={{ color: '#2C1810' }}>&euro;{(tenant.total_due || 0).toFixed(2)}</p>
+            ) : (
+              <div className="p-4 rounded-xl" style={{ background: '#FEF2F2', border: '1px solid rgba(220,38,38,0.2)' }}>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-red-500" />
+                  <span className="font-bold text-lg" style={{ color: '#DC2626' }}>Non Pagato</span>
+                </div>
               </div>
-              <div className="py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-                <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Totale Pagato</p>
-                <p className="text-xl font-bold" style={{ color: '#059669' }}>&euro;{(tenant.total_paid || 0).toFixed(2)}</p>
-              </div>
-              <div className="py-3">
-                <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Saldo Residuo</p>
-                <p className="text-2xl font-bold" style={{ color: balance > 0 ? '#DC2626' : '#059669' }}>&euro;{balance.toFixed(2)}</p>
-              </div>
-            </div>
+            )}
+          </div>
+
+          {/* Deposit (Guarantee - constant) */}
+          <div className="luxury-card p-7">
+            <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Deposito Garanzia</h3>
+            <p className="text-2xl font-bold" style={{ color: '#2C1810' }}>&euro;{(tenant.deposit_amount || 0).toFixed(2)}</p>
+            <p className="text-xs mt-1" style={{ color: '#8B7355' }}>Il deposito e solo garanzia, non viene scalato</p>
           </div>
 
           {/* Contracts */}

@@ -1,4 +1,4 @@
-"""Tenant Routes."""
+"""Tenant Routes - Simplified payment logic."""
 
 from fastapi import APIRouter, HTTPException, Depends
 import uuid
@@ -11,37 +11,69 @@ from models.schemas import TenantCreate
 router = APIRouter(prefix="/api", tags=["Tenants"])
 
 
+def _current_month_range():
+    """Return (start, end) date strings for the current month."""
+    now = datetime.now(timezone.utc)
+    start = now.strftime("%Y-%m-01")
+    if now.month == 12:
+        end = f"{now.year + 1}-01-01"
+    else:
+        end = f"{now.year}-{now.month + 1:02d}-01"
+    return start, end
+
+
+async def _enrich_tenant(t: dict) -> dict:
+    """Add current month payment status and property/room info to a tenant dict."""
+    # Current month payment status
+    start, end = _current_month_range()
+    current_payments = await db.payments.find(
+        {"tenant_id": t["id"], "payment_date": {"$gte": start, "$lt": end}}
+    , {"_id": 0}).to_list(10)
+
+    if current_payments:
+        total_paid_month = sum(p.get("amount", 0) for p in current_payments)
+        methods = list(set(p.get("payment_method", "") for p in current_payments))
+        t["payment_status"] = "paid"
+        t["month_paid_amount"] = total_paid_month
+        t["month_payment_method"] = methods[0] if len(methods) == 1 else ", ".join(methods)
+    else:
+        t["payment_status"] = "not_paid"
+        t["month_paid_amount"] = 0
+        t["month_payment_method"] = ""
+
+    # Room info
+    if t.get("room_id"):
+        room = await db.rooms.find_one({"id": t["room_id"]}, {"_id": 0})
+        t["room_number"] = room.get("room_number", "") if room else ""
+    else:
+        t["room_number"] = ""
+
+    # Property info
+    if t.get("property_id"):
+        prop = await db.properties.find_one({"id": t["property_id"]}, {"_id": 0})
+        t["property_address"] = prop.get("address", "") if prop else ""
+    else:
+        t["property_address"] = ""
+
+    return t
+
+
 @router.post("/tenants")
 async def create_tenant(tenant: TenantCreate, user: dict = Depends(get_current_user)):
     tenant_dict = tenant.model_dump()
     tenant_dict["id"] = str(uuid.uuid4())
-    tenant_dict["total_paid"] = 0.0
-    tenant_dict["total_due"] = 0.0
     tenant_dict["created_at"] = datetime.now(timezone.utc).isoformat()
     tenant_dict["created_by"] = user.get("email", "")
     await db.tenants.insert_one(tenant_dict)
     t = await db.tenants.find_one({"id": tenant_dict["id"]}, {"_id": 0})
-    t["remaining_balance"] = t.get("total_due", 0) - t.get("total_paid", 0)
-    t["current_property"] = t.get("property_id", "")
-    return t
+    return await _enrich_tenant(t)
 
 
 @router.get("/tenants")
 async def get_tenants(user: dict = Depends(get_current_user)):
     tenants = await db.tenants.find({}, {"_id": 0}).to_list(1000)
     for t in tenants:
-        t["remaining_balance"] = t.get("total_due", 0) - t.get("total_paid", 0)
-        t["current_property"] = t.get("property_id", "")
-        if t.get("room_id"):
-            room = await db.rooms.find_one({"id": t["room_id"]}, {"_id": 0})
-            t["room_number"] = room.get("room_number", "") if room else ""
-        else:
-            t["room_number"] = ""
-        if t.get("property_id"):
-            prop = await db.properties.find_one({"id": t["property_id"]}, {"_id": 0})
-            t["property_address"] = prop.get("address", "") if prop else ""
-        else:
-            t["property_address"] = ""
+        await _enrich_tenant(t)
     return tenants
 
 
@@ -50,8 +82,7 @@ async def get_tenant(tenant_id: str, user: dict = Depends(get_current_user)):
     t = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
     if not t:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    t["remaining_balance"] = t.get("total_due", 0) - t.get("total_paid", 0)
-    t["current_property"] = t.get("property_id", "")
+    await _enrich_tenant(t)
     docs = await db.documents.find({"owner_id": tenant_id}, {"_id": 0}).to_list(50)
     t["documents"] = docs
     payments = await db.payments.find({"tenant_id": tenant_id}, {"_id": 0}).sort("payment_date", -1).to_list(100)
@@ -75,15 +106,16 @@ async def update_tenant(tenant_id: str, tenant_update: TenantCreate, user: dict 
     if not existing:
         raise HTTPException(status_code=404, detail="Tenant not found")
     update_dict = tenant_update.model_dump()
+    # Preserve deposit_amount - never let it decrease
+    if existing.get("deposit_amount", 0) > 0 and update_dict.get("deposit_amount", 0) < existing["deposit_amount"]:
+        update_dict["deposit_amount"] = existing["deposit_amount"]
     await db.tenants.update_one({"id": tenant_id}, {"$set": update_dict})
     if update_dict.get("room_id") and update_dict["room_id"] != existing.get("room_id", ""):
         if existing.get("room_id"):
             await db.rooms.update_one({"id": existing["room_id"]}, {"$set": {"status": "available", "tenant_id": ""}})
         await db.rooms.update_one({"id": update_dict["room_id"]}, {"$set": {"status": "occupied", "tenant_id": tenant_id}})
     updated = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
-    updated["remaining_balance"] = updated.get("total_due", 0) - updated.get("total_paid", 0)
-    updated["current_property"] = updated.get("property_id", "")
-    return updated
+    return await _enrich_tenant(updated)
 
 
 @router.delete("/tenants/{tenant_id}")

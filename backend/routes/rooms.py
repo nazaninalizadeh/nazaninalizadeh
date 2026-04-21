@@ -124,6 +124,12 @@ async def upload_room_image(room_id: str, file: UploadFile = File(...), user: di
 
 @router.get("/occupancy-overview")
 async def get_occupancy_overview(user: dict = Depends(get_current_user)):
+    """Current month payment status per property/room/tenant."""
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    month_start = now.strftime("%Y-%m-01")
+    month_end = f"{now.year + 1}-01-01" if now.month == 12 else f"{now.year}-{now.month + 1:02d}-01"
+
     properties = await db.properties.find({}, {"_id": 0}).to_list(500)
     result = []
     for prop in properties:
@@ -140,29 +146,23 @@ async def get_occupancy_overview(user: dict = Depends(get_current_user)):
                 "payment_status": "none",
                 "payment_amount": 0,
                 "payment_method": "",
-                "payment_date": "",
             }
             if room.get("tenant_id"):
                 tenant = await db.tenants.find_one({"id": room["tenant_id"]}, {"_id": 0})
                 if tenant:
                     room_data["tenant_name"] = tenant.get("full_name", "")
-                    latest_payment = await db.payments.find(
-                        {"tenant_id": room["tenant_id"]}
-                    ).sort("payment_date", -1).to_list(1)
-                    if latest_payment:
-                        lp = latest_payment[0]
+                    # Check CURRENT MONTH payments only
+                    month_payments = await db.payments.find(
+                        {"tenant_id": room["tenant_id"], "payment_date": {"$gte": month_start, "$lt": month_end}}
+                    , {"_id": 0}).to_list(10)
+                    if month_payments:
+                        total = sum(p.get("amount", 0) for p in month_payments)
+                        methods = list(set(p.get("payment_method", "") for p in month_payments))
+                        raw = methods[0] if len(methods) == 1 else ", ".join(methods)
+                        method_map = {"contanti": "Contanti", "cash": "Contanti", "bonifico": "Bonifico", "bank_transfer": "Bonifico", "carta": "Carta"}
                         room_data["payment_status"] = "paid"
-                        room_data["payment_amount"] = lp.get("amount", 0)
-                        raw_method = lp.get("payment_method", "")
-                        if raw_method in ("contanti", "cash"):
-                            room_data["payment_method"] = "Contanti"
-                        elif raw_method in ("bonifico", "bank_transfer"):
-                            room_data["payment_method"] = "Bonifico"
-                        elif raw_method == "carta":
-                            room_data["payment_method"] = "Carta"
-                        else:
-                            room_data["payment_method"] = raw_method.capitalize() if raw_method else ""
-                        room_data["payment_date"] = lp.get("payment_date", "")
+                        room_data["payment_amount"] = total
+                        room_data["payment_method"] = method_map.get(raw, raw.capitalize() if raw else "")
                     else:
                         room_data["payment_status"] = "not_paid"
             room_list.append(room_data)

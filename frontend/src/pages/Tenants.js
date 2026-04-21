@@ -104,7 +104,7 @@ const Tenants = () => {
       <div className="mb-10 flex items-center justify-between">
         <div>
           <h1 className="luxury-title mb-2" data-testid="tenants-title">Inquilini</h1>
-          <p className="luxury-subtitle">Gestisci inquilini, documenti e pagamenti</p>
+          <p className="luxury-subtitle">Gestisci inquilini e stato pagamenti</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
@@ -141,7 +141,7 @@ const Tenants = () => {
                 <div><Label>Email *</Label><Input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="luxury-input" data-testid="tenant-email-input" /></div>
                 <div><Label>WhatsApp *</Label><Input value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })} required className="luxury-input" /></div>
                 <div><Label>Professione *</Label><Input value={formData.occupation} onChange={e => setFormData({ ...formData, occupation: e.target.value })} required className="luxury-input" /></div>
-                <div><Label>Deposito</Label><Input type="number" step="0.01" value={formData.deposit_amount} onChange={e => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
+                <div><Label>Deposito (Garanzia)</Label><Input type="number" step="0.01" value={formData.deposit_amount} onChange={e => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
               </div>
               <div><Label>Indirizzo *</Label><Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} required className="luxury-input" /></div>
               <div className="grid grid-cols-2 gap-4">
@@ -191,28 +191,42 @@ const Tenants = () => {
             <TableHeader>
               <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Nome</TableHead>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Codice Fiscale</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Immobile</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Stanza</TableHead>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Telefono</TableHead>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Saldo</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Deposito</TableHead>
+                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Stato Mese</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTenants.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-10" style={{ color: '#8B7355' }}>Nessun inquilino trovato</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-10" style={{ color: '#8B7355' }}>Nessun inquilino trovato</TableCell></TableRow>
               ) : filteredTenants.map(tenant => (
                 <TableRow key={tenant.id} className="hover:bg-rose-50/30 transition-colors" data-testid={`tenant-row-${tenant.id}`}>
                   <TableCell className="font-medium" style={{ color: '#2C1810' }}>{tenant.full_name}</TableCell>
-                  <TableCell className="font-mono text-xs" style={{ color: '#4A3B31' }}>{tenant.codice_fiscale || '-'}</TableCell>
                   <TableCell style={{ color: '#4A3B31' }}>{tenant.property_address || '-'}</TableCell>
                   <TableCell style={{ color: '#4A3B31' }}>{tenant.room_number || '-'}</TableCell>
-                  <TableCell style={{ color: '#4A3B31' }}>{tenant.phone}</TableCell>
+                  <TableCell style={{ color: '#4A3B31' }}>&euro;{(tenant.deposit_amount || 0).toFixed(0)}</TableCell>
                   <TableCell>
-                    <span className="font-bold" style={{ color: (tenant.remaining_balance || 0) > 0 ? '#DC2626' : '#059669' }}>
-                      &euro;{(tenant.remaining_balance || 0).toFixed(2)}
-                    </span>
+                    {tenant.payment_status === 'paid' ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: '#ECFDF5', color: '#059669' }} data-testid={`status-paid-${tenant.id}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Pagato
+                        </span>
+                        <span className="text-xs font-bold" style={{ color: '#059669' }}>&euro;{tenant.month_paid_amount?.toFixed(0)}</span>
+                        {tenant.month_payment_method && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>{tenant.month_payment_method}</span>
+                        )}
+                      </div>
+                    ) : tenant.room_id ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: '#FEF2F2', color: '#DC2626' }} data-testid={`status-notpaid-${tenant.id}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                        Non Pagato
+                      </span>
+                    ) : (
+                      <span className="text-xs" style={{ color: '#94A3B8' }}>-</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

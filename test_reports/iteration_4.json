@@ -1,0 +1,48 @@
+{
+  "summary": "Tested the simplified payment logic (constant deposit, per-month paid/not_paid). Backend: 5/6 pytest tests pass against the live preview URL. Frontend: all target pages render correctly (Tenants columns, Payments grouped view + toggle + summary cards, Tenant Detail without legacy totals). Found 2 real issues: (1) GET /api/tenants leaks legacy fields `total_paid` and `remaining_balance` for pre-existing DB records — violates spec. (2) Dashboard UI shows 0 for Reddito Mensile / Totale Incassato / Saldo In Sospeso because frontend still reads old keys (monthly_income/total_collected/total_outstanding) while backend now returns `month_collected` + removed outstanding.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/tenants", "issue": "Pre-existing tenant documents in MongoDB still carry legacy fields `total_paid` and `remaining_balance` (and nested `current_property`) which are returned as-is. Spec requires NO remaining_balance and NO total_due/total_paid in tenant responses. Root cause: _enrich_tenant only adds new fields and does not strip obsolete ones from the stored dict; no data migration was run.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/tenants/{id}", "issue": "Newly created tenants do not contain legacy fields, so only tenants created before the refactor leak them. Suggest either a migration to $unset total_paid/remaining_balance or whitelist the response in _enrich_tenant."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Dashboard financial summary", "issue": "Reddito Mensile, Totale Incassato and Saldo In Sospeso all render as €0 although the backend /api/dashboard/stats returns `month_collected` (>0 when there are payments) and no longer returns `total_outstanding`. Frontend is likely reading old keys (monthly_income / total_collected / total_outstanding). Depositi Totali (total_deposits) renders correctly (€9,900).", "affected_selectors": ["Dashboard page Riepilogo Finanziario section"]}
+    ],
+    "design_issues": [
+      {"screen": "Dashboard", "issues": ["'Saldo In Sospeso' label should be removed entirely per spec (no deposit-based outstanding)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_simplified_payments.py",
+    "/app/test_reports/pytest/pytest_simplified.xml"
+  ],
+  "action_items": [
+    "Strip or migrate legacy fields total_paid and remaining_balance from tenant responses (either unset in DB or return only whitelisted fields from _enrich_tenant).",
+    "Update Dashboard.js to read the new keys: month_collected (instead of monthly_income/total_collected) and remove the Saldo In Sospeso card (total_outstanding no longer exists)."
+  ],
+  "critical_code_review_comments": [
+    "routes/tenants.py _enrich_tenant mutates and returns the raw MongoDB doc (minus _id). Consider building a fresh response dict with only the simplified keys to guarantee no legacy field leaks regardless of historical DB state.",
+    "routes/payments.py POST /payments correctly no longer touches tenant.total_paid — verified. Good.",
+    "routes/dashboard.py cleanly removes total_outstanding; however frontend still references the removed keys.",
+    "routes/rooms.py occupancy-overview and routes/payments.py payments/overview duplicate ~40 lines of month-aggregation logic — extract a shared helper to DRY.",
+    "_current_month_range is only in tenants.py; duplicated inline in dashboard.py, payments.py, rooms.py. Move to a shared utils module."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_simplified_payments.py (new pytest suite for simplified payment logic)"
+  ],
+  "success_rate": {
+    "backend": "83% (5/6 simplified-logic tests pass; failing test is on legacy field leak in GET /api/tenants)",
+    "frontend": "85% (all requested UI structure correct; Dashboard numeric cards mis-wired to removed keys)"
+  },
+  "test_credentials": {"admin": {"email": "alborz.sbd@gmail.com", "password": "1234@Admin"}},
+  "seed_data_creation": "Module-scoped fixture creates a TEST_ landlord -> property -> room -> tenant, assigns the tenant, registers a €500 current-month payment, then tears everything down. The one failing test does not depend on the fixture (it lists existing tenants to expose legacy leaks).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: REACT_APP_BACKEND_URL=https://property-ops-16.preview.emergentagent.com python -m pytest backend/tests/test_simplified_payments.py -v. Seeder requires landlord payload with whatsapp+id_number+bank_details and property payload with number_of_rooms+capacity+rental_amount+deposit_amount. After main agent fix, re-verify: GET /api/tenants has NO total_paid/remaining_balance for ANY tenant (including Mario Rossi seed), and Dashboard shows non-zero Reddito Mensile when current-month payments exist. Payments Overview grouping verified working. Occupancy-overview uses current month verified working. POST /payments verified NOT updating tenant.total_paid.",
+  "rca_of_the_issue": "Legacy tenant docs predate the schema simplification. _enrich_tenant returns the mongo doc as-is (minus _id) which still contains total_paid and remaining_balance for those old rows. Fix options: (a) one-time migration: db.tenants.update_many({}, {$unset: {total_paid:'', remaining_balance:'', current_property:''}}) or (b) construct response dict from a fixed whitelist. Frontend Dashboard mismatch is a simple key rename to match new backend contract."
+}
