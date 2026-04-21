@@ -26,7 +26,6 @@ const Dashboard = () => {
     { label: 'Immobili', value: stats?.total_properties || 0, icon: Home, color: '#059669', link: '/properties' },
     { label: 'Stanze', value: stats?.total_rooms || 0, icon: DoorOpen, color: '#7C3AED', link: '/rooms' },
     { label: 'Contratti Attivi', value: stats?.active_contracts || 0, icon: FileText, color: '#2563EB', link: '/contracts' },
-    { label: 'Fatture Non Pagate', value: stats?.unpaid_invoices || 0, icon: AlertTriangle, color: '#DC2626', link: '/invoices' },
   ];
 
   return (
@@ -57,23 +56,23 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
         <div className="luxury-card p-7">
           <h3 className="text-lg font-semibold font-heading mb-5 flex items-center gap-2" style={{ color: '#9F1239' }}>
-            <TrendingUp size={20} /> Riepilogo Finanziario
+            <TrendingUp size={20} /> Riepilogo Mese Corrente
           </h3>
           <div className="space-y-4">
             <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-              <span style={{ color: '#5C4A3A' }}>Reddito Mensile</span>
-              <span className="font-bold text-lg" style={{ color: '#059669' }}>&euro;{(stats?.total_monthly_income || 0).toLocaleString()}</span>
+              <span style={{ color: '#5C4A3A' }}>Incassato Questo Mese</span>
+              <span className="font-bold text-lg" style={{ color: '#059669' }}>&euro;{(stats?.month_collected || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-              <span style={{ color: '#5C4A3A' }}>Totale Incassato</span>
-              <span className="font-bold text-lg" style={{ color: '#2563EB' }}>&euro;{(stats?.total_collected || 0).toLocaleString()}</span>
+              <span style={{ color: '#5C4A3A' }}>Inquilini Pagato</span>
+              <span className="font-bold text-lg" style={{ color: '#059669' }}>{stats?.tenants_paid || 0}</span>
             </div>
             <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-              <span style={{ color: '#5C4A3A' }}>Saldo In Sospeso</span>
-              <span className="font-bold text-lg" style={{ color: '#DC2626' }}>&euro;{(stats?.total_outstanding || 0).toLocaleString()}</span>
+              <span style={{ color: '#5C4A3A' }}>Inquilini Non Pagato</span>
+              <span className="font-bold text-lg" style={{ color: '#DC2626' }}>{stats?.tenants_not_paid || 0}</span>
             </div>
             <div className="flex justify-between items-center py-3">
-              <span style={{ color: '#5C4A3A' }}>Depositi Totali</span>
+              <span style={{ color: '#5C4A3A' }}>Depositi Totali (Garanzia)</span>
               <span className="font-bold text-lg" style={{ color: '#7C3AED' }}>&euro;{(stats?.total_deposits || 0).toLocaleString()}</span>
             </div>
           </div>
