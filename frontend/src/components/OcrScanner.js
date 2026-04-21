@@ -13,6 +13,7 @@ const OcrScanner = ({ onDataExtracted }) => {
   const [result, setResult] = useState(null);
   const [status, setStatus] = useState('idle'); // idle, processing, completed, failed
   const [preview, setPreview] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef(null);
 
   const handleFileSelect = async (e) => {
@@ -35,6 +36,7 @@ const OcrScanner = ({ onDataExtracted }) => {
     setScanning(true);
     setStatus('processing');
     setResult(null);
+    setErrorMsg('');
 
     const fd = new FormData();
     fd.append('file', file);
@@ -48,11 +50,14 @@ const OcrScanner = ({ onDataExtracted }) => {
         toast.success('Documento scansionato con successo!');
       } else {
         setStatus('failed');
+        setErrorMsg(data.error || 'Scansione fallita');
         toast.error(data.error || 'Scansione fallita');
       }
     } catch (err) {
       setStatus('failed');
-      toast.error(err.response?.data?.detail || 'Errore durante la scansione');
+      const msg = err.response?.data?.detail || 'Errore durante la scansione';
+      setErrorMsg(msg);
+      toast.error(msg);
     }
     setScanning(false);
   };
@@ -158,7 +163,7 @@ const OcrScanner = ({ onDataExtracted }) => {
               {status === 'failed' && (
                 <>
                   <XCircle size={20} style={{ color: '#DC2626' }} />
-                  <span style={{ color: '#DC2626' }}>Scansione fallita - Riprova con un'immagine piu chiara</span>
+                  <span style={{ color: '#DC2626' }}>{errorMsg || 'Scansione fallita - Riprova con un\'immagine piu chiara'}</span>
                 </>
               )}
             </div>
