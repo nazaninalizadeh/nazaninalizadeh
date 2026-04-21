@@ -48,14 +48,29 @@ async def get_payments(tenant_id: Optional[str] = None, user: dict = Depends(get
                 p["tenant_name"] = tenant.get("full_name", "")
                 p["property_id"] = tenant.get("property_id", "")
                 p["room_id"] = tenant.get("room_id", "")
+                # Add property address and room number
+                if tenant.get("property_id"):
+                    prop = await db.properties.find_one({"id": tenant["property_id"]}, {"_id": 0})
+                    p["property_address"] = prop.get("address", "") if prop else ""
+                else:
+                    p["property_address"] = ""
+                if tenant.get("room_id"):
+                    room = await db.rooms.find_one({"id": tenant["room_id"]}, {"_id": 0})
+                    p["room_number"] = room.get("room_number", "") if room else ""
+                else:
+                    p["room_number"] = ""
             else:
                 p["tenant_name"] = ""
                 p["property_id"] = ""
                 p["room_id"] = ""
+                p["property_address"] = ""
+                p["room_number"] = ""
         else:
             p["tenant_name"] = ""
             p["property_id"] = ""
             p["room_id"] = ""
+            p["property_address"] = ""
+            p["room_number"] = ""
     return payments
 
 

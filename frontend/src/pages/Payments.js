@@ -253,9 +253,13 @@ const Payments = () => {
               <div key={p.id} className="px-6 py-4 flex items-center justify-between hover:bg-rose-50/20 transition-colors">
                 <div className="flex items-center gap-4">
                   <div className="text-sm" style={{ color: '#8B7355', minWidth: 90 }}>{p.payment_date}</div>
-                  <Link to={`/tenants/${p.tenant_id}`} className="font-medium text-sm hover:underline" style={{ color: '#9F1239' }}>
-                    {p.tenant_name || 'Sconosciuto'}
-                  </Link>
+                  {p.tenant_id && p.tenant_name ? (
+                    <Link to={`/tenants/${p.tenant_id}`} className="font-medium text-sm hover:underline" style={{ color: '#9F1239' }}>
+                      {p.tenant_name}
+                    </Link>
+                  ) : (
+                    <span className="text-sm italic" style={{ color: '#94A3B8' }}>N/A</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-bold" style={{ color: '#059669' }}>&euro;{p.amount?.toFixed(2)}</span>

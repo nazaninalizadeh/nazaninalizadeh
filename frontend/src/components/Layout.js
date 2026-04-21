@@ -15,7 +15,8 @@ import {
   BarChart3,
   DoorOpen,
   CreditCard,
-  Sheet
+  Sheet,
+  ScrollText
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
@@ -38,13 +39,14 @@ const Layout = () => {
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/tenants', label: 'Inquilini', icon: Users },
-    { path: '/landlords', label: 'Proprietari', icon: Home },
     { path: '/properties', label: 'Immobili', icon: Building2 },
     { path: '/rooms', label: 'Stanze', icon: DoorOpen },
+    { path: '/tenants', label: 'Inquilini', icon: Users },
     { path: '/payments', label: 'Pagamenti', icon: CreditCard },
+    { path: '/hospitality', label: 'Ospitalita', icon: ScrollText },
     { path: '/contracts', label: 'Contratti', icon: FileText },
     { path: '/invoices', label: 'Fatture', icon: Receipt },
+    { path: '/landlords', label: 'Proprietari', icon: Home },
     { path: '/notifications', label: 'Notifiche', icon: Bell },
     { path: '/reports', label: 'Report', icon: BarChart3 },
     { path: '/data-exchange', label: 'Gestione Dati', icon: Sheet },
