@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Mail, Phone, Calendar, DollarSign, FileText, Receipt } from 'lucide-react';
+import { ArrowLeft, FileText, CreditCard, Upload, Trash2, Download } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
@@ -10,252 +12,233 @@ const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 const TenantDetail = () => {
   const { id } = useParams();
   const [tenant, setTenant] = useState(null);
-  const [contracts, setContracts] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    fetchTenantDetails();
-  }, [id]);
+  useEffect(() => { fetchTenant(); }, [id]);
 
-  const fetchTenantDetails = async () => {
+  const fetchTenant = async () => {
     try {
-      const [tenantRes, contractsRes, invoicesRes, paymentsRes] = await Promise.all([
-        axios.get(`${API_URL}/tenants/${id}`, { withCredentials: true }),
-        axios.get(`${API_URL}/contracts`, { withCredentials: true }),
-        axios.get(`${API_URL}/invoices`, { withCredentials: true }),
-        axios.get(`${API_URL}/payments/tenant/${id}`, { withCredentials: true }),
-      ]);
-
-      setTenant(tenantRes.data);
-      setContracts(contractsRes.data.filter(c => c.tenant_id === id));
-      setInvoices(invoicesRes.data.filter(i => i.tenant_id === id));
-      setPayments(paymentsRes.data);
-    } catch (error) {
-      toast.error('Failed to load tenant details');
-    } finally {
-      setLoading(false);
-    }
+      const { data } = await axios.get(`${API_URL}/tenants/${id}`, { withCredentials: true });
+      setTenant(data);
+    } catch { toast.error('Errore nel caricamento'); }
+    setLoading(false);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-700 border-r-transparent" />
-      </div>
-    );
-  }
+  const handleUpload = async (e, docType) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('owner_id', id);
+    fd.append('owner_type', 'tenant');
+    fd.append('doc_type', docType);
+    try {
+      await axios.post(`${API_URL}/documents/upload`, fd, { withCredentials: true });
+      toast.success('Documento caricato');
+      fetchTenant();
+    } catch { toast.error('Errore upload'); }
+    setUploading(false);
+  };
 
-  if (!tenant) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-slate-600">Tenant not found</p>
-        <Link to="/tenants">
-          <Button className="mt-4">Back to Tenants</Button>
-        </Link>
-      </div>
-    );
-  }
+  const handleDeleteDoc = async (docId) => {
+    if (!window.confirm('Eliminare documento?')) return;
+    try {
+      await axios.delete(`${API_URL}/documents/${docId}`, { withCredentials: true });
+      toast.success('Documento eliminato');
+      fetchTenant();
+    } catch { toast.error('Errore'); }
+  };
+
+  if (loading) return <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div>;
+  if (!tenant) return <div className="text-center p-12">Inquilino non trovato</div>;
+
+  const balance = (tenant.total_due || 0) - (tenant.total_paid || 0);
 
   return (
     <div data-testid="tenant-detail-page" className="luxury-fade-in">
       <Link to="/tenants">
-        <Button variant="ghost" className="mb-6 rounded-xl" style={{ color: '#9F1239' }} data-testid="back-to-tenants">
-          <ArrowLeft size={18} className="mr-2" />
-          Torna agli Inquilini
+        <Button variant="ghost" className="mb-6 rounded-xl" style={{ color: '#9F1239' }}>
+          <ArrowLeft size={18} className="mr-2" /> Torna agli Inquilini
         </Button>
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Tenant Profile */}
+        {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
           <div className="luxury-card p-7">
-            <h2 className="text-2xl font-semibold font-heading mb-6" style={{ color: '#9F1239' }} data-testid="tenant-name">
-              {tenant.full_name}
-            </h2>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Passport Number</p>
-                <p className="text-slate-900 font-medium">{tenant.passport_number}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Nationality</p>
-                <p className="text-slate-900 font-medium">{tenant.nationality}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Date of Birth</p>
-                <p className="text-slate-900">{tenant.date_of_birth}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Passport Issue Date</p>
-                <p className="text-slate-900">{tenant.passport_issue_date}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Passport Expiry Date</p>
-                <p className="text-slate-900">{tenant.passport_expiry_date}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Occupation</p>
-                <p className="text-slate-900">{tenant.occupation}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-slate-200">
-              <h3 className="text-sm font-semibold text-slate-900 mb-4">Contact Information</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <Mail size={18} className="text-slate-400" />
-                  <span className="text-slate-900">{tenant.email}</span>
+            <h2 className="text-2xl font-semibold font-heading mb-6" style={{ color: '#9F1239' }}>{tenant.full_name}</h2>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {[
+                ['Codice Fiscale', tenant.codice_fiscale],
+                ['Passaporto', tenant.passport_number],
+                ['Nazionalita', tenant.nationality],
+                ['Data di Nascita', tenant.date_of_birth],
+                ['Rilascio Passaporto', tenant.passport_issue_date],
+                ['Scadenza Passaporto', tenant.passport_expiry_date],
+                ['Tipo Doc. ID', tenant.id_type],
+                ['Numero Doc. ID', tenant.id_number],
+                ['Telefono', tenant.phone],
+                ['Email', tenant.email],
+                ['WhatsApp', tenant.whatsapp],
+                ['Professione', tenant.occupation],
+                ['Indirizzo', tenant.address],
+              ].map(([label, value]) => value ? (
+                <div key={label} className="py-2" style={{ borderBottom: '1px solid rgba(184,134,11,0.08)' }}>
+                  <p className="text-xs uppercase tracking-wide mb-1" style={{ color: '#8B7355' }}>{label}</p>
+                  <p className="font-medium" style={{ color: '#2C1810' }}>{value}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Phone size={18} className="text-slate-400" />
-                  <span className="text-slate-900">{tenant.phone}</span>
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xs text-slate-500 mb-1">Address</p>
-                <p className="text-slate-900">{tenant.address}</p>
-              </div>
+              ) : null)}
             </div>
-
             {tenant.notes && (
-              <div className="mt-6 pt-6 border-t border-slate-200">
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Notes</h3>
-                <p className="text-slate-600">{tenant.notes}</p>
+              <div className="mt-4 p-3 rounded-xl notes-text" style={{ background: 'rgba(184,134,11,0.04)' }}>
+                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: '#8B7355' }}>Note</p>
+                <p>{tenant.notes}</p>
               </div>
             )}
           </div>
 
-          {/* Contracts */}
+          {/* Property & Room */}
+          {tenant.property_info && (
+            <div className="luxury-card p-7">
+              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Alloggio</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><p className="text-xs uppercase" style={{ color: '#8B7355' }}>Immobile</p><p className="font-medium">{tenant.property_info.address}</p></div>
+                <div><p className="text-xs uppercase" style={{ color: '#8B7355' }}>Codice</p><p className="font-medium">{tenant.property_info.property_code}</p></div>
+                {tenant.room_info && <>
+                  <div><p className="text-xs uppercase" style={{ color: '#8B7355' }}>Stanza</p><p className="font-medium">{tenant.room_info.room_number}</p></div>
+                  <div><p className="text-xs uppercase" style={{ color: '#8B7355' }}>Tipo</p><p className="font-medium">{tenant.room_info.room_type === 'single' ? 'Singola' : 'Doppia'}</p></div>
+                </>}
+              </div>
+            </div>
+          )}
+
+          {/* Payments History */}
           <div className="luxury-card p-7">
             <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
-              <FileText size={20} />
-              Contratti
+              <CreditCard size={20} /> Storico Pagamenti
             </h3>
-            {contracts.length === 0 ? (
-              <p className="text-slate-500 text-sm">No contracts found</p>
-            ) : (
-              <div className="space-y-3">
-                {contracts.map((contract) => (
-                  <div key={contract.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="font-medium text-slate-900">{contract.contract_number}</p>
-                      <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                        contract.status === 'active' ? 'bg-green-100 text-green-700' :
-                        contract.status === 'expired' ? 'bg-red-100 text-red-700' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {contract.status}
-                      </span>
+            {tenant.payments?.length > 0 ? (
+              <div className="space-y-2">
+                {tenant.payments.map(p => (
+                  <div key={p.id} className="flex items-center justify-between py-3 px-4 rounded-xl" style={{ background: 'rgba(250,247,240,0.5)', border: '1px solid rgba(184,134,11,0.08)' }}>
+                    <div>
+                      <p className="font-medium text-sm" style={{ color: '#2C1810' }}>&euro;{p.amount?.toFixed(2)}</p>
+                      <p className="text-xs" style={{ color: '#8B7355' }}>{p.payment_date} - {p.payment_method}</p>
                     </div>
-                    <p className="text-sm text-slate-600 mb-1">{contract.property_address}</p>
-                    <p className="text-sm text-slate-500">
-                      {contract.start_date} to {contract.end_date}
-                    </p>
-                    <p className="text-sm font-medium text-slate-900 mt-2">
-                      Rent: ${contract.rent_amount.toFixed(2)}/month
-                    </p>
+                    {p.notes && <p className="text-xs notes-text" style={{ color: '#8B7355' }}>{p.notes}</p>}
                   </div>
                 ))}
               </div>
-            )}
+            ) : <p style={{ color: '#8B7355' }}>Nessun pagamento registrato</p>}
           </div>
 
-          {/* Invoices */}
+          {/* Documents */}
           <div className="luxury-card p-7">
             <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
-              <Receipt size={20} />
-              Fatture
+              <FileText size={20} /> Documenti
             </h3>
-            {invoices.length === 0 ? (
-              <p className="text-slate-500 text-sm">No invoices found</p>
-            ) : (
-              <div className="space-y-3">
-                {invoices.map((invoice) => (
-                  <div key={invoice.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="font-medium text-slate-900">{invoice.invoice_number}</p>
-                      <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                        invoice.payment_status === 'paid' ? 'bg-green-100 text-green-700' :
-                        'bg-orange-100 text-orange-700'
-                      }`}>
-                        {invoice.payment_status}
-                      </span>
+            <div className="flex gap-3 mb-4 flex-wrap">
+              <label className="cursor-pointer">
+                <input type="file" className="hidden" onChange={e => handleUpload(e, 'passport')} />
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm" style={{ background: 'rgba(159,18,57,0.05)', border: '1px solid rgba(159,18,57,0.2)', color: '#9F1239' }}>
+                  <Upload size={16} /> Carica Passaporto
+                </span>
+              </label>
+              <label className="cursor-pointer">
+                <input type="file" className="hidden" onChange={e => handleUpload(e, 'id_card')} />
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm" style={{ background: 'rgba(184,134,11,0.05)', border: '1px solid rgba(184,134,11,0.2)', color: '#B8860B' }}>
+                  <Upload size={16} /> Carica Doc. Identita
+                </span>
+              </label>
+              <label className="cursor-pointer">
+                <input type="file" className="hidden" onChange={e => handleUpload(e, 'other')} />
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm" style={{ background: 'rgba(5,150,105,0.05)', border: '1px solid rgba(5,150,105,0.2)', color: '#059669' }}>
+                  <Upload size={16} /> Altro Documento
+                </span>
+              </label>
+            </div>
+            {tenant.documents?.length > 0 ? (
+              <div className="space-y-2">
+                {tenant.documents.map(doc => (
+                  <div key={doc.id} className="flex items-center justify-between py-2 px-4 rounded-xl" style={{ border: '1px solid rgba(184,134,11,0.1)' }}>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#2C1810' }}>{doc.filename}</p>
+                      <p className="text-xs" style={{ color: '#8B7355' }}>{doc.doc_type} - {doc.uploaded_at?.slice(0, 10)}</p>
                     </div>
-                    <p className="text-sm text-slate-600 mb-1">{invoice.invoice_type}</p>
-                    <p className="text-sm text-slate-500">Due: {invoice.due_date}</p>
-                    <p className="text-sm font-medium text-slate-900 mt-2">
-                      Amount: ${invoice.amount.toFixed(2)}
-                    </p>
+                    <div className="flex gap-2">
+                      <a href={`${process.env.REACT_APP_BACKEND_URL}${doc.url}`} target="_blank" rel="noreferrer">
+                        <Button variant="ghost" size="sm" className="rounded-lg"><Download size={14} /></Button>
+                      </a>
+                      <Button variant="ghost" size="sm" className="rounded-lg" onClick={() => handleDeleteDoc(doc.id)}><Trash2 size={14} className="text-red-500" /></Button>
+                    </div>
                   </div>
                 ))}
               </div>
-            )}
+            ) : <p style={{ color: '#8B7355' }}>Nessun documento caricato</p>}
           </div>
         </div>
 
-        {/* Financial Summary */}
+        {/* Sidebar - Financial */}
         <div className="space-y-6">
           <div className="luxury-card p-7">
             <h3 className="text-lg font-semibold font-heading mb-6" style={{ color: '#9F1239' }}>Riepilogo Finanziario</h3>
             <div className="space-y-4">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-3 mb-2">
-                  <DollarSign size={18} className="text-rose-700" />
-                  <p className="text-xs text-rose-700 font-semibold uppercase">Deposit Amount</p>
-                </div>
-                <p className="text-2xl font-semibold text-rose-900">
-                  ${tenant.deposit_amount.toFixed(2)}
-                </p>
+              <div className="py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
+                <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Deposito</p>
+                <p className="text-xl font-bold" style={{ color: '#2C1810' }}>&euro;{(tenant.deposit_amount || 0).toFixed(2)}</p>
               </div>
-
-              <div className="p-4 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-3 mb-2">
-                  <DollarSign size={18} className="text-green-700" />
-                  <p className="text-xs text-green-700 font-semibold uppercase">Total Paid</p>
-                </div>
-                <p className="text-2xl font-semibold text-green-900">
-                  ${tenant.total_paid.toFixed(2)}
-                </p>
+              <div className="py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
+                <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Totale Dovuto</p>
+                <p className="text-xl font-bold" style={{ color: '#2C1810' }}>&euro;{(tenant.total_due || 0).toFixed(2)}</p>
               </div>
-
-              <div className="p-4 bg-orange-50 rounded-lg">
-                <div className="flex items-center gap-3 mb-2">
-                  <DollarSign size={18} className="text-orange-700" />
-                  <p className="text-xs text-orange-700 font-semibold uppercase">Remaining Balance</p>
-                </div>
-                <p className="text-2xl font-semibold text-orange-900">
-                  ${tenant.remaining_balance.toFixed(2)}
-                </p>
+              <div className="py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
+                <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Totale Pagato</p>
+                <p className="text-xl font-bold" style={{ color: '#059669' }}>&euro;{(tenant.total_paid || 0).toFixed(2)}</p>
+              </div>
+              <div className="py-3">
+                <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Saldo Residuo</p>
+                <p className="text-2xl font-bold" style={{ color: balance > 0 ? '#DC2626' : '#059669' }}>&euro;{balance.toFixed(2)}</p>
               </div>
             </div>
           </div>
 
-          {/* Recent Payments */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4">Recent Payments</h3>
-            {payments.length === 0 ? (
-              <p className="text-slate-500 text-sm">No payments recorded</p>
-            ) : (
-              <div className="space-y-3">
-                {payments.slice(0, 5).map((payment) => (
-                  <div key={payment.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">
-                          ${payment.amount.toFixed(2)}
-                        </p>
-                        <p className="text-xs text-slate-500">{payment.payment_method}</p>
-                      </div>
-                      <p className="text-xs text-slate-500">{payment.payment_date}</p>
-                    </div>
+          {/* Contracts */}
+          {tenant.contracts?.length > 0 && (
+            <div className="luxury-card p-7">
+              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Contratti</h3>
+              <div className="space-y-2">
+                {tenant.contracts.map(c => (
+                  <div key={c.id} className="p-3 rounded-xl" style={{ border: '1px solid rgba(184,134,11,0.1)' }}>
+                    <p className="text-sm font-medium font-mono" style={{ color: '#2C1810' }}>{c.contract_number}</p>
+                    <p className="text-xs" style={{ color: '#8B7355' }}>{c.start_date} - {c.end_date}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>{c.status}</span>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Invoices */}
+          {tenant.invoices?.length > 0 && (
+            <div className="luxury-card p-7">
+              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Fatture</h3>
+              <div className="space-y-2">
+                {tenant.invoices.map(inv => (
+                  <div key={inv.id} className="p-3 rounded-xl" style={{ border: '1px solid rgba(184,134,11,0.1)' }}>
+                    <div className="flex justify-between">
+                      <p className="text-sm font-mono" style={{ color: '#2C1810' }}>{inv.invoice_number}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${inv.payment_status === 'paid' ? 'bg-green-100 text-green-700' : inv.payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                        {inv.payment_status === 'paid' ? 'Pagato' : inv.payment_status === 'partial' ? 'Parziale' : 'Non Pagato'}
+                      </span>
+                    </div>
+                    <p className="text-xs" style={{ color: '#8B7355' }}>&euro;{inv.amount?.toFixed(2)} - Scadenza: {inv.due_date}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

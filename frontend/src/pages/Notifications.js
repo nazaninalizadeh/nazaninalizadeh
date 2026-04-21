@@ -1,111 +1,66 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Bell, AlertCircle, Calendar, FileText, User } from 'lucide-react';
-import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { Bell, AlertTriangle, Clock, FileText, Cake } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
+const API = process.env.REACT_APP_BACKEND_URL + '/api';
+
+const severityConfig = {
+  high: { icon: AlertTriangle, color: '#DC2626', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.2)' },
+  medium: { icon: Clock, color: '#D97706', bg: 'rgba(217,119,6,0.06)', border: 'rgba(217,119,6,0.2)' },
+  low: { icon: FileText, color: '#2563EB', bg: 'rgba(37,99,235,0.06)', border: 'rgba(37,99,235,0.2)' },
+  info: { icon: Cake, color: '#7C3AED', bg: 'rgba(124,58,237,0.06)', border: 'rgba(124,58,237,0.2)' },
+};
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchNotifications();
+    axios.get(`${API}/notifications`, { withCredentials: true })
+      .then(res => setNotifications(res.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  const fetchNotifications = async () => {
-    try {
-      const { data } = await axios.get(`${API_URL}/notifications/pending`, {
-        withCredentials: true,
-      });
-      setNotifications(data.notifications || []);
-    } catch (error) {
-      toast.error('Failed to load notifications');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getIcon = (type) => {
-    switch (type) {
-      case 'rent_due':
-        return <FileText size={20} />;
-      case 'contract_expiry':
-        return <Calendar size={20} />;
-      case 'passport_expiry':
-        return <User size={20} />;
-      default:
-        return <Bell size={20} />;
-    }
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-50 border-red-200 text-red-800';
-      case 'medium':
-        return 'bg-orange-50 border-orange-200 text-orange-800';
-      case 'low':
-        return 'bg-blue-50 border-rose-200 text-blue-800';
-      default:
-        return 'bg-slate-50 border-slate-200 text-slate-800';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-700 border-r-transparent" />
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div>;
 
   return (
     <div data-testid="notifications-page" className="luxury-fade-in">
       <div className="mb-10">
-        <h1 className="luxury-title mb-2" data-testid="notifications-title">
-          Notifiche e Promemoria
-        </h1>
-        <p className="luxury-subtitle">Rimani aggiornato sulle scadenze affitti, contratti e passaporti</p>
+        <h1 className="luxury-title mb-2">Notifiche e Promemoria</h1>
+        <p className="luxury-subtitle">Pagamenti scaduti, contratti in scadenza e compleanni</p>
       </div>
 
       {notifications.length === 0 ? (
         <div className="luxury-card p-14 text-center">
-          <Bell className="mx-auto mb-4" size={64} style={{ color: 'rgba(184, 134, 11, 0.3)' }} />
+          <Bell className="mx-auto mb-4" size={64} style={{ color: 'rgba(184,134,11,0.3)' }} />
           <h3 className="text-lg font-semibold mb-2" style={{ color: '#2C1810' }}>Nessuna Notifica</h3>
-          <p style={{ color: '#8B7355' }}>Sei in pari! Nessun promemoria o avviso al momento.</p>
+          <p style={{ color: '#8B7355' }}>Tutto in ordine!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {notifications.map((notification, index) => (
-            <div
-              key={index}
-              className={`p-4 rounded-lg border ${getPriorityColor(notification.priority)}`}
-              data-testid={`notification-${index}`}
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  {getIcon(notification.type)}
+        <div className="space-y-3">
+          {notifications.map((n, i) => {
+            const cfg = severityConfig[n.severity] || severityConfig.info;
+            const Icon = cfg.icon;
+            return (
+              <div key={i} className="luxury-card p-5 flex items-start gap-4" style={{ borderLeft: `4px solid ${cfg.color}` }}>
+                <div className="p-2.5 rounded-xl" style={{ background: cfg.bg }}>
+                  <Icon size={20} style={{ color: cfg.color }} />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="text-sm font-semibold">
-                      {notification.type.replace('_', ' ').toUpperCase()}
-                    </h4>
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/50">
-                      {notification.priority} priority
-                    </span>
-                  </div>
-                  <p className="text-sm">{notification.message}</p>
-                  {(notification.due_date || notification.expiry_date) && (
-                    <p className="text-xs mt-2 opacity-75">
-                      Date: {notification.due_date || notification.expiry_date}
-                    </p>
-                  )}
+                  <p className="font-semibold text-sm" style={{ color: '#2C1810' }}>{n.title}</p>
+                  <p className="text-sm mt-1" style={{ color: '#5C4A3A' }}>{n.message}</p>
+                  <p className="text-xs mt-2" style={{ color: '#8B7355' }}>{n.date}</p>
                 </div>
+                {n.tenant_id && (
+                  <Link to={`/tenants/${n.tenant_id}`} className="text-xs underline whitespace-nowrap" style={{ color: '#9F1239' }}>
+                    Vedi Profilo
+                  </Link>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

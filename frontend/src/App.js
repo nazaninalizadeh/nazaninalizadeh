@@ -12,6 +12,8 @@ import LandlordDetail from './pages/LandlordDetail';
 import Properties from './pages/Properties';
 import Contracts from './pages/Contracts';
 import Invoices from './pages/Invoices';
+import Rooms from './pages/Rooms';
+import Payments from './pages/Payments';
 import Notifications from './pages/Notifications';
 import Reports from './pages/Reports';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -39,6 +41,8 @@ function App() {
               <Route path="landlords" element={<Landlords />} />
               <Route path="landlords/:id" element={<LandlordDetail />} />
               <Route path="properties" element={<Properties />} />
+              <Route path="rooms" element={<Rooms />} />
+              <Route path="payments" element={<Payments />} />
               <Route path="contracts" element={<Contracts />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="notifications" element={<Notifications />} />

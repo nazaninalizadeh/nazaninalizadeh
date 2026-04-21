@@ -12,7 +12,9 @@ import {
   Menu,
   X,
   Bell,
-  BarChart3
+  BarChart3,
+  DoorOpen,
+  CreditCard
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
@@ -38,6 +40,8 @@ const Layout = () => {
     { path: '/tenants', label: 'Inquilini', icon: Users },
     { path: '/landlords', label: 'Proprietari', icon: Home },
     { path: '/properties', label: 'Immobili', icon: Building2 },
+    { path: '/rooms', label: 'Stanze', icon: DoorOpen },
+    { path: '/payments', label: 'Pagamenti', icon: CreditCard },
     { path: '/contracts', label: 'Contratti', icon: FileText },
     { path: '/invoices', label: 'Fatture', icon: Receipt },
     { path: '/notifications', label: 'Notifiche', icon: Bell },
