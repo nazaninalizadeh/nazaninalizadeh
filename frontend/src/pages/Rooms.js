@@ -5,24 +5,30 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Plus, Search, Edit, Trash2, UserPlus, UserMinus, DoorOpen } from 'lucide-react';
+import { Plus, Search, UserPlus, UserMinus, Trash2, DoorOpen, Home, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
 const Rooms = () => {
-  const [rooms, setRooms] = useState([]);
+  const [overview, setOverview] = useState([]);
   const [properties, setProperties] = useState([]);
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterProperty, setFilterProperty] = useState('all');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [assignDialog, setAssignDialog] = useState(false);
+
+  // Filters
+  const [filterHome, setFilterHome] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterMethod, setFilterMethod] = useState('all');
+  const [searchName, setSearchName] = useState('');
+
+  // Dialogs
+  const [addRoomOpen, setAddRoomOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [assignTenantId, setAssignTenantId] = useState('');
-  const [formData, setFormData] = useState({
+  const [roomForm, setRoomForm] = useState({
     property_id: '', room_number: '', room_type: 'single', floor: '', monthly_rent: 0, description: '', bill_responsible: ''
   });
 
@@ -30,26 +36,27 @@ const Rooms = () => {
 
   const fetchAll = async () => {
     try {
-      const [r, p, t] = await Promise.all([
-        axios.get(`${API}/rooms`, { withCredentials: true }),
+      const [ov, pr, tn] = await Promise.all([
+        axios.get(`${API}/occupancy-overview`, { withCredentials: true }),
         axios.get(`${API}/properties`, { withCredentials: true }),
         axios.get(`${API}/tenants`, { withCredentials: true }),
       ]);
-      setRooms(r.data);
-      setProperties(p.data);
-      setTenants(t.data);
+      setOverview(ov.data);
+      setProperties(pr.data);
+      setTenants(tn.data);
     } catch (e) { console.error(e); }
     setLoading(false);
   };
 
-  const handleSubmit = async (e) => {
+  const handleAddRoom = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/rooms`, formData, { withCredentials: true });
-      setDialogOpen(false);
-      setFormData({ property_id: '', room_number: '', room_type: 'single', floor: '', monthly_rent: 0, description: '', bill_responsible: '' });
+      await axios.post(`${API}/rooms`, roomForm, { withCredentials: true });
+      toast.success('Stanza aggiunta');
+      setAddRoomOpen(false);
+      setRoomForm({ property_id: '', room_number: '', room_type: 'single', floor: '', monthly_rent: 0, description: '', bill_responsible: '' });
       fetchAll();
-    } catch (err) { alert(err.response?.data?.detail || 'Errore'); }
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
 
   const handleAssign = async () => {
@@ -58,75 +65,93 @@ const Rooms = () => {
       const fd = new FormData();
       fd.append('tenant_id', assignTenantId);
       await axios.post(`${API}/rooms/${selectedRoom.id}/assign`, fd, { withCredentials: true });
-      setAssignDialog(false);
+      toast.success('Inquilino assegnato');
+      setAssignOpen(false);
       setAssignTenantId('');
       fetchAll();
-    } catch (err) { alert(err.response?.data?.detail || 'Errore'); }
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
 
   const handleUnassign = async (roomId) => {
-    if (!window.confirm('Rimuovere inquilino dalla stanza?')) return;
+    if (!window.confirm('Rimuovere inquilino?')) return;
     try {
       await axios.post(`${API}/rooms/${roomId}/unassign`, {}, { withCredentials: true });
+      toast.success('Inquilino rimosso');
       fetchAll();
-    } catch (err) { alert(err.response?.data?.detail || 'Errore'); }
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Eliminare questa stanza?')) return;
+  const handleDeleteRoom = async (roomId) => {
+    if (!window.confirm('Eliminare stanza?')) return;
     try {
-      await axios.delete(`${API}/rooms/${id}`, { withCredentials: true });
+      await axios.delete(`${API}/rooms/${roomId}`, { withCredentials: true });
+      toast.success('Stanza eliminata');
       fetchAll();
-    } catch (err) { alert(err.response?.data?.detail || 'Errore'); }
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
 
-  const filtered = rooms.filter(r => {
-    const matchSearch = r.room_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.tenant_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.property_address?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchProp = filterProperty === 'all' || r.property_id === filterProperty;
-    return matchSearch && matchProp;
-  });
+  // Apply filters
+  const filteredOverview = overview
+    .filter(p => filterHome === 'all' || p.id === filterHome)
+    .map(prop => ({
+      ...prop,
+      rooms: prop.rooms.filter(r => {
+        if (filterStatus === 'paid' && r.payment_status !== 'paid') return false;
+        if (filterStatus === 'not_paid' && r.payment_status !== 'not_paid') return false;
+        if (filterStatus === 'empty' && r.status !== 'available') return false;
+        if (filterMethod === 'contanti' && r.payment_method !== 'Contanti') return false;
+        if (filterMethod === 'bonifico' && r.payment_method !== 'Bonifico') return false;
+        if (searchName && r.tenant_name && !r.tenant_name.toLowerCase().includes(searchName.toLowerCase())) return false;
+        if (searchName && !r.tenant_name) return false;
+        return true;
+      })
+    }))
+    .filter(p => p.rooms.length > 0 || (filterStatus === 'all' && filterMethod === 'all' && !searchName));
+
+  // Summary stats
+  const allRooms = overview.flatMap(p => p.rooms);
+  const totalOccupied = allRooms.filter(r => r.status === 'occupied').length;
+  const totalVacant = allRooms.filter(r => r.status === 'available').length;
+  const totalPaid = allRooms.filter(r => r.payment_status === 'paid').length;
+  const totalNotPaid = allRooms.filter(r => r.payment_status === 'not_paid').length;
+
+  if (loading) return <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div>;
 
   return (
     <div data-testid="rooms-page" className="luxury-fade-in">
-      <div className="mb-10 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="luxury-title mb-2" data-testid="rooms-title">Stanze</h1>
-          <p className="luxury-subtitle">Gestisci stanze, assegnazioni e occupazione</p>
+          <h1 className="luxury-title mb-2" data-testid="rooms-title">Panoramica Immobili</h1>
+          <p className="luxury-subtitle">Chi abita dove, chi ha pagato e come</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={addRoomOpen} onOpenChange={setAddRoomOpen}>
           <DialogTrigger asChild>
             <Button className="btn-luxury" data-testid="add-room-button"><Plus size={18} className="mr-2" /> Aggiungi Stanza</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg luxury-modal">
             <DialogHeader><DialogTitle>Nuova Stanza</DialogTitle></DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleAddRoom} className="space-y-4">
               <div>
                 <Label>Immobile *</Label>
-                <Select value={formData.property_id} onValueChange={v => setFormData({ ...formData, property_id: v })}>
+                <Select value={roomForm.property_id} onValueChange={v => setRoomForm({ ...roomForm, property_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Seleziona immobile" /></SelectTrigger>
                   <SelectContent>{properties.map(p => <SelectItem key={p.id} value={p.id}>{p.property_code} - {p.address}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>N. Stanza *</Label><Input value={formData.room_number} onChange={e => setFormData({ ...formData, room_number: e.target.value })} required className="luxury-input" /></div>
+                <div><Label>N. Stanza *</Label><Input value={roomForm.room_number} onChange={e => setRoomForm({ ...roomForm, room_number: e.target.value })} required className="luxury-input" /></div>
                 <div>
                   <Label>Tipo *</Label>
-                  <Select value={formData.room_type} onValueChange={v => setFormData({ ...formData, room_type: v })}>
+                  <Select value={roomForm.room_type} onValueChange={v => setRoomForm({ ...roomForm, room_type: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="single">Singola</SelectItem>
-                      <SelectItem value="double">Doppia</SelectItem>
-                    </SelectContent>
+                    <SelectContent><SelectItem value="single">Singola</SelectItem><SelectItem value="double">Doppia</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div><Label>Piano</Label><Input value={formData.floor} onChange={e => setFormData({ ...formData, floor: e.target.value })} className="luxury-input" /></div>
-                <div><Label>Affitto Mensile</Label><Input type="number" step="0.01" value={formData.monthly_rent} onChange={e => setFormData({ ...formData, monthly_rent: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
+                <div><Label>Piano</Label><Input value={roomForm.floor} onChange={e => setRoomForm({ ...roomForm, floor: e.target.value })} className="luxury-input" /></div>
+                <div><Label>Affitto Mensile</Label><Input type="number" step="0.01" value={roomForm.monthly_rent} onChange={e => setRoomForm({ ...roomForm, monthly_rent: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
               </div>
-              <div><Label>Descrizione</Label><Input value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="luxury-input" /></div>
               <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="rounded-xl">Annulla</Button>
+                <Button type="button" variant="outline" onClick={() => setAddRoomOpen(false)} className="rounded-xl">Annulla</Button>
                 <Button type="submit" className="btn-luxury">Crea Stanza</Button>
               </div>
             </form>
@@ -134,8 +159,75 @@ const Rooms = () => {
         </Dialog>
       </div>
 
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="luxury-card p-4 text-center">
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Occupate</p>
+          <p className="text-2xl font-bold" style={{ color: '#059669' }}>{totalOccupied}</p>
+        </div>
+        <div className="luxury-card p-4 text-center">
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Libere</p>
+          <p className="text-2xl font-bold" style={{ color: '#DC2626' }}>{totalVacant}</p>
+        </div>
+        <div className="luxury-card p-4 text-center">
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Pagato</p>
+          <p className="text-2xl font-bold" style={{ color: '#059669' }}>{totalPaid}</p>
+        </div>
+        <div className="luxury-card p-4 text-center">
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Non Pagato</p>
+          <p className="text-2xl font-bold" style={{ color: '#DC2626' }}>{totalNotPaid}</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="luxury-card p-5 mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter size={16} style={{ color: '#B8860B' }} />
+          <span className="text-sm font-semibold" style={{ color: '#4A3B31' }}>Filtri</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <Label className="text-xs">Immobile</Label>
+            <Select value={filterHome} onValueChange={setFilterHome}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti</SelectItem>
+                {overview.map(p => <SelectItem key={p.id} value={p.id}>{p.property_code} - {p.address}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Stato Pagamento</Label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="paid">Pagato</SelectItem>
+                <SelectItem value="not_paid">Non Pagato</SelectItem>
+                <SelectItem value="empty">Stanze Vuote</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Metodo Pagamento</Label>
+            <Select value={filterMethod} onValueChange={setFilterMethod}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="contanti">Contanti</SelectItem>
+                <SelectItem value="bonifico">Bonifico</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Nome Inquilino</Label>
+            <Input placeholder="Cerca nome..." value={searchName} onChange={e => setSearchName(e.target.value)} className="luxury-input h-9" />
+          </div>
+        </div>
+      </div>
+
       {/* Assign Dialog */}
-      <Dialog open={assignDialog} onOpenChange={setAssignDialog}>
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent className="luxury-modal">
           <DialogHeader><DialogTitle>Assegna Inquilino a Stanza {selectedRoom?.room_number}</DialogTitle></DialogHeader>
           <div className="space-y-4">
@@ -144,70 +236,159 @@ const Rooms = () => {
               <SelectContent>{tenants.filter(t => !t.room_id).map(t => <SelectItem key={t.id} value={t.id}>{t.full_name}</SelectItem>)}</SelectContent>
             </Select>
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setAssignDialog(false)} className="rounded-xl">Annulla</Button>
+              <Button variant="outline" onClick={() => setAssignOpen(false)} className="rounded-xl">Annulla</Button>
               <Button onClick={handleAssign} className="btn-luxury">Assegna</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      <div className="luxury-card overflow-hidden">
-        <div className="p-5 flex gap-4" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
-            <Input placeholder="Cerca stanza..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-11 luxury-input" />
-          </div>
-          <Select value={filterProperty} onValueChange={setFilterProperty}>
-            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filtra per immobile" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutti gli immobili</SelectItem>
-              {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.property_code}</SelectItem>)}
-            </SelectContent>
-          </Select>
+      {/* Property Cards with Rooms */}
+      {filteredOverview.length === 0 ? (
+        <div className="luxury-card p-14 text-center">
+          <Home className="mx-auto mb-4" size={64} style={{ color: 'rgba(184,134,11,0.3)' }} />
+          <h3 className="text-lg font-semibold mb-2" style={{ color: '#2C1810' }}>Nessun Immobile</h3>
+          <p style={{ color: '#8B7355' }}>Aggiungi immobili e stanze per vedere la panoramica</p>
         </div>
+      ) : (
+        <div className="space-y-6">
+          {filteredOverview.map(prop => (
+            <div key={prop.id} className="luxury-card overflow-hidden" data-testid={`property-card-${prop.id}`}>
+              {/* Property Header */}
+              <div className="px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+                <div className="flex items-center gap-3">
+                  <Home size={22} className="text-white" />
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">{prop.address}</h3>
+                    <p className="text-white/70 text-xs">Codice: {prop.property_code} | Proprietario: {prop.landlord_name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-white text-sm">
+                  <span><span className="font-bold">{prop.occupied_rooms}</span> occupate</span>
+                  <span className="text-white/50">|</span>
+                  <span><span className="font-bold">{prop.vacant_rooms}</span> libere</span>
+                  <span className="text-white/50">|</span>
+                  <span><span className="font-bold">{prop.total_rooms}</span> totali</span>
+                </div>
+              </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Stanza</TableHead>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Immobile</TableHead>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Tipo</TableHead>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Stato</TableHead>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Inquilino</TableHead>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Affitto</TableHead>
-                <TableHead className="text-white font-semibold text-xs uppercase tracking-wider text-right">Azioni</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-10" style={{ color: '#8B7355' }}>Nessuna stanza trovata</TableCell></TableRow>
-              ) : filtered.map(room => (
-                <TableRow key={room.id} className="hover:bg-rose-50/30 transition-colors">
-                  <TableCell className="font-medium" style={{ color: '#2C1810' }}><DoorOpen size={16} className="inline mr-2" style={{ color: '#9F1239' }} />{room.room_number}</TableCell>
-                  <TableCell style={{ color: '#4A3B31' }}>{room.property_address}</TableCell>
-                  <TableCell><span className="luxury-badge" style={{ background: room.room_type === 'double' ? '#EDE9FE' : '#F0FDF4', color: room.room_type === 'double' ? '#7C3AED' : '#059669' }}>{room.room_type === 'single' ? 'Singola' : 'Doppia'}</span></TableCell>
-                  <TableCell><span className={`luxury-badge ${room.status === 'occupied' ? 'badge-success' : ''}`} style={room.status !== 'occupied' ? { background: '#FEF2F2', color: '#DC2626' } : {}}>{room.status === 'occupied' ? 'Occupata' : 'Libera'}</span></TableCell>
-                  <TableCell>{room.tenant_name ? <Link to={`/tenants/${room.tenant_id}`} className="font-medium underline" style={{ color: '#9F1239' }}>{room.tenant_name}</Link> : <span style={{ color: '#8B7355' }}>-</span>}</TableCell>
-                  <TableCell className="font-medium" style={{ color: '#2C1810' }}>&euro;{room.monthly_rent?.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      {room.status === 'available' ? (
-                        <Button variant="ghost" size="sm" className="rounded-lg hover:bg-green-50" onClick={() => { setSelectedRoom(room); setAssignDialog(true); }}><UserPlus size={16} style={{ color: '#059669' }} /></Button>
-                      ) : (
-                        <Button variant="ghost" size="sm" className="rounded-lg hover:bg-orange-50" onClick={() => handleUnassign(room.id)}><UserMinus size={16} style={{ color: '#D97706' }} /></Button>
-                      )}
-                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={() => handleDelete(room.id)}><Trash2 size={16} className="text-red-500" /></Button>
+              {/* Rooms List */}
+              <div className="divide-y" style={{ borderColor: 'rgba(184,134,11,0.08)' }}>
+                {prop.rooms.length === 0 ? (
+                  <div className="p-6 text-center" style={{ color: '#8B7355' }}>
+                    Nessuna stanza in questo immobile. Aggiungi stanze per iniziare.
+                  </div>
+                ) : prop.rooms.map(room => (
+                  <div
+                    key={room.id}
+                    className="px-6 py-4 flex items-center justify-between hover:bg-rose-50/20 transition-colors"
+                    data-testid={`room-row-${room.id}`}
+                  >
+                    {/* Room Info */}
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="flex items-center gap-2.5 w-28 shrink-0">
+                        <DoorOpen size={18} style={{ color: room.status === 'occupied' ? '#059669' : '#94A3B8' }} />
+                        <div>
+                          <span className="font-semibold text-sm" style={{ color: '#2C1810' }}>Stanza {room.room_number}</span>
+                          <p className="text-[11px]" style={{ color: '#8B7355' }}>{room.room_type === 'single' ? 'Singola' : 'Doppia'}</p>
+                        </div>
+                      </div>
+
+                      {/* Tenant Name or Empty */}
+                      <div className="flex-1 min-w-0">
+                        {room.status === 'occupied' && room.tenant_name ? (
+                          <Link
+                            to={`/tenants/${room.tenant_id}`}
+                            className="font-medium text-sm hover:underline truncate block"
+                            style={{ color: '#9F1239' }}
+                            data-testid={`tenant-link-${room.tenant_id}`}
+                          >
+                            {room.tenant_name}
+                          </Link>
+                        ) : (
+                          <span className="text-sm italic" style={{ color: '#94A3B8' }}>Vuota</span>
+                        )}
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+
+                    {/* Payment Status */}
+                    <div className="flex items-center gap-4 shrink-0">
+                      {room.status === 'occupied' && room.tenant_name ? (
+                        room.payment_status === 'paid' ? (
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                              style={{ background: '#ECFDF5', color: '#059669' }}
+                              data-testid={`payment-badge-${room.id}`}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Pagato
+                            </span>
+                            <span className="font-bold text-sm" style={{ color: '#059669' }}>
+                              &euro;{room.payment_amount?.toLocaleString()}
+                            </span>
+                            <span
+                              className="px-2 py-0.5 rounded text-[11px] font-medium"
+                              style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}
+                            >
+                              {room.payment_method}
+                            </span>
+                          </div>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                            style={{ background: '#FEF2F2', color: '#DC2626' }}
+                            data-testid={`payment-badge-${room.id}`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                            Non Pagato
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-xs" style={{ color: '#94A3B8' }}>—</span>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 ml-2">
+                        {room.status === 'available' ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-lg hover:bg-green-50 h-8 w-8 p-0"
+                            onClick={() => { setSelectedRoom(room); setAssignOpen(true); }}
+                            title="Assegna inquilino"
+                          >
+                            <UserPlus size={15} style={{ color: '#059669' }} />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-lg hover:bg-orange-50 h-8 w-8 p-0"
+                            onClick={() => handleUnassign(room.id)}
+                            title="Rimuovi inquilino"
+                          >
+                            <UserMinus size={15} style={{ color: '#D97706' }} />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-lg hover:bg-red-50 h-8 w-8 p-0"
+                          onClick={() => handleDeleteRoom(room.id)}
+                          title="Elimina stanza"
+                        >
+                          <Trash2 size={15} className="text-red-400" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

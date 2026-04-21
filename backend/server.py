@@ -475,6 +475,72 @@ async def upload_room_image(room_id: str, file: UploadFile = File(...), user: di
     await db.rooms.update_one({"id": room_id}, {"$push": {"images": url}})
     return {"url": url}
 
+# ============ Occupancy Overview (Home → Room → Tenant + Payment) ============
+@api_router.get("/occupancy-overview")
+async def get_occupancy_overview(user: dict = Depends(get_current_user)):
+    """Returns all properties grouped with their rooms, tenants, and latest payment info."""
+    properties = await db.properties.find({}, {"_id": 0}).to_list(500)
+    result = []
+
+    for prop in properties:
+        rooms = await db.rooms.find({"property_id": prop["id"]}, {"_id": 0}).to_list(200)
+        room_list = []
+        for room in rooms:
+            room_data = {
+                "id": room["id"],
+                "room_number": room.get("room_number", ""),
+                "room_type": room.get("room_type", ""),
+                "status": room.get("status", "available"),
+                "tenant_id": room.get("tenant_id", ""),
+                "tenant_name": "",
+                "payment_status": "none",
+                "payment_amount": 0,
+                "payment_method": "",
+                "payment_date": "",
+            }
+            if room.get("tenant_id"):
+                tenant = await db.tenants.find_one({"id": room["tenant_id"]}, {"_id": 0})
+                if tenant:
+                    room_data["tenant_name"] = tenant.get("full_name", "")
+                    # Get the most recent payment for this tenant
+                    latest_payment = await db.payments.find(
+                        {"tenant_id": room["tenant_id"]}
+                    ).sort("payment_date", -1).to_list(1)
+                    if latest_payment:
+                        lp = latest_payment[0]
+                        room_data["payment_status"] = "paid"
+                        room_data["payment_amount"] = lp.get("amount", 0)
+                        raw_method = lp.get("payment_method", "")
+                        if raw_method in ("contanti", "cash"):
+                            room_data["payment_method"] = "Contanti"
+                        elif raw_method in ("bonifico", "bank_transfer"):
+                            room_data["payment_method"] = "Bonifico"
+                        elif raw_method == "carta":
+                            room_data["payment_method"] = "Carta"
+                        else:
+                            room_data["payment_method"] = raw_method.capitalize() if raw_method else ""
+                        room_data["payment_date"] = lp.get("payment_date", "")
+                    else:
+                        room_data["payment_status"] = "not_paid"
+            room_list.append(room_data)
+
+        # Sort rooms by room_number
+        room_list.sort(key=lambda r: r["room_number"])
+
+        occupied = sum(1 for r in room_list if r["status"] == "occupied")
+        result.append({
+            "id": prop["id"],
+            "property_code": prop.get("property_code", ""),
+            "address": prop.get("address", ""),
+            "landlord_name": prop.get("landlord_name", ""),
+            "total_rooms": len(room_list),
+            "occupied_rooms": occupied,
+            "vacant_rooms": len(room_list) - occupied,
+            "rooms": room_list,
+        })
+
+    return result
+
 # ============ Contract Routes ============
 @api_router.post("/contracts")
 async def create_contract(contract: ContractCreate, user: dict = Depends(get_current_user)):
