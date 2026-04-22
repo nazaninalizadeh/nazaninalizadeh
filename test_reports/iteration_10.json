@@ -1,0 +1,60 @@
+{
+  "summary": "Iteration 10 - Monthly Payment Status system fully verified. Backend pytest 12/12 passed. Frontend Playwright green across all 15 feature bullets. Key verifications: (1) Login with reCAPTCHA bypass stub -> redirects to '/'. (2) GET /api/payment-calendar/{tenant_id}?year=2026 returns {tenant_id, year, calendar:[12]} each with {month, month_name, year, status, amount, manual_override,...}. (3) PUT /api/payment-calendar/{tenant_id}/2026/4 with {status:'paid',amount:500,payment_method:'contanti'} creates override; GET back shows manual_override=true, amount=500, status='paid'. (4) PUT with invalid status -> 400; PUT month=13 -> 400. (5) PUT status='late' persists correctly. (6) DELETE removes override; subsequent GET shows manual_override=false. (7) GET /api/late-tenants returns list with {tenant_id, tenant_name, property_address, room_number, month, month_name, year, status='late'}; tenant with override=late for current month correctly appears. (8) GET /api/dashboard/stats includes late_details[] length == tenants_late, each entry carries tenant_id, tenant_name, property_address, room_number, due_day. (9) GET /api/notifications returns late_payment typed items matching overridden tenants. (10) GET /api/tenants/{id} payment_status reflects monthly_status override (paid/late). (11) Frontend Dashboard: three <Link> anchors to /tenants?status=paid|not_paid|late present; 'Inquilini In Ritardo' luxury-card renders with current_month; each late detail links to /tenants/{id}. (12) Frontend TenantDetail: calendar months render as <button data-testid='calendar-month-{n}'> when status != 'none' (months with status='none' render as non-clickable <div>, expected behavior for months before tenant.created_at). (13) Clicking a month opens edit dialog exposing data-testid='set-month-paid'|'set-month-not_paid'|'set-month-late'. (14) 'Rimuovi override' button appears in edit dialog once a manual override exists (and after setting one via UI it reappears as expected). (15) Tenants page: StatusBadge rendered as <button data-testid='status-btn-{id}'> with handleQuickStatus wired to PUT /api/payment-calendar; tenants without room_id show no clickable badge (4 of 9 rows had clickable buttons on seeded data). (16) Notifications page '/notifications' loads, displays 'Pagamento in ritardo: <nome>' entries consistent with backend /api/notifications payload.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/payment-calendar", "issue": "payment_date matched with string $gte/$lt only works if stored as 'YYYY-MM-DD'. If any payment ever gets stored as datetime or with time component mixed, the comparison silently drops records. Add a type check or always store ISO-date-only."},
+      {"endpoint": "GET /api/payment-calendar", "issue": "MONTH_NAMES is module-level (good) but _compute_month_status issues one extra Mongo query per month x per tenant; /late-tenants and dashboard both iterate occupied_tenants with an additional find_one per tenant. Consider batch-loading monthly_status with a single $in query keyed on tenant_ids for current month."},
+      {"endpoint": "PUT /api/payment-calendar/{tenant_id}/{year}/{month}", "issue": "No uniqueness index creation on startup for monthly_status collection - relies on upsert on (tenant_id, month, year) triple. Add db.monthly_status.create_index([('tenant_id',1),('month',1),('year',1)], unique=True) at startup to prevent race-condition duplicates."},
+      {"endpoint": "DELETE /api/payment-calendar/{tenant_id}/{year}/{month}", "issue": "Returns 200 even when nothing was deleted (delete_one on non-existent doc). Consider returning 404 when deleted_count==0 so UI can avoid silent no-ops."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Sidebar", "issues": ["'Ospitalita' and 'Registrazione' - 'Ospitalita' still missing Italian accent 'Ospitalità' (carried from iter 7/8/9)."]},
+      {"screen": "Notifications page", "issues": ["Persian/RTL tenant name (تست فارسی) does not auto-apply dir='rtl' inline; visually acceptable but bidi mirrors the colon."]},
+      {"screen": "TenantDetail Edit Month Dialog", "issues": ["Dialog is a custom fixed overlay (not Radix); pressing ESC does not close it (no keydown handler). Only backdrop click or explicit button closes it."]},
+      {"screen": "Tenants.js", "issues": ["Clickable status badge only shown for tenants with a current StatusBadge (paid/not_paid/late). Fallback path when tenant lacks room_id just shows text — visually inconsistent and gives no quick-change affordance (minor)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration10.py",
+    "/app/test_reports/pytest/iteration_10.xml"
+  ],
+  "action_items": [
+    "(Low) Create unique compound index on monthly_status(tenant_id, month, year) at app startup to guarantee upsert correctness under concurrency.",
+    "(Low) Batch-load monthly_status in /late-tenants and /dashboard/stats to reduce N+1 queries.",
+    "(Low) DELETE /api/payment-calendar should return 404 when no override exists (currently returns 200).",
+    "(Low) Add ESC-to-close and focus-trap to the custom TenantDetail edit-month dialog, or replace with existing Radix Dialog component used elsewhere for consistency.",
+    "(Cosmetic) Restore Italian accents across sidebar ('Ospitalità').",
+    "(Carry-over) Scrub legacy 'occupation' field from db.tenants; Tenants.js useEffect dep array missing searchParams; data-testid on Rooms edit buttons (all from iter 9, still open)."
+  ],
+  "critical_code_review_comments": [
+    "routes/payment_calendar.py _compute_month_status runs N x 12 find queries per calendar call (1 override lookup + 1 payments query). For a tenant-heavy dashboard this becomes slow. Batch with aggregation or cache per request.",
+    "routes/payment_calendar.py: when override has status 'paid' but amount=0, dashboard still counts it as paid. Confirm this is intended (manual mark-as-paid without amount).",
+    "routes/dashboard.py: duplicates the override/compute logic inline instead of reusing _compute_month_status - risk of drift. Extract to shared helper.",
+    "routes/notifications_routes.py: rebuilds late detection in a 4th place. Same helper should be used.",
+    "frontend TenantDetail.js: edit dialog uses raw fetch(`${BACKEND}/api/...`) outside the shared API client - ensure credentials:'include' and CSRF handling match the rest of the app.",
+    "frontend Tenants.js handleQuickStatus likely calls PUT /api/payment-calendar/{tenant}/{year}/{currentMonth} - verify it also refreshes the row locally instead of a full list reload for snappier UX.",
+    "Consider adding a cleanup/TTL for very old monthly_status rows if tenants are deleted — current code does not cascade delete overrides when a tenant is removed."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration10.py (new)",
+    "/app/test_reports/pytest/iteration_10.xml (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (12/12 passed)",
+    "frontend": "100% of the 15 requested feature checks"
+  },
+  "test_credentials": {
+    "admin": {"email": "alborz.sbd@gmail.com", "password": "1234@Admin"},
+    "captcha_bypass": "test_token_bypass_recaptcha"
+  },
+  "seed_data_creation": "No persistent seed data. All PUTs were paired with matching DELETEs; test creates/removes overrides for months 4 (2026), 5 (2026), 6 (2026), and current month on the first available tenant with a room. Verified no orphan monthly_status rows remain after suite.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: python -m pytest /app/backend/tests/test_iteration10.py -v --junitxml=/app/test_reports/pytest/iteration_10.xml. Login: alborz.sbd@gmail.com / 1234@Admin with captcha_token='test_token_bypass_recaptcha'. Preview URL: https://property-ops-16.preview.emergentagent.com. Key collection: db.monthly_status (unique index NOT enforced at startup - relies on upsert). Calendar months with status='none' render as <div> not <button>, so `calendar-month-{n}` testid only exists for months after tenant.created_at - don't expect 12 clickable buttons. All 15 review bullets green. Carry-overs from iter 9 (occupation scrub, Rooms edit-testid, Ospitalità accent, Tenants useEffect dep) remain and were NOT part of this review scope.",
+  "rca_of_the_issue": "No blocker. Everything in features_or_bugs_to_test works. The only new observations are non-blocking perf/UX items: (a) N+1 queries in dashboard/late-tenants; (b) no unique index on monthly_status; (c) DELETE returns 200 even when nothing to delete; (d) edit-month dialog lacks ESC-to-close. Frontend data-testids correctly wired (calendar-month-{n}, set-month-{status}, status-btn-{id}). Tenant enrichment, notifications, and dashboard all honor monthly_status overrides as designed."
+}

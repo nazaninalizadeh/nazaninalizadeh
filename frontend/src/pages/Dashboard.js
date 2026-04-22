@@ -113,6 +113,29 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Late Tenants Detail */}
+      {stats?.late_details?.length > 0 && (
+        <div className="luxury-card p-7 mb-10">
+          <h3 className="text-lg font-semibold font-heading mb-5 flex items-center gap-2" style={{ color: '#DC2626' }}>
+            <AlertTriangle size={20} /> Inquilini In Ritardo — {stats.current_month}
+          </h3>
+          <div className="space-y-2">
+            {stats.late_details.map((t, i) => (
+              <Link key={i} to={`/tenants/${t.tenant_id}`} className="flex items-center justify-between py-3 px-4 rounded-xl hover:shadow-md transition-all" style={{ background: '#FEF2F2', border: '1px solid rgba(220,38,38,0.15)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: '#2C1810' }}>{t.tenant_name}</p>
+                    <p className="text-xs" style={{ color: '#8B7355' }}>{t.property_address}{t.room_number ? ` — Stanza ${t.room_number}` : ''}</p>
+                  </div>
+                </div>
+                <span className="text-xs font-semibold" style={{ color: '#DC2626' }}>Scadenza: giorno {t.due_day}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Recent Payments */}
       {stats?.recent_payments?.length > 0 && (
         <div className="luxury-card p-7">

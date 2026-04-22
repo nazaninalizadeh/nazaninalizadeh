@@ -15,6 +15,8 @@ const TenantDetail = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [calendar, setCalendar] = useState(null);
+  const [editDialog, setEditDialog] = useState(false);
+  const [editMonth, setEditMonth] = useState(null);
 
   useEffect(() => { fetchTenant(); fetchCalendar(); }, [id]);
 
@@ -140,43 +142,114 @@ const TenantDetail = () => {
             </p>
           </div>
 
-          {/* Monthly Payment Calendar */}
+          {/* Monthly Payment Calendar - Editable */}
           <div className="luxury-card p-7">
             <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
               <Calendar size={20} /> Calendario Pagamenti {calendar?.year}
             </h3>
             {calendar?.calendar ? (
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                {calendar.calendar.map(m => (
-                  <div key={m.month} className="p-3 rounded-xl text-center" style={{
-                    background: m.status === 'paid' ? '#ECFDF5' : m.status === 'late' ? '#FEF2F2' : m.status === 'not_paid' ? '#FFF7ED' : 'rgba(184,134,11,0.04)',
-                    border: `1.5px solid ${m.status === 'paid' ? 'rgba(5,150,105,0.3)' : m.status === 'late' ? 'rgba(220,38,38,0.3)' : m.status === 'not_paid' ? 'rgba(217,119,6,0.3)' : 'rgba(184,134,11,0.1)'}`,
-                  }} data-testid={`calendar-month-${m.month}`}>
-                    <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: '#8B7355' }}>{m.month_name?.substring(0, 3)}</p>
-                    {m.status === 'paid' && (
-                      <>
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto my-1" />
-                        <p className="text-xs font-bold" style={{ color: '#059669' }}>&euro;{m.amount?.toFixed(0)}</p>
-                      </>
-                    )}
-                    {m.status === 'late' && (
-                      <>
-                        <div className="w-2 h-2 rounded-full bg-red-500 mx-auto my-1" />
-                        <p className="text-[10px] font-semibold" style={{ color: '#DC2626' }}>In Ritardo</p>
-                      </>
-                    )}
-                    {m.status === 'not_paid' && (
-                      <>
-                        <div className="w-2 h-2 rounded-full bg-amber-500 mx-auto my-1" />
-                        <p className="text-[10px] font-semibold" style={{ color: '#D97706' }}>Non Pagato</p>
-                      </>
-                    )}
-                    {m.status === 'none' && <p className="text-[10px]" style={{ color: '#94A3B8' }}>—</p>}
-                  </div>
-                ))}
+                {calendar.calendar.map(m => {
+                  if (m.status === 'none') {
+                    return (
+                      <div key={m.month} className="p-3 rounded-xl text-center" style={{ background: 'rgba(184,134,11,0.04)', border: '1.5px solid rgba(184,134,11,0.1)' }}>
+                        <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: '#8B7355' }}>{m.month_name?.substring(0, 3)}</p>
+                        <p className="text-[10px] mt-1" style={{ color: '#94A3B8' }}>—</p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <button key={m.month} onClick={() => { setEditMonth(m); setEditDialog(true); }}
+                      className="p-3 rounded-xl text-center cursor-pointer hover:shadow-md transition-all"
+                      style={{
+                        background: m.status === 'paid' ? '#ECFDF5' : m.status === 'late' ? '#FEF2F2' : '#FFF7ED',
+                        border: `1.5px solid ${m.status === 'paid' ? 'rgba(5,150,105,0.3)' : m.status === 'late' ? 'rgba(220,38,38,0.3)' : 'rgba(217,119,6,0.3)'}`,
+                      }} data-testid={`calendar-month-${m.month}`}>
+                      <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: '#8B7355' }}>{m.month_name?.substring(0, 3)}</p>
+                      {m.status === 'paid' && (
+                        <>
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto my-1" />
+                          <p className="text-xs font-bold" style={{ color: '#059669' }}>&euro;{m.amount?.toFixed(0)}</p>
+                          {m.payment_method && <p className="text-[8px]" style={{ color: '#8B7355' }}>{m.payment_method}</p>}
+                        </>
+                      )}
+                      {m.status === 'late' && (
+                        <><div className="w-2 h-2 rounded-full bg-red-500 mx-auto my-1" /><p className="text-[10px] font-semibold" style={{ color: '#DC2626' }}>In Ritardo</p></>
+                      )}
+                      {m.status === 'not_paid' && (
+                        <><div className="w-2 h-2 rounded-full bg-amber-500 mx-auto my-1" /><p className="text-[10px] font-semibold" style={{ color: '#D97706' }}>Non Pagato</p></>
+                      )}
+                      {m.manual_override && <p className="text-[7px] mt-0.5" style={{ color: '#9F1239' }}>manuale</p>}
+                    </button>
+                  );
+                })}
               </div>
             ) : <p className="text-sm" style={{ color: '#8B7355' }}>Caricamento calendario...</p>}
+            <p className="text-xs mt-3" style={{ color: '#8B7355' }}>Clicca su un mese per cambiare lo stato di pagamento</p>
           </div>
+
+          {/* Edit Month Status Dialog */}
+          {editDialog && editMonth && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(44,24,16,0.5)' }} onClick={() => setEditDialog(false)}>
+              <div className="p-6 rounded-2xl max-w-sm w-full mx-4" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.2)', boxShadow: '0 25px 50px rgba(159,18,57,0.2)' }}
+                onClick={e => e.stopPropagation()}>
+                <h4 className="font-semibold text-lg mb-4" style={{ color: '#9F1239' }}>
+                  {editMonth.month_name} {editMonth.year}
+                </h4>
+                <p className="text-xs mb-4" style={{ color: '#8B7355' }}>
+                  Stato attuale: <strong>{editMonth.status === 'paid' ? 'Pagato' : editMonth.status === 'late' ? 'In Ritardo' : 'Non Pagato'}</strong>
+                  {editMonth.manual_override && ' (manuale)'}
+                </p>
+                <div className="space-y-2 mb-4">
+                  {[
+                    { status: 'paid', label: 'Pagato', color: '#059669', bg: '#ECFDF5' },
+                    { status: 'not_paid', label: 'Non Pagato', color: '#D97706', bg: '#FFF7ED' },
+                    { status: 'late', label: 'In Ritardo', color: '#DC2626', bg: '#FEF2F2' },
+                  ].map(opt => (
+                    <button key={opt.status} onClick={async () => {
+                      try {
+                        const body = { status: opt.status };
+                        if (opt.status === 'paid') {
+                          const method = window.prompt('Metodo di pagamento? (contanti / bonifico)', 'contanti');
+                          const amount = window.prompt('Importo?', '500');
+                          body.amount = parseFloat(amount) || 0;
+                          body.payment_method = method || 'contanti';
+                          body.payment_date = new Date().toISOString().slice(0, 10);
+                        }
+                        await axios.put(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}`, body, { withCredentials: true });
+                        toast.success(`${editMonth.month_name} → ${opt.label}`);
+                        setEditDialog(false);
+                        fetchCalendar();
+                        fetchTenant();
+                      } catch { toast.error('Errore'); }
+                    }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:shadow-md transition-all"
+                      style={{ background: opt.bg, border: `1.5px solid ${opt.color}30` }}
+                      data-testid={`set-month-${opt.status}`}>
+                      <div className="w-3 h-3 rounded-full" style={{ background: opt.color }} />
+                      <span className="font-semibold text-sm" style={{ color: opt.color }}>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {editMonth.manual_override && (
+                  <button onClick={async () => {
+                    try {
+                      await axios.delete(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}`, { withCredentials: true });
+                      toast.success('Override rimosso');
+                      setEditDialog(false);
+                      fetchCalendar();
+                      fetchTenant();
+                    } catch { toast.error('Errore'); }
+                  }} className="w-full text-center text-xs py-2 rounded-xl hover:bg-rose-50 transition-all" style={{ color: '#9F1239', border: '1px solid rgba(159,18,57,0.2)' }}>
+                    Rimuovi override manuale
+                  </button>
+                )}
+                <button onClick={() => setEditDialog(false)} className="w-full text-center text-xs py-2 mt-2" style={{ color: '#8B7355' }}>
+                  Chiudi
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Property & Room */}
           {tenant.property_info && (

@@ -105,14 +105,35 @@ const Tenants = () => {
 
   const availableRooms = rooms.filter(r => r.property_id === formData.property_id && (r.status === 'available' || r.id === formData.room_id));
 
-  // Status badge component
+  // Quick status change handler
+  const handleQuickStatus = async (tenant, newStatus) => {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    try {
+      const body = { status: newStatus };
+      if (newStatus === 'paid') {
+        const method = window.prompt('Metodo di pagamento? (contanti / bonifico)', 'contanti');
+        const amount = window.prompt('Importo?', '500');
+        body.amount = parseFloat(amount) || 0;
+        body.payment_method = method || 'contanti';
+        body.payment_date = now.toISOString().slice(0, 10);
+      }
+      await axios.put(`${API_URL}/payment-calendar/${tenant.id}/${year}/${month}`, body, { withCredentials: true });
+      toast.success(`${tenant.full_name} → ${newStatus === 'paid' ? 'Pagato' : newStatus === 'late' ? 'In Ritardo' : 'Non Pagato'}`);
+      fetchAll();
+    } catch { toast.error('Errore'); }
+  };
+
+  // Status badge component - clickable for quick change
   const StatusBadge = ({ tenant }) => {
+    const nextStatus = tenant.payment_status === 'paid' ? 'not_paid' : 'paid';
     if (tenant.payment_status === 'paid') {
       return (
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: '#ECFDF5', color: '#059669' }}>
+          <button onClick={() => handleQuickStatus(tenant, 'not_paid')} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:shadow-md transition-all" style={{ background: '#ECFDF5', color: '#059669' }} title="Clicca per cambiare stato" data-testid={`status-btn-${tenant.id}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Pagato
-          </span>
+          </button>
           <span className="text-xs font-bold" style={{ color: '#059669' }}>&euro;{tenant.month_paid_amount?.toFixed(0)}</span>
           {tenant.month_payment_method && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>{tenant.month_payment_method}</span>}
         </div>
@@ -120,16 +141,16 @@ const Tenants = () => {
     }
     if (tenant.payment_status === 'late') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: '#FEF2F2', color: '#DC2626' }}>
+        <button onClick={() => handleQuickStatus(tenant, 'paid')} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:shadow-md transition-all" style={{ background: '#FEF2F2', color: '#DC2626' }} title="Clicca per segnare pagato" data-testid={`status-btn-${tenant.id}`}>
           <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> In Ritardo
-        </span>
+        </button>
       );
     }
     if (tenant.room_id) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: '#FFF7ED', color: '#D97706' }}>
+        <button onClick={() => handleQuickStatus(tenant, 'paid')} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:shadow-md transition-all" style={{ background: '#FFF7ED', color: '#D97706' }} title="Clicca per segnare pagato" data-testid={`status-btn-${tenant.id}`}>
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Non Pagato
-        </span>
+        </button>
       );
     }
     return <span className="text-xs" style={{ color: '#94A3B8' }}>-</span>;

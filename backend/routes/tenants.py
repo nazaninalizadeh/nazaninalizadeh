@@ -26,29 +26,44 @@ async def _enrich_tenant(t: dict) -> dict:
     start, end = _current_month_range()
     now = datetime.now(timezone.utc)
     today = int(now.strftime("%d"))
-
-    current_payments = await db.payments.find(
-        {"tenant_id": t["id"], "payment_date": {"$gte": start, "$lt": end}}
-    , {"_id": 0}).to_list(10)
+    current_month = now.month
+    current_year = now.year
 
     due_day = t.get("payment_due_day", 5)
 
-    if current_payments:
-        total_paid_month = sum(p.get("amount", 0) for p in current_payments)
-        methods = list(set(p.get("payment_method", "") for p in current_payments))
+    # 1. Check manual override first
+    override = await db.monthly_status.find_one(
+        {"tenant_id": t["id"], "month": current_month, "year": current_year},
+        {"_id": 0}
+    )
+    if override:
         method_map = {"contanti": "Contanti", "cash": "Contanti", "bonifico": "Bonifico", "bank_transfer": "Bonifico", "carta": "Carta"}
-        raw = methods[0] if len(methods) == 1 else ", ".join(methods)
-        t["payment_status"] = "paid"
-        t["month_paid_amount"] = total_paid_month
+        raw = override.get("payment_method", "")
+        t["payment_status"] = override["status"]
+        t["month_paid_amount"] = override.get("amount", 0)
         t["month_payment_method"] = method_map.get(raw, raw.capitalize() if raw else "")
     else:
-        # Check if past due date -> late
-        if today > due_day and t.get("room_id"):
-            t["payment_status"] = "late"
+        # 2. Check actual payments
+        current_payments = await db.payments.find(
+            {"tenant_id": t["id"], "payment_date": {"$gte": start, "$lt": end}}
+        , {"_id": 0}).to_list(10)
+
+        if current_payments:
+            total_paid_month = sum(p.get("amount", 0) for p in current_payments)
+            methods = list(set(p.get("payment_method", "") for p in current_payments))
+            method_map = {"contanti": "Contanti", "cash": "Contanti", "bonifico": "Bonifico", "bank_transfer": "Bonifico", "carta": "Carta"}
+            raw = methods[0] if len(methods) == 1 else ", ".join(methods)
+            t["payment_status"] = "paid"
+            t["month_paid_amount"] = total_paid_month
+            t["month_payment_method"] = method_map.get(raw, raw.capitalize() if raw else "")
         else:
-            t["payment_status"] = "not_paid"
-        t["month_paid_amount"] = 0
-        t["month_payment_method"] = ""
+            # 3. Auto-determine based on due day
+            if today > due_day and t.get("room_id"):
+                t["payment_status"] = "late"
+            else:
+                t["payment_status"] = "not_paid"
+            t["month_paid_amount"] = 0
+            t["month_payment_method"] = ""
 
     # Room info
     if t.get("room_id"):

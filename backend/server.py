@@ -58,6 +58,7 @@ async def startup_event():
     await db.payments.create_index("tenant_id")
     await db.documents.create_index("owner_id")
     await db.ocr_scans.create_index("id")
+    await db.monthly_status.create_index([("tenant_id", 1), ("month", 1), ("year", 1)], unique=True)
     await seed_admins()
 
 # ============ Include All Routers ============
