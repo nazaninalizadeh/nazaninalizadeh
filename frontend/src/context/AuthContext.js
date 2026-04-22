@@ -51,8 +51,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const inactivityTimerRef = useRef(null);
 
-  const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
-  const INACTIVITY_WARNING_MS = 7.5 * 60 * 60 * 1000; // 7.5 hours
+  const SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours
+  const INACTIVITY_WARNING_MS = 23 * 60 * 60 * 1000; // 23 hours
 
   const handleSessionExpired = useCallback(() => {
     setUser(false);

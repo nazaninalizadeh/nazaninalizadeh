@@ -50,9 +50,9 @@ MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_DURATION = timedelta(minutes=15)
 OTP_EXPIRY = timedelta(minutes=5)
 MAX_OTP_ATTEMPTS = 3
-SESSION_TIMEOUT = timedelta(hours=8)
-ACCESS_TOKEN_EXPIRY = timedelta(minutes=30)
-REFRESH_TOKEN_EXPIRY = timedelta(days=7)
+SESSION_TIMEOUT = timedelta(hours=24)
+ACCESS_TOKEN_EXPIRY = timedelta(hours=8)
+REFRESH_TOKEN_EXPIRY = timedelta(days=30)
 
 # In-memory rate limiter (per IP)
 _rate_store = defaultdict(list)
