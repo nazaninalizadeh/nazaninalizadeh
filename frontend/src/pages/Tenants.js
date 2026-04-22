@@ -28,7 +28,7 @@ const Tenants = () => {
     full_name: '', codice_fiscale: '', passport_number: '', nationality: '',
     date_of_birth: '', passport_issue_date: '', passport_expiry_date: '',
     id_type: '', id_number: '', phone: '', email: '', whatsapp: '',
-    occupation: '', notes: '', deposit_amount: 0, property_id: '', room_id: '',
+    notes: '', deposit_amount: 0, property_id: '', room_id: '',
     payment_due_day: 5,
   });
 
@@ -51,7 +51,7 @@ const Tenants = () => {
   };
 
   const resetForm = () => {
-    setFormData({ full_name: '', codice_fiscale: '', passport_number: '', nationality: '', date_of_birth: '', passport_issue_date: '', passport_expiry_date: '', id_type: '', id_number: '', phone: '', email: '', whatsapp: '', occupation: '', notes: '', deposit_amount: 0, property_id: '', room_id: '', payment_due_day: 5 });
+    setFormData({ full_name: '', codice_fiscale: '', passport_number: '', nationality: '', date_of_birth: '', passport_issue_date: '', passport_expiry_date: '', id_type: '', id_number: '', phone: '', email: '', whatsapp: '', notes: '', deposit_amount: 0, property_id: '', room_id: '', payment_due_day: 5 });
     setEditingTenant(null);
   };
 
@@ -63,7 +63,7 @@ const Tenants = () => {
       date_of_birth: tenant.date_of_birth || '', passport_issue_date: tenant.passport_issue_date || '',
       passport_expiry_date: tenant.passport_expiry_date || '', id_type: tenant.id_type || '',
       id_number: tenant.id_number || '', phone: tenant.phone || '', email: tenant.email || '',
-      whatsapp: tenant.whatsapp || '', occupation: tenant.occupation || '',
+      whatsapp: tenant.whatsapp || '',
       notes: tenant.notes || '', deposit_amount: tenant.deposit_amount || 0,
       property_id: tenant.property_id || '', room_id: tenant.room_id || '',
       payment_due_day: tenant.payment_due_day || 5,
@@ -168,7 +168,6 @@ const Tenants = () => {
                 <div><Label>Scadenza Passaporto *</Label><Input type="date" value={formData.passport_expiry_date} onChange={e => setFormData({ ...formData, passport_expiry_date: e.target.value })} required className="luxury-input" /></div>
                 <div><Label>WhatsApp *</Label><Input value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })} required className="luxury-input" placeholder="+39 333 1234567" /></div>
                 <div><Label>Email *</Label><Input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="luxury-input" data-testid="tenant-email-input" /></div>
-                <div><Label>Professione *</Label><Input value={formData.occupation} onChange={e => setFormData({ ...formData, occupation: e.target.value })} required className="luxury-input" /></div>
                 <div><Label>Deposito (Garanzia)</Label><Input type="number" step="0.01" value={formData.deposit_amount} onChange={e => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
                 <div><Label>Giorno Scadenza Pagamento</Label><Input type="number" min="1" max="28" value={formData.payment_due_day} onChange={e => setFormData({ ...formData, payment_due_day: parseInt(e.target.value) || 5 })} className="luxury-input" /></div>
               </div>

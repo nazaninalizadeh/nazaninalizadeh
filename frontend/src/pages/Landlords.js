@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, ScanLine, Upload } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
@@ -21,6 +21,46 @@ const Landlords = () => {
     full_name: '', codice_fiscale: '', phone: '', email: '', whatsapp: '',
     id_type: '', id_number: '', bank_details: '', notes: ''
   });
+  const ocrRef = useRef(null);
+  const ownerDocRef = useRef(null);
+
+  const handleOwnerOcr = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      toast.info('Scansione documento proprietario...');
+      const { data } = await axios.post(`${API_URL}/ocr/scan`, fd, { withCredentials: true });
+      if (data.status === 'completed' && data.extracted_data) {
+        const d = data.extracted_data;
+        setFormData(prev => ({
+          ...prev,
+          full_name: d.full_name || prev.full_name,
+          codice_fiscale: d.codice_fiscale || prev.codice_fiscale,
+          id_number: d.passport_number || prev.id_number,
+          id_type: d.document_type === 'passport' ? 'Passaporto' : d.document_type === 'id_card' ? "Carta d'identita" : prev.id_type,
+        }));
+        toast.success('Dati estratti dal documento!');
+      } else {
+        toast.error(data.error || 'Scansione fallita');
+      }
+    } catch { toast.error('Errore OCR'); }
+    if (ocrRef.current) ocrRef.current.value = '';
+  };
+
+  const handleOwnerDocUpload = async (e, landlordId) => {
+    const file = e.target.files[0];
+    if (!file || !landlordId) return;
+    const fd = new FormData();
+    fd.append('owner_id', landlordId);
+    fd.append('file', file);
+    try {
+      await axios.post(`${API_URL}/owner-documents/upload`, fd, { withCredentials: true });
+      toast.success('Documento proprietario caricato');
+    } catch { toast.error('Errore upload'); }
+    if (ownerDocRef.current) ownerDocRef.current.value = '';
+  };
 
   useEffect(() => { fetchLandlords(); }, []);
 
@@ -89,6 +129,16 @@ const Landlords = () => {
           <DialogContent className="max-w-2xl luxury-modal">
             <DialogHeader><DialogTitle>{editingLandlord ? 'Modifica' : 'Nuovo'} Proprietario</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* OCR for owner */}
+              <div className="pb-3 mb-2" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
+                <label data-testid="owner-ocr-button">
+                  <input type="file" ref={ocrRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleOwnerOcr} />
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer hover:shadow-md" style={{ background: '#9F1239', color: 'white' }}>
+                    <ScanLine size={16} /> Scansiona Documento (OCR)
+                  </span>
+                </label>
+                <p className="text-xs mt-2" style={{ color: '#8B7355' }}>Scansiona documento del proprietario per compilare automaticamente</p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Nome Completo *</Label><Input value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} required className="luxury-input" /></div>
                 <div><Label>Codice Fiscale</Label><Input value={formData.codice_fiscale} onChange={e => setFormData({ ...formData, codice_fiscale: e.target.value })} className="luxury-input" /></div>
@@ -149,6 +199,10 @@ const Landlords = () => {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Link to={`/landlords/${ll.id}`}><Button variant="ghost" size="sm" className="rounded-lg hover:bg-rose-50"><Eye size={16} style={{ color: '#9F1239' }} /></Button></Link>
+                      <label className="cursor-pointer">
+                        <input type="file" className="hidden" onChange={e => handleOwnerDocUpload(e, ll.id)} accept=".pdf,.jpg,.jpeg,.png" />
+                        <span className="inline-flex items-center justify-center rounded-lg h-8 w-8 hover:bg-emerald-50 transition-colors"><Upload size={16} style={{ color: '#059669' }} /></span>
+                      </label>
                       <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={() => openEditDialog(ll)}><Edit size={16} style={{ color: '#B8860B' }} /></Button>
                       <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={() => handleDelete(ll.id)}><Trash2 size={16} className="text-red-500" /></Button>
                     </div>

@@ -1,0 +1,55 @@
+{
+  "summary": "Iteration 9 - Verified all 14 features from review request. Backend (pytest test_iteration9.py): 10 passed / 1 skipped / 0 failed. Frontend (Playwright): all flows green. Key verifications: (1) Login with reCAPTCHA test bypass OK. (2) Dashboard Riepilogo: Inquilini Pagato/Non Pagato/In Ritardo render as <a href=\"/tenants?status=paid|not_paid|late\"> links. (3) GET /api/payment-calendar/{tenant_id} returns {tenant_id, year, calendar:[12 items]} with month 1..12, month_name (Gennaio..Dicembre), status in {paid,not_paid,late,none}, amount, payment_methods[]; returns 404 for invalid id; honors ?year=2025. (4) TenantDetail page renders 12 [data-testid='calendar-month-{n}'] cells under heading 'Calendario Pagamenti {year}'. (5) Tenant form - no 'Professione'/'Occupation' label in the 15 form labels; TenantCreate schema has no occupation field; POST /api/tenants succeeds without it. (6) Tenant list headers = ['Nome','Immobile','Stanza','Deposito','Stato Mese','Azioni'] - no Professione column. (7) Rooms 'Aggiungi Stanza' dialog has property search input (placeholder 'Cerca per nome/indirizzo...'). (8) Rooms 'Assegna Inquilino' dialog has tenant search (placeholder 'Cerca per nome...'). (9) Landlords new form shows 'Scansiona Documento (OCR)' button. (10) Landlords table exposes 5 <input type=file> + 5 lucide-upload icons (one per landlord row). (11) Modal background = rgb(255,251,245) = #FFFBF5 (cream/warm) on property dialog. (12) POST /api/properties without property_code auto-generates code matching ^IMM-[A-Z0-9]{4,}$. Property dialog has NO manual property_code input. (13) POST /api/owner-documents/upload (owner_id, doc_type, file) returns 200 with /uploads/documents/... url and persists in db.documents. (14) Frontend compiles, no console errors captured during the flow. JUnit XML: /app/test_reports/pytest/iteration_9.xml.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/tenants", "issue": "Legacy tenant documents in MongoDB still carry an 'occupation' field (removed from TenantCreate schema but not scrubbed from existing docs). API returns raw docs so the field leaks through. Either run a one-time $unset migration (db.tenants.update_many({}, {$unset: {occupation: ''}})) or project it out in the route."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Rooms page", "issues": ["Edit pencil buttons on room rows still lack data-testid='edit-room-{id}' (carried from iter 8)."]},
+      {"screen": "Sidebar + page titles", "issues": ["'Ospitalita' and 'Nazionalita' still missing Italian accent (cosmetic, carried from iter 7/8)."]},
+      {"screen": "Property 'Nuovo Immobile' dialog", "issues": ["Dialog labels/inputs briefly overlap during the Radix open animation (visible on first frame). Final rendered state is correct - purely a transition artefact; consider disabling slide/fade animation on the DialogContent or giving it a fixed min-height."]},
+      {"screen": "Tenants.js useEffect", "issues": ["useEffect(() => {...}, []) reads searchParams.get('status') but has an empty dependency array, so switching filter via in-app navigation (e.g. Dashboard link click while already on /tenants) keeps the stale tab active until a full refresh (carried from iter 8)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration9.py",
+    "/app/test_reports/pytest/iteration_9.xml"
+  ],
+  "action_items": [
+    "(Low) Scrub the legacy 'occupation' field from existing db.tenants documents OR project it out in routes/tenants.py get endpoints so the schema removal is also reflected in API responses.",
+    "(Low) Add data-testid='edit-room-{id}' to room edit buttons in Rooms.js.",
+    "(Low) Fix Tenants.js useEffect dep array to include searchParams (reproduce: from /tenants?status=paid click Dashboard 'In Ritardo' link - tab stays on Pagato until hard refresh).",
+    "(Cosmetic) Add accents: 'Ospitalità', 'Nazionalità', 'Capacità', 'attività' across Layout and page titles.",
+    "(Cosmetic) Property modal shows a brief overlap frame during open animation; set min-height on DialogContent or disable the slide-in."
+  ],
+  "critical_code_review_comments": [
+    "routes/payment_calendar.py uses string comparison for dates (payment_date: {$gte: 'YYYY-MM-01'}) which is correct only if payment_date is stored as ISO yyyy-mm-dd. If any payment record uses datetime/ObjectId the comparison silently returns no rows. Add a schema check or cast to datetime before comparing.",
+    "routes/payment_calendar.py: month_names[] is rebuilt inside the 1..12 loop - lift to module scope.",
+    "routes/payment_calendar.py: when a tenant has created_at only (no assignment history), months before creation are marked 'none' but months after creation but before tenant had a room are still marked 'late'. Consider also reading room assignment history / contract start_date.",
+    "routes/properties.py generate_property_code retries only 10 times; on exhaustion property_code is left empty (truthy check). Prefer raising 500 or suffixing uuid slice on collision.",
+    "routes/tenants.py still returns full documents including legacy 'occupation' key - add projection {occupation: 0} or migrate data.",
+    "frontend Landlords.js: owner upload trigger is a <span> wrapped around a hidden <input type=file>. Functional but not semantic; wrap in <label> or <button> for accessibility and easier data-testid targeting."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration9.py (new)",
+    "/app/test_reports/pytest/iteration_9.xml (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 passed, 1 intentionally skipped for legacy-data probe)",
+    "frontend": "100% of the 14 requested checks"
+  },
+  "test_credentials": {
+    "admin": {"email": "alborz.sbd@gmail.com", "password": "1234@Admin"},
+    "captcha_bypass": "test_token_bypass_recaptcha"
+  },
+  "seed_data_creation": "Created one OCR PNG (ocr_iter9.png) + one owner doc upload (owner_iter9.png) under /app/backend/uploads/documents/. Safe to leave. Test tenant/property creations are deleted in the same test (cleanup). No orphan data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: python -m pytest /app/backend/tests/test_iteration9.py -v --junitxml=/app/test_reports/pytest/iteration_9.xml . Login captcha bypass: inject window.grecaptcha stub returning 'test_token_bypass_recaptcha' before clicking submit. After login the app redirects to '/' (not '/dashboard') - do not wait_for_url('**/dashboard**'). All 14 bullets in features_or_bugs_to_test are green. One unresolved low-priority leak: legacy db.tenants docs still contain 'occupation' field that the API returns raw. Frontend already doesn't render it, but a data migration would make it squeaky clean. Re-verify the Hospitality 'auto-fill owner from Proprietari' - it was in the original_problem_statement but NOT in features_or_bugs_to_test; Hospitality.js host_* fields are still manual inputs with no visible landlord select/autofill hook (checked via grep). If main agent intends this feature, it is not yet implemented.",
+  "rca_of_the_issue": "No regression or blocker found. Backend 10/10, frontend 14/14 features work as requested. Notable non-blocker: (a) legacy 'occupation' field still present on old tenant documents - schema-level removal is correct, data-level cleanup pending; (b) Hospitality auto-fill owner from Proprietari (mentioned in original statement but not in feature checklist) is NOT implemented in Hospitality.js - no call to /api/landlords and no auto-fill effect on host_* fields."
+}

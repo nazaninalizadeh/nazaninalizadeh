@@ -29,9 +29,11 @@ const Rooms = () => {
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [assignTenantId, setAssignTenantId] = useState('');
+  const [assignSearch, setAssignSearch] = useState('');
   const [roomForm, setRoomForm] = useState({
     property_id: '', room_number: '', room_type: 'single', floor: '', monthly_rent: 0, description: '', bill_responsible: ''
   });
+  const [roomPropertySearch, setRoomPropertySearch] = useState('');
   const [editRoomForm, setEditRoomForm] = useState({
     property_id: '', room_number: '', room_type: 'single', floor: '', monthly_rent: 0, description: '', bill_responsible: ''
   });
@@ -155,15 +157,21 @@ const Rooms = () => {
           <DialogTrigger asChild>
             <Button className="btn-luxury" data-testid="add-room-button"><Plus size={18} className="mr-2" /> Aggiungi Stanza</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg luxury-modal">
+          <DialogContent className="max-w-lg luxury-modal" style={{ background: '#FFFBF5' }}>
             <DialogHeader><DialogTitle>Nuova Stanza</DialogTitle></DialogHeader>
             <form onSubmit={handleAddRoom} className="space-y-4">
               <div>
-                <Label>Immobile *</Label>
-                <Select value={roomForm.property_id} onValueChange={v => setRoomForm({ ...roomForm, property_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Seleziona immobile" /></SelectTrigger>
-                  <SelectContent>{properties.map(p => <SelectItem key={p.id} value={p.id}>{p.property_code} - {p.address}</SelectItem>)}</SelectContent>
-                </Select>
+                <Label>Cerca Immobile *</Label>
+                <Input placeholder="Cerca per nome/indirizzo..." value={roomPropertySearch} onChange={e => setRoomPropertySearch(e.target.value)} className="luxury-input mb-2" />
+                <div className="max-h-36 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(184,134,11,0.15)' }}>
+                  {properties.filter(p => !roomPropertySearch || p.address?.toLowerCase().includes(roomPropertySearch.toLowerCase()) || p.property_code?.toLowerCase().includes(roomPropertySearch.toLowerCase())).map(p => (
+                    <button type="button" key={p.id} onClick={() => setRoomForm({ ...roomForm, property_id: p.id })}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${roomForm.property_id === p.id ? 'font-bold' : ''}`}
+                      style={{ background: roomForm.property_id === p.id ? 'rgba(159,18,57,0.08)' : 'transparent', color: roomForm.property_id === p.id ? '#9F1239' : '#4A3B31' }}>
+                      <span className="font-medium">{p.address}</span> <span className="text-xs" style={{ color: '#8B7355' }}>({p.property_code})</span>
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>N. Stanza *</Label><Input value={roomForm.room_number} onChange={e => setRoomForm({ ...roomForm, room_number: e.target.value })} required className="luxury-input" /></div>
@@ -253,18 +261,30 @@ const Rooms = () => {
         </div>
       </div>
 
-      {/* Assign Dialog */}
+      {/* Assign Dialog - with search */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-        <DialogContent className="luxury-modal">
+        <DialogContent className="luxury-modal" style={{ background: '#FFFBF5' }}>
           <DialogHeader><DialogTitle>Assegna Inquilino a Stanza {selectedRoom?.room_number}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <Select value={assignTenantId} onValueChange={setAssignTenantId}>
-              <SelectTrigger><SelectValue placeholder="Seleziona inquilino" /></SelectTrigger>
-              <SelectContent>{tenants.filter(t => !t.room_id).map(t => <SelectItem key={t.id} value={t.id}>{t.full_name}</SelectItem>)}</SelectContent>
-            </Select>
+            <div>
+              <Label className="text-xs mb-1 block">Cerca Inquilino</Label>
+              <Input placeholder="Cerca per nome..." value={assignSearch} onChange={e => setAssignSearch(e.target.value)} className="luxury-input mb-2" autoFocus />
+            </div>
+            <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(184,134,11,0.15)' }}>
+              {tenants.filter(t => !t.room_id).filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).map(t => (
+                <button key={t.id} onClick={() => setAssignTenantId(t.id)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${assignTenantId === t.id ? 'font-bold' : ''}`}
+                  style={{ background: assignTenantId === t.id ? 'rgba(159,18,57,0.08)' : 'transparent', color: assignTenantId === t.id ? '#9F1239' : '#4A3B31' }}>
+                  {t.full_name} {t.nationality ? `(${t.nationality})` : ''}
+                </button>
+              ))}
+              {tenants.filter(t => !t.room_id).filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).length === 0 && (
+                <p className="text-center text-xs py-4" style={{ color: '#8B7355' }}>Nessun inquilino disponibile</p>
+              )}
+            </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setAssignOpen(false)} className="rounded-xl">Annulla</Button>
-              <Button onClick={handleAssign} className="btn-luxury">Assegna</Button>
+              <Button onClick={handleAssign} className="btn-luxury" disabled={!assignTenantId}>Assegna</Button>
             </div>
           </div>
         </DialogContent>

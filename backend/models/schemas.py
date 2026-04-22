@@ -23,7 +23,6 @@ class TenantCreate(BaseModel):
     phone: Optional[str] = ""
     email: EmailStr
     whatsapp: str
-    occupation: str
     notes: Optional[str] = ""
     deposit_amount: float = 0.0
     property_id: Optional[str] = ""

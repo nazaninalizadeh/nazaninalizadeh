@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, FileText, CreditCard, Upload, Trash2, Download, ScrollText } from 'lucide-react';
+import { ArrowLeft, FileText, CreditCard, Upload, Trash2, Download, ScrollText, Calendar } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -14,8 +14,9 @@ const TenantDetail = () => {
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [calendar, setCalendar] = useState(null);
 
-  useEffect(() => { fetchTenant(); }, [id]);
+  useEffect(() => { fetchTenant(); fetchCalendar(); }, [id]);
 
   const fetchTenant = async () => {
     try {
@@ -23,6 +24,13 @@ const TenantDetail = () => {
       setTenant(data);
     } catch { toast.error('Errore nel caricamento'); }
     setLoading(false);
+  };
+
+  const fetchCalendar = async () => {
+    try {
+      const { data } = await axios.get(`${API_URL}/payment-calendar/${id}`, { withCredentials: true });
+      setCalendar(data);
+    } catch {}
   };
 
   const handleUpload = async (e, docType) => {
@@ -82,8 +90,6 @@ const TenantDetail = () => {
                 ['Telefono', tenant.phone],
                 ['Email', tenant.email],
                 ['WhatsApp', tenant.whatsapp],
-                ['Professione', tenant.occupation],
-                ['Indirizzo', tenant.address],
               ].map(([label, value]) => value ? (
                 <div key={label} className="py-2" style={{ borderBottom: '1px solid rgba(184,134,11,0.08)' }}>
                   <p className="text-xs uppercase tracking-wide mb-1" style={{ color: '#8B7355' }}>{label}</p>
@@ -132,6 +138,44 @@ const TenantDetail = () => {
             <p className="text-xs mt-2" style={{ color: '#8B7355' }}>
               Genera la dichiarazione di ospitalita per questo inquilino con tutti i dati necessari.
             </p>
+          </div>
+
+          {/* Monthly Payment Calendar */}
+          <div className="luxury-card p-7">
+            <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
+              <Calendar size={20} /> Calendario Pagamenti {calendar?.year}
+            </h3>
+            {calendar?.calendar ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                {calendar.calendar.map(m => (
+                  <div key={m.month} className="p-3 rounded-xl text-center" style={{
+                    background: m.status === 'paid' ? '#ECFDF5' : m.status === 'late' ? '#FEF2F2' : m.status === 'not_paid' ? '#FFF7ED' : 'rgba(184,134,11,0.04)',
+                    border: `1.5px solid ${m.status === 'paid' ? 'rgba(5,150,105,0.3)' : m.status === 'late' ? 'rgba(220,38,38,0.3)' : m.status === 'not_paid' ? 'rgba(217,119,6,0.3)' : 'rgba(184,134,11,0.1)'}`,
+                  }} data-testid={`calendar-month-${m.month}`}>
+                    <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: '#8B7355' }}>{m.month_name?.substring(0, 3)}</p>
+                    {m.status === 'paid' && (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto my-1" />
+                        <p className="text-xs font-bold" style={{ color: '#059669' }}>&euro;{m.amount?.toFixed(0)}</p>
+                      </>
+                    )}
+                    {m.status === 'late' && (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-red-500 mx-auto my-1" />
+                        <p className="text-[10px] font-semibold" style={{ color: '#DC2626' }}>In Ritardo</p>
+                      </>
+                    )}
+                    {m.status === 'not_paid' && (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-amber-500 mx-auto my-1" />
+                        <p className="text-[10px] font-semibold" style={{ color: '#D97706' }}>Non Pagato</p>
+                      </>
+                    )}
+                    {m.status === 'none' && <p className="text-[10px]" style={{ color: '#94A3B8' }}>—</p>}
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-sm" style={{ color: '#8B7355' }}>Caricamento calendario...</p>}
           </div>
 
           {/* Property & Room */}

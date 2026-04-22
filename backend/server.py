@@ -34,6 +34,7 @@ from routes.hospitality import router as hospitality_router
 from routes.data_exchange import router as data_exchange_router
 from routes.ricevuta import router as ricevuta_router
 from routes.registration import router as registration_router
+from routes.payment_calendar import router as payment_calendar_router
 
 app = FastAPI(title="PropertyOps API", version="2.0.0")
 
@@ -77,6 +78,7 @@ app.include_router(hospitality_router)
 app.include_router(data_exchange_router)
 app.include_router(ricevuta_router)
 app.include_router(registration_router)
+app.include_router(payment_calendar_router)
 
 # ============ CORS ============
 frontend_url = os.environ.get('CORS_ORIGINS', 'http://localhost:3000')
