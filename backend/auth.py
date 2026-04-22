@@ -284,11 +284,7 @@ async def login_direct(body: LoginStep1Request, req: Request, response: Response
 
     user_id = str(user["_id"])
 
-    await db.sessions.update_many(
-        {"admin_id": user_id, "is_active": True},
-        {"$set": {"is_active": False, "expired_reason": "new_device_login"}},
-    )
-
+    # Allow multiple sessions for the same admin (no single-device enforcement)
     session_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
     await db.sessions.insert_one({
@@ -305,8 +301,8 @@ async def login_direct(body: LoginStep1Request, req: Request, response: Response
     access_token = create_access_token(user_id, email, session_id)
     refresh_token = create_refresh_token(user_id, session_id)
 
-    response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=1800, path="/")
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=False, samesite="lax", max_age=604800, path="/")
+    response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=28800, path="/")
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=False, samesite="lax", max_age=2592000, path="/")
 
     await clear_failed_attempts(bf_key)
     await log_activity(email, "login_success", ip, ua, f"session={session_id}")
@@ -419,13 +415,7 @@ async def verify_otp_endpoint(body: VerifyOTPRequest, req: Request, response: Re
 
     user_id = str(user["_id"])
 
-    # Invalidate ALL existing sessions for this admin (single-device enforcement)
-    await db.sessions.update_many(
-        {"admin_id": user_id, "is_active": True},
-        {"$set": {"is_active": False, "expired_reason": "new_device_login"}},
-    )
-
-    # Create new session
+    # Allow multiple sessions (no single-device enforcement)
     session_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
     await db.sessions.insert_one({
@@ -443,8 +433,8 @@ async def verify_otp_endpoint(body: VerifyOTPRequest, req: Request, response: Re
     access_token = create_access_token(user_id, email, session_id)
     refresh_token = create_refresh_token(user_id, session_id)
 
-    response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=1800, path="/")
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=False, samesite="lax", max_age=604800, path="/")
+    response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=28800, path="/")
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=False, samesite="lax", max_age=2592000, path="/")
 
     # Clear brute force record
     await clear_failed_attempts(f"{ip}:{email}")
@@ -509,7 +499,7 @@ async def refresh_token(req: Request, response: Response):
             raise HTTPException(status_code=401, detail="Utente non trovato.")
 
         new_access = create_access_token(str(user["_id"]), user["email"], sid)
-        response.set_cookie(key="access_token", value=new_access, httponly=True, secure=False, samesite="lax", max_age=1800, path="/")
+        response.set_cookie(key="access_token", value=new_access, httponly=True, secure=False, samesite="lax", max_age=28800, path="/")
         return {"message": "Token aggiornato."}
 
     except jwt.ExpiredSignatureError:
