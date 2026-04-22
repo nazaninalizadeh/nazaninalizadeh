@@ -1,4 +1,4 @@
-"""Tenant Routes - Simplified payment logic."""
+"""Tenant Routes - 3 payment statuses: paid / not_paid / late."""
 
 from fastapi import APIRouter, HTTPException, Depends
 import uuid
@@ -12,7 +12,6 @@ router = APIRouter(prefix="/api", tags=["Tenants"])
 
 
 def _current_month_range():
-    """Return (start, end) date strings for the current month."""
     now = datetime.now(timezone.utc)
     start = now.strftime("%Y-%m-01")
     if now.month == 12:
@@ -23,21 +22,31 @@ def _current_month_range():
 
 
 async def _enrich_tenant(t: dict) -> dict:
-    """Add current month payment status and property/room info to a tenant dict."""
-    # Current month payment status
+    """Add payment status (paid/not_paid/late), property/room info."""
     start, end = _current_month_range()
+    now = datetime.now(timezone.utc)
+    today = int(now.strftime("%d"))
+
     current_payments = await db.payments.find(
         {"tenant_id": t["id"], "payment_date": {"$gte": start, "$lt": end}}
     , {"_id": 0}).to_list(10)
 
+    due_day = t.get("payment_due_day", 5)
+
     if current_payments:
         total_paid_month = sum(p.get("amount", 0) for p in current_payments)
         methods = list(set(p.get("payment_method", "") for p in current_payments))
+        method_map = {"contanti": "Contanti", "cash": "Contanti", "bonifico": "Bonifico", "bank_transfer": "Bonifico", "carta": "Carta"}
+        raw = methods[0] if len(methods) == 1 else ", ".join(methods)
         t["payment_status"] = "paid"
         t["month_paid_amount"] = total_paid_month
-        t["month_payment_method"] = methods[0] if len(methods) == 1 else ", ".join(methods)
+        t["month_payment_method"] = method_map.get(raw, raw.capitalize() if raw else "")
     else:
-        t["payment_status"] = "not_paid"
+        # Check if past due date -> late
+        if today > due_day and t.get("room_id"):
+            t["payment_status"] = "late"
+        else:
+            t["payment_status"] = "not_paid"
         t["month_paid_amount"] = 0
         t["month_payment_method"] = ""
 
@@ -70,10 +79,12 @@ async def create_tenant(tenant: TenantCreate, user: dict = Depends(get_current_u
 
 
 @router.get("/tenants")
-async def get_tenants(user: dict = Depends(get_current_user)):
+async def get_tenants(status: str = "", user: dict = Depends(get_current_user)):
     tenants = await db.tenants.find({}, {"_id": 0}).to_list(1000)
     for t in tenants:
         await _enrich_tenant(t)
+    if status and status in ("paid", "not_paid", "late"):
+        tenants = [t for t in tenants if t.get("payment_status") == status]
     return tenants
 
 
@@ -106,7 +117,6 @@ async def update_tenant(tenant_id: str, tenant_update: TenantCreate, user: dict 
     if not existing:
         raise HTTPException(status_code=404, detail="Tenant not found")
     update_dict = tenant_update.model_dump()
-    # Preserve deposit_amount - never let it decrease
     if existing.get("deposit_amount", 0) > 0 and update_dict.get("deposit_amount", 0) < existing["deposit_amount"]:
         update_dict["deposit_amount"] = existing["deposit_amount"]
     await db.tenants.update_one({"id": tenant_id}, {"$set": update_dict})

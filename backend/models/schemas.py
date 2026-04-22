@@ -1,5 +1,13 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+import random
+import string
+
+
+def generate_property_code():
+    """Generate a random unique property code like IMM-A3X7."""
+    chars = random.choices(string.ascii_uppercase + string.digits, k=4)
+    return f"IMM-{''.join(chars)}"
 
 
 class TenantCreate(BaseModel):
@@ -12,15 +20,15 @@ class TenantCreate(BaseModel):
     passport_expiry_date: str
     id_type: Optional[str] = ""
     id_number: Optional[str] = ""
-    phone: str
+    phone: Optional[str] = ""
     email: EmailStr
     whatsapp: str
-    address: str
     occupation: str
     notes: Optional[str] = ""
     deposit_amount: float = 0.0
     property_id: Optional[str] = ""
     room_id: Optional[str] = ""
+    payment_due_day: int = 5
 
 
 class LandlordCreate(BaseModel):
@@ -36,14 +44,13 @@ class LandlordCreate(BaseModel):
 
 
 class PropertyCreate(BaseModel):
-    property_code: str
+    property_code: Optional[str] = ""
     address: str
     property_type: str
     number_of_rooms: int
     capacity: int
     landlord_id: str
     rental_amount: float
-    deposit_amount: float
     additional_charges: Optional[str] = ""
 
 

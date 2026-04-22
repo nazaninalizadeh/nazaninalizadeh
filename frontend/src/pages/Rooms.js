@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Plus, Search, UserPlus, UserMinus, Trash2, DoorOpen, Home, Filter } from 'lucide-react';
+import { Plus, Search, UserPlus, UserMinus, Trash2, DoorOpen, Home, Filter, Edit } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -25,10 +25,14 @@ const Rooms = () => {
 
   // Dialogs
   const [addRoomOpen, setAddRoomOpen] = useState(false);
+  const [editRoomOpen, setEditRoomOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [assignTenantId, setAssignTenantId] = useState('');
   const [roomForm, setRoomForm] = useState({
+    property_id: '', room_number: '', room_type: 'single', floor: '', monthly_rent: 0, description: '', bill_responsible: ''
+  });
+  const [editRoomForm, setEditRoomForm] = useState({
     property_id: '', room_number: '', room_type: 'single', floor: '', monthly_rent: 0, description: '', bill_responsible: ''
   });
 
@@ -55,6 +59,29 @@ const Rooms = () => {
       toast.success('Stanza aggiunta');
       setAddRoomOpen(false);
       setRoomForm({ property_id: '', room_number: '', room_type: 'single', floor: '', monthly_rent: 0, description: '', bill_responsible: '' });
+      fetchAll();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+  };
+
+  const openEditRoom = (room) => {
+    setSelectedRoom(room);
+    setEditRoomForm({
+      property_id: room.property_id || '', room_number: room.room_number || '',
+      room_type: room.room_type || 'single', floor: room.floor || '',
+      monthly_rent: room.monthly_rent || 0, description: room.description || '',
+      bill_responsible: room.bill_responsible || '',
+    });
+    setEditRoomOpen(true);
+  };
+
+  const handleEditRoom = async (e) => {
+    e.preventDefault();
+    if (!selectedRoom) return;
+    try {
+      await axios.put(`${API}/rooms/${selectedRoom.id}`, editRoomForm, { withCredentials: true });
+      toast.success('Stanza aggiornata');
+      setEditRoomOpen(false);
+      setSelectedRoom(null);
       fetchAll();
     } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
@@ -371,6 +398,10 @@ const Rooms = () => {
                             <UserMinus size={15} style={{ color: '#D97706' }} />
                           </Button>
                         )}
+                        <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50 h-8 w-8 p-0"
+                          onClick={() => openEditRoom(room)} title="Modifica stanza">
+                          <Edit size={15} style={{ color: '#B8860B' }} />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -389,6 +420,35 @@ const Rooms = () => {
           ))}
         </div>
       )}
+
+      {/* Edit Room Dialog */}
+      <Dialog open={editRoomOpen} onOpenChange={setEditRoomOpen}>
+        <DialogContent className="luxury-modal">
+          <DialogHeader><DialogTitle>Modifica Stanza</DialogTitle></DialogHeader>
+          <form onSubmit={handleEditRoom} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Numero Stanza *</Label><Input value={editRoomForm.room_number} onChange={e => setEditRoomForm({ ...editRoomForm, room_number: e.target.value })} required className="luxury-input" /></div>
+              <div>
+                <Label>Tipo *</Label>
+                <Select value={editRoomForm.room_type} onValueChange={v => setEditRoomForm({ ...editRoomForm, room_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Singola</SelectItem>
+                    <SelectItem value="double">Doppia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Piano</Label><Input value={editRoomForm.floor} onChange={e => setEditRoomForm({ ...editRoomForm, floor: e.target.value })} className="luxury-input" /></div>
+              <div><Label>Affitto Mensile</Label><Input type="number" step="0.01" value={editRoomForm.monthly_rent} onChange={e => setEditRoomForm({ ...editRoomForm, monthly_rent: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
+            </div>
+            <div><Label>Descrizione</Label><Input value={editRoomForm.description} onChange={e => setEditRoomForm({ ...editRoomForm, description: e.target.value })} className="luxury-input" /></div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={() => setEditRoomOpen(false)} className="rounded-xl">Annulla</Button>
+              <Button type="submit" className="btn-luxury">Aggiorna</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

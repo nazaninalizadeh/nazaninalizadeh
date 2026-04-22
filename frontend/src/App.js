@@ -18,6 +18,7 @@ import Notifications from './pages/Notifications';
 import Reports from './pages/Reports';
 import DataExchange from './pages/DataExchange';
 import Hospitality from './pages/Hospitality';
+import Registration from './pages/Registration';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import '@/App.css';
@@ -46,6 +47,7 @@ function App() {
               <Route path="rooms" element={<Rooms />} />
               <Route path="payments" element={<Payments />} />
               <Route path="hospitality" element={<Hospitality />} />
+              <Route path="registration" element={<Registration />} />
               <Route path="contracts" element={<Contracts />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="notifications" element={<Notifications />} />

@@ -81,7 +81,7 @@ const Properties = () => {
   };
 
   const resetForm = () => {
-    setFormData({ property_code: '', address: '', property_type: '', number_of_rooms: 1, capacity: 1, landlord_id: '', rental_amount: 0, deposit_amount: 0, additional_charges: '' });
+    setFormData({ property_code: '', address: '', property_type: '', number_of_rooms: 1, capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '' });
     setEditingProperty(null);
   };
 
@@ -91,7 +91,7 @@ const Properties = () => {
       property_code: property.property_code, address: property.address,
       property_type: property.property_type, number_of_rooms: property.number_of_rooms,
       capacity: property.capacity, landlord_id: property.landlord_id,
-      rental_amount: property.rental_amount, deposit_amount: property.deposit_amount,
+      rental_amount: property.rental_amount,
       additional_charges: property.additional_charges || '',
     });
     setDialogOpen(true);
@@ -120,8 +120,9 @@ const Properties = () => {
             <DialogHeader><DialogTitle>{editingProperty ? 'Modifica Immobile' : 'Nuovo Immobile'}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Codice *</Label><Input value={formData.property_code} onChange={e => setFormData({ ...formData, property_code: e.target.value })} required className="luxury-input" /></div>
+                {editingProperty && <div><Label>Codice</Label><Input value={formData.property_code} disabled className="luxury-input bg-gray-50" /></div>}
                 <div><Label>Tipo *</Label><Input value={formData.property_type} onChange={e => setFormData({ ...formData, property_type: e.target.value })} placeholder="Appartamento, Casa..." required className="luxury-input" /></div>
+                {!editingProperty && <div />}
                 <div className="col-span-2"><Label>Indirizzo *</Label><Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} required className="luxury-input" /></div>
                 <div>
                   <Label>Proprietario *</Label>
@@ -133,7 +134,6 @@ const Properties = () => {
                 <div><Label>N. Stanze *</Label><Input type="number" min="1" value={formData.number_of_rooms} onChange={e => setFormData({ ...formData, number_of_rooms: parseInt(e.target.value) })} required className="luxury-input" /></div>
                 <div><Label>Capacita *</Label><Input type="number" min="1" value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} required className="luxury-input" /></div>
                 <div><Label>Affitto Mensile *</Label><Input type="number" step="0.01" value={formData.rental_amount} onChange={e => setFormData({ ...formData, rental_amount: parseFloat(e.target.value) })} required className="luxury-input" /></div>
-                <div><Label>Deposito *</Label><Input type="number" step="0.01" value={formData.deposit_amount} onChange={e => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) })} required className="luxury-input" /></div>
               </div>
               <div><Label>Costi Aggiuntivi</Label><Input value={formData.additional_charges} onChange={e => setFormData({ ...formData, additional_charges: e.target.value })} className="luxury-input" placeholder="Utenze, manutenzione..." /></div>
               <div className="flex justify-end gap-3 pt-2">

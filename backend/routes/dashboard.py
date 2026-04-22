@@ -32,11 +32,20 @@ async def get_dashboard_stats(user: dict = Depends(get_current_user)):
     month_collected = sum(p.get("amount", 0) for p in month_payments)
     month_payment_count = len(month_payments)
 
-    # Count tenants who paid this month vs not
-    occupied_tenants = await db.tenants.find({"room_id": {"$ne": ""}}, {"_id": 0, "id": 1}).to_list(1000)
+    # Count tenants: paid, not_paid, late
+    occupied_tenants = await db.tenants.find({"room_id": {"$ne": ""}}, {"_id": 0, "id": 1, "payment_due_day": 1}).to_list(1000)
     paid_tenant_ids = set(p.get("tenant_id") for p in month_payments)
-    tenants_paid = sum(1 for t in occupied_tenants if t["id"] in paid_tenant_ids)
-    tenants_not_paid = len(occupied_tenants) - tenants_paid
+    today_day = int(now.strftime("%d"))
+    tenants_paid = 0
+    tenants_not_paid = 0
+    tenants_late = 0
+    for t in occupied_tenants:
+        if t["id"] in paid_tenant_ids:
+            tenants_paid += 1
+        elif today_day > t.get("payment_due_day", 5):
+            tenants_late += 1
+        else:
+            tenants_not_paid += 1
 
     # Total deposits (constant, just for info)
     tenants_list = await db.tenants.find({}, {"_id": 0, "deposit_amount": 1}).to_list(1000)
@@ -64,6 +73,7 @@ async def get_dashboard_stats(user: dict = Depends(get_current_user)):
         "month_payment_count": month_payment_count,
         "tenants_paid": tenants_paid,
         "tenants_not_paid": tenants_not_paid,
+        "tenants_late": tenants_late,
         "recent_payments": recent_payments,
         "current_month": now.strftime("%B %Y"),
     }

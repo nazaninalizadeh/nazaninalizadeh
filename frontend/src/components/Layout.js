@@ -16,7 +16,8 @@ import {
   DoorOpen,
   CreditCard,
   Sheet,
-  ScrollText
+  ScrollText,
+  ClipboardList
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
@@ -44,6 +45,7 @@ const Layout = () => {
     { path: '/tenants', label: 'Inquilini', icon: Users },
     { path: '/payments', label: 'Pagamenti', icon: CreditCard },
     { path: '/hospitality', label: 'Ospitalita', icon: ScrollText },
+    { path: '/registration', label: 'Registrazione', icon: ClipboardList },
     { path: '/contracts', label: 'Contratti', icon: FileText },
     { path: '/invoices', label: 'Fatture', icon: Receipt },
     { path: '/landlords', label: 'Proprietari', icon: Home },

@@ -1,4 +1,4 @@
-"""Property Routes."""
+"""Property Routes - auto-generate property code, no deposit."""
 
 from fastapi import APIRouter, HTTPException, Depends
 import uuid
@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from database import db
 from auth import get_current_user
-from models.schemas import PropertyCreate
+from models.schemas import PropertyCreate, generate_property_code
 
 router = APIRouter(prefix="/api", tags=["Properties"])
 
@@ -18,6 +18,13 @@ async def create_property(property_data: PropertyCreate, user: dict = Depends(ge
         raise HTTPException(status_code=404, detail="Landlord not found")
     d = property_data.model_dump()
     d["id"] = str(uuid.uuid4())
+    # Auto-generate unique code if not provided
+    if not d.get("property_code"):
+        for _ in range(10):
+            code = generate_property_code()
+            if not await db.properties.find_one({"property_code": code}):
+                d["property_code"] = code
+                break
     d["landlord_name"] = landlord["full_name"]
     d["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.properties.insert_one(d)
@@ -75,6 +82,9 @@ async def update_property(property_id: str, property_update: PropertyCreate, use
         raise HTTPException(status_code=404, detail="Landlord not found")
     update_dict = property_update.model_dump()
     update_dict["landlord_name"] = landlord["full_name"]
+    # Preserve existing code
+    if not update_dict.get("property_code"):
+        update_dict["property_code"] = existing.get("property_code", "")
     await db.properties.update_one({"id": property_id}, {"$set": update_dict})
     updated = await db.properties.find_one({"id": property_id}, {"_id": 0})
     rooms = await db.rooms.find({"property_id": property_id}, {"_id": 0}).to_list(100)

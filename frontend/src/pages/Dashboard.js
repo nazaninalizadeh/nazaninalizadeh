@@ -65,11 +65,15 @@ const Dashboard = () => {
             </div>
             <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
               <span style={{ color: '#5C4A3A' }}>Inquilini Pagato</span>
-              <span className="font-bold text-lg" style={{ color: '#059669' }}>{stats?.tenants_paid || 0}</span>
+              <Link to="/tenants?status=paid" className="font-bold text-lg hover:underline" style={{ color: '#059669' }}>{stats?.tenants_paid || 0}</Link>
             </div>
             <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
               <span style={{ color: '#5C4A3A' }}>Inquilini Non Pagato</span>
-              <span className="font-bold text-lg" style={{ color: '#DC2626' }}>{stats?.tenants_not_paid || 0}</span>
+              <Link to="/tenants?status=not_paid" className="font-bold text-lg hover:underline" style={{ color: '#D97706' }}>{stats?.tenants_not_paid || 0}</Link>
+            </div>
+            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
+              <span style={{ color: '#5C4A3A' }}>Inquilini In Ritardo</span>
+              <Link to="/tenants?status=late" className="font-bold text-lg hover:underline" style={{ color: '#DC2626' }}>{stats?.tenants_late || 0}</Link>
             </div>
             <div className="flex justify-between items-center py-3">
               <span style={{ color: '#5C4A3A' }}>Depositi Totali (Garanzia)</span>
