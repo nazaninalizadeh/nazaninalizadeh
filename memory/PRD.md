@@ -7,22 +7,23 @@
 ## Navigation (13 items)
 Dashboard | Immobili | Stanze | Inquilini | Pagamenti | Ospitalita | Registrazione | Contratti | Fatture | Proprietari | Notifiche | Report | Gestione Dati
 
-## Implemented (All DONE)
-- Security: JWT + CAPTCHA + multi-device sessions (8h token)
-- CRUD: Tenants, Landlords, Properties, Rooms, Contracts, Invoices, Payments
-- OCR: Passport/ID scanning + file saved + doc type detection (tenants + owners)
-- Hospitality: COMUNICAZIONE DI OSPITALITA + owner auto-fill from Proprietari
-- Ricevuta: Brand receipt PDF
-- Registration: Upload + ZIP bundle
-- Excel/CSV: Import & Export
-- 3 Payment Statuses: Paid / Not Paid / Late (with filters)
-- Monthly Payment Calendar: 12-month tracker per tenant
-- Dashboard: clickable links to filtered tenant lists
+## Key Features
+- Monthly Payment Status: manual override (Paid/Not Paid/Late) + auto-late from contract due dates
+- Payment Calendar: 12-month visual tracker per tenant, clickable to change status
+- Dashboard: late tenant details with links to profiles
+- Notifications: auto-generated late payment alerts
+- OCR: passport/ID scanning for tenants + owners
+- Hospitality: COMUNICAZIONE DI OSPITALITA PDF
+- Ricevuta: brand receipt PDF
+- Registration: document upload + ZIP bundle
+- Excel/CSV: import/export
+- Searchable dropdowns: property + tenant search
 - Auto property codes (IMM-XXXX)
-- Searchable dropdowns: property search in add room, tenant search in assign
-- Owner OCR + document upload
-- CSS: warm cream backgrounds on all modals/dropdowns
+
+## Data Model
+- monthly_status: { tenant_id, month, year, status, amount, payment_method, manual_override, notes, updated_by, updated_at }
+- Priority: manual override > payment records > auto-calculate from due_day
 
 ## Backlog
 - P1: Real email (Resend/SendGrid), WhatsApp API
-- P2: Persian UI option
+- P2: Persian UI
