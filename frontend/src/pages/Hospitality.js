@@ -14,6 +14,7 @@ const API = process.env.REACT_APP_BACKEND_URL + '/api';
 const Hospitality = () => {
   const [tenants, setTenants] = useState([]);
   const [properties, setProperties] = useState([]);
+  const [landlords, setLandlords] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,14 +42,16 @@ const Hospitality = () => {
 
   const fetchAll = async () => {
     try {
-      const [t, p, r] = await Promise.all([
+      const [t, p, r, l] = await Promise.all([
         axios.get(`${API}/tenants`, { withCredentials: true }),
         axios.get(`${API}/properties`, { withCredentials: true }),
         axios.get(`${API}/hospitality/records`, { withCredentials: true }).catch(() => ({ data: [] })),
+        axios.get(`${API}/landlords`, { withCredentials: true }).catch(() => ({ data: [] })),
       ]);
       setTenants(t.data);
       setProperties(p.data);
       setRecords(r.data);
+      setLandlords(l.data);
     } catch { toast.error('Errore nel caricamento'); }
     setLoading(false);
   };
@@ -197,7 +200,17 @@ const Hospitality = () => {
                 </div>
                 <div>
                   <Label>Immobile *</Label>
-                  <Select value={form.property_id} onValueChange={v => setForm({ ...form, property_id: v })}>
+                  <Select value={form.property_id} onValueChange={v => {
+                    const prop = properties.find(p => p.id === v);
+                    const ll = prop ? landlords.find(l => l.id === prop.landlord_id) : null;
+                    const llName = ll?.full_name || '';
+                    const llParts = llName.includes(' ') ? llName.split(' ') : [llName, ''];
+                    setForm(prev => ({
+                      ...prev, property_id: v,
+                      host_surname: llParts[0] || prev.host_surname,
+                      host_name: llParts.slice(1).join(' ') || prev.host_name,
+                    }));
+                  }}>
                     <SelectTrigger><SelectValue placeholder="Seleziona immobile" /></SelectTrigger>
                     <SelectContent>
                       {properties.map(p => (
