@@ -4,26 +4,39 @@
 - alborz.sbd@gmail.com (super_admin) / 1234@Admin
 - nazaninalizade890@gmail.com (admin) / 1234@Admin
 
-## Navigation (13 items)
-Dashboard | Immobili | Stanze | Inquilini | Pagamenti | Ospitalita | Registrazione | Contratti | Fatture | Proprietari | Notifiche | Report | Gestione Dati
+## Security
+- Single-admin session: only ONE admin active at a time
+- New login invalidates all other sessions immediately
+- Frontend polls /session-check every 30s → auto-logout if session invalidated
+- Shows "Another admin logged in" alert
+
+## Navigation (12 items)
+Proprietari | Immobili | Inquilini | Dashboard | Pagamenti | Ospitalità | Registrazione | Contratti | Fatture | Notifiche (with badge) | Report | Gestione Dati
+
+## Payment System
+- 3 statuses: Pagato (green) / Non Pagato (amber) / In Ritardo (red)
+- In Ritardo: automatically triggered 1 day after contract due_day
+- due_day comes from contract first, fallback to tenant.payment_due_day
+- Manual override: admin can change any month status
+- Payment method: selectable buttons (Contanti / Bonifico) — NOT typed
+- Cancel button: closes dialog without changing anything
 
 ## Key Features
-- Monthly Payment Status: manual override (Paid/Not Paid/Late) + auto-late from contract due dates
-- Payment Calendar: 12-month visual tracker per tenant, clickable to change status
-- Dashboard: late tenant details with links to profiles
-- Notifications: auto-generated late payment alerts
-- OCR: passport/ID scanning for tenants + owners
+- Monthly Payment Calendar: 12-month clickable tracker per tenant
+- Notification badge: red count on Notifiche menu item
+- Dashboard: late tenant details section + clickable stats
+- OCR: passport/ID scanning + file permanently saved
 - Hospitality: COMUNICAZIONE DI OSPITALITA PDF
-- Ricevuta: brand receipt PDF
 - Registration: document upload + ZIP bundle
-- Excel/CSV: import/export
-- Searchable dropdowns: property + tenant search
 - Auto property codes (IMM-XXXX)
-
-## Data Model
-- monthly_status: { tenant_id, month, year, status, amount, payment_method, manual_override, notes, updated_by, updated_at }
-- Priority: manual override > payment records > auto-calculate from due_day
+- Searchable dropdowns: property + tenant search
 
 ## Backlog
-- P1: Real email (Resend/SendGrid), WhatsApp API
+- P1: Merge Stanze into Immobili detail (rooms visible when clicking property)
+- P1: Image upload for properties/rooms
+- P1: Email reminders (mocked, ready for Resend)
+- P2: Hospitality form exact match to provided form
+- P2: Owner ID front/back upload with OCR
+- P2: Registration ZIP package (send via WhatsApp/email)
+- P2: Face detection for profile photo
 - P2: Persian UI
