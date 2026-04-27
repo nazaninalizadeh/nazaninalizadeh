@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -6,10 +7,16 @@ import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // If already authenticated, send away from /login
+  if (!authLoading && user) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,6 +24,7 @@ const Login = () => {
     setLoading(true);
     try {
       await login(email, password);
+      navigate('/', { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore di autenticazione');
     }
