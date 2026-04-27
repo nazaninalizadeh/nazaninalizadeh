@@ -60,27 +60,28 @@ async def get_dashboard_stats(user: dict = Depends(get_current_user)):
         if s == "paid":
             tenants_paid += 1
         elif s == "late":
-            tenants_late += 1
-            # Get details for late list
-            tenant_doc = await db.tenants.find_one({"id": t["id"]}, {"_id": 0})
-            if tenant_doc:
-                prop_addr = ""
-                room_num = ""
-                if tenant_doc.get("property_id"):
-                    prop = await db.properties.find_one({"id": tenant_doc["property_id"]}, {"_id": 0})
-                    prop_addr = prop.get("address", "") if prop else ""
-                if tenant_doc.get("room_id"):
-                    room = await db.rooms.find_one({"id": tenant_doc["room_id"]}, {"_id": 0})
-                    room_num = room.get("room_number", "") if room else ""
-                late_details.append({
-                    "tenant_id": t["id"],
-                    "tenant_name": tenant_doc.get("full_name", ""),
-                    "property_address": prop_addr,
-                    "room_number": room_num,
-                    "due_day": t.get("payment_due_day", 5),
-                })
+            # Always append details so list length == count (single source of truth)
+            tenant_doc = await db.tenants.find_one({"id": t["id"]}, {"_id": 0}) or {}
+            prop_addr = ""
+            room_num = ""
+            if tenant_doc.get("property_id"):
+                prop = await db.properties.find_one({"id": tenant_doc["property_id"]}, {"_id": 0})
+                prop_addr = prop.get("address", "") if prop else ""
+            if tenant_doc.get("room_id"):
+                room = await db.rooms.find_one({"id": tenant_doc["room_id"]}, {"_id": 0})
+                room_num = room.get("room_number", "") if room else ""
+            late_details.append({
+                "tenant_id": t["id"],
+                "tenant_name": tenant_doc.get("full_name", "") or "—",
+                "property_address": prop_addr,
+                "room_number": room_num,
+                "due_day": t.get("payment_due_day", 5),
+            })
         else:
             tenants_not_paid += 1
+
+    # Count is ALWAYS derived from list length — guaranteed consistency
+    tenants_late = len(late_details)
 
     # Total deposits (constant, just for info)
     tenants_list = await db.tenants.find({}, {"_id": 0, "deposit_amount": 1}).to_list(1000)

@@ -33,7 +33,7 @@ async def upload_registration_doc(
     async with aiofiles.open(str(filepath), "wb") as f:
         content = await file.read()
         await f.write(content)
-    url = f"/uploads/documents/{filename}"
+    url = f"/api/uploads/documents/{filename}"
     doc_record = {
         "id": str(uuid.uuid4()),
         "owner_id": owner_id,
@@ -64,7 +64,7 @@ async def upload_signed_contract(
     async with aiofiles.open(str(filepath), "wb") as f:
         content = await file.read()
         await f.write(content)
-    url = f"/uploads/documents/{filename}"
+    url = f"/api/uploads/documents/{filename}"
     doc_record = {
         "id": str(uuid.uuid4()),
         "owner_id": tenant_id,
@@ -95,7 +95,7 @@ async def upload_owner_document(
     async with aiofiles.open(str(filepath), "wb") as f:
         content = await file.read()
         await f.write(content)
-    url = f"/uploads/documents/{filename}"
+    url = f"/api/uploads/documents/{filename}"
     doc_record = {
         "id": str(uuid.uuid4()),
         "owner_id": owner_id,

@@ -28,7 +28,7 @@ async def upload_document(
     async with aiofiles.open(str(filepath), "wb") as f:
         content = await file.read()
         await f.write(content)
-    url = f"/uploads/documents/{filename}"
+    url = f"/api/uploads/documents/{filename}"
     doc_record = {
         "id": str(uuid.uuid4()),
         "owner_id": owner_id,
@@ -54,7 +54,7 @@ async def delete_document(doc_id: str, user: dict = Depends(get_current_user)):
     doc = await db.documents.find_one({"id": doc_id})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    filepath = UPLOAD_DIR / doc["url"].lstrip("/uploads/")
+    filepath = UPLOAD_DIR / doc["url"].replace("/api/uploads/", "").replace("/uploads/", "")
     if filepath.exists():
         filepath.unlink()
     await db.documents.delete_one({"id": doc_id})

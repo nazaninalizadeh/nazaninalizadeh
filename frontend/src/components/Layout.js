@@ -41,8 +41,19 @@ const Layout = () => {
     };
     fetchCount();
     const interval = setInterval(fetchCount, 60000);
-    return () => clearInterval(interval);
+    // Reset badge immediately when the Notifiche page marks notifications seen.
+    const onSeen = () => setNotifCount(0);
+    window.addEventListener('notifications:seen', onSeen);
+    return () => { clearInterval(interval); window.removeEventListener('notifications:seen', onSeen); };
   }, []);
+
+  // Re-fetch the badge whenever the user navigates somewhere (cheap and keeps badge in sync).
+  useEffect(() => {
+    if (location.pathname === '/notifications') return; // already cleared via event
+    axios.get(`${API_URL}/notifications/count`, { withCredentials: true })
+      .then(({ data }) => setNotifCount(data.count || 0))
+      .catch(() => {});
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {

@@ -140,7 +140,7 @@ async def upload_room_image(room_id: str, file: UploadFile = File(...), user: di
     filepath = UPLOAD_DIR / "rooms" / filename
     async with aiofiles.open(str(filepath), "wb") as f:
         await f.write(content)
-    url = f"/uploads/rooms/{filename}"
+    url = f"/api/uploads/rooms/{filename}"
     await db.rooms.update_one({"id": room_id}, {"$push": {"images": url}})
     return {"url": url}
 
@@ -157,7 +157,7 @@ async def upload_property_image(property_id: str, file: UploadFile = File(...), 
     filepath = UPLOAD_DIR / "properties" / filename
     async with aiofiles.open(str(filepath), "wb") as f:
         await f.write(content)
-    url = f"/uploads/properties/{filename}"
+    url = f"/api/uploads/properties/{filename}"
     await db.properties.update_one({"id": property_id}, {"$push": {"images": url}})
     return {"url": url}
 

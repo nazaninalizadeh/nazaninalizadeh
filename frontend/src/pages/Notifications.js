@@ -17,10 +17,15 @@ const Notifications = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch notifications AND mark them seen so the badge resets to 0.
+    // Layout polls /notifications/count every 60s, so the badge will catch up.
     axios.get(`${API}/notifications`, { withCredentials: true })
       .then(res => setNotifications(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
+    axios.post(`${API}/notifications/mark-seen`, {}, { withCredentials: true })
+      .then(() => window.dispatchEvent(new Event('notifications:seen')))
+      .catch(() => {});
   }, []);
 
   if (loading) return <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div>;

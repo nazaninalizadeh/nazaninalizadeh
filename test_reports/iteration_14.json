@@ -1,0 +1,29 @@
+{
+  "summary": "Iteration 14 verified all 5 user-reported fixes: (1) Dashboard tenants_late === len(late_details) — verified consistent across 3 reads + after status toggles. (2) Hospitality PDF rewritten to match official Italian gov form — all 13 required strings present (COMUNICAZIONE DI OSPITALITA, IN FAVORE DI CITTADINO EXTRACOMUNITARIO, ARTICOLO 7, Il sottoscritto, DICHIARA CHE DAL, A TEMPO INDETERMINATO, ha fornito, ha ceduto, Cittadinanza, PASSAPORTO, firma del dichiarante, ALLEGATI, COPIA DI UN DOCUMENTO DEL DICHIARANTE). (3) Notification badge: POST /api/notifications/mark-seen returns viewed_at, zeroes count immediately; sidebar Notifiche label has no numeric badge after visit; 'notifications:seen' event wired. (4) Tenant document upload now returns url with /api/uploads/ prefix; downloading the URL returns the actual PDF bytes (no Dashboard redirect, no HTML response). (5) Email service: send_email returns status='mocked' when RESEND_API_KEY empty, returns status='error'/'sent' on invalid key without raising. Reminder check endpoint completes 200. Backend pytest 10/10 PASSED. Frontend: sidebar order Dashboard→Proprietari→Immobili→Inquilini verified, badge zeroing verified live.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration14.py",
+    "/app/test_reports/pytest/iteration_14.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "dashboard.py: tenants_late = len(late_details) is computed AFTER the loop and late_details.append happens inside the loop — single source of truth, guarantees count==len. Good fix.",
+    "notifications_routes.py mark-seen: stores last_viewed_at as ISO string but reads it as either datetime or string with fromisoformat(replace 'Z'+00:00). Robust to both.",
+    "notifications_routes.py _became_late_at: clamps day to max 28 to avoid Feb-overflow. OK but means a tenant with due_day=30 will be 'became late' on the 28th, which is technically too early. Not blocking — just a minor edge case.",
+    "documents.py upload now emits /api/uploads/... URL. server.py mounts StaticFiles at /api/uploads which routes correctly through K8s ingress to backend (not frontend catch-all). Migration on startup updates legacy DB entries — confirmed no /uploads/ URLs remain via API probe.",
+    "documents.py delete: filepath calc strips both /api/uploads/ AND /uploads/ prefixes before unlink — safe for both old & new URLs. Good.",
+    "email_service.py: never raises (try/except wraps Resend call), returns dict with status. _is_real_send_enabled() rejects empty/whitespace and the literal 'YOUR_KEY_HERE'. Lazy import of resend module so missing pkg won't break mock path.",
+    "hospitality_pdf.py: pure black/white form, no extra branding/colors as requested. Layout uses ReportLab Tables with LINEBELOW for underlines — matches scanned-form aesthetic. Date boxes show GG/MM/AA. Two checkboxes for 'ha fornito alloggio' / 'ha ceduto la proprieta' wired to hosting_type field. ALLEGATI bullet list and ARTICOLO 7 quote both present at bottom.",
+    "Layout.js navItems unchanged: Dashboard, Proprietari, Immobili, Inquilini, Pagamenti, Ospitalita, Registrazione, Contratti, Fatture, Notifiche, Report, Gestione Dati — verified live.",
+    "Notifications.js fires POST /mark-seen on mount and dispatches 'notifications:seen' event. Layout.js listens for this event and refetches count on every route change — both wires verified."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration14.py", "/app/test_reports/pytest/iteration_14.xml"],
+  "success_rate": {"backend": "100% (10/10 passed)", "frontend": "100% (sidebar order, badge zeroing, dashboard count consistency all verified live)"},
+  "test_credentials": {"admin2_used": "nazaninalizade890@gmail.com / 1234@Admin", "admin1_avoided_to_preserve_human_session": true},
+  "seed_data_creation": "TEST_iter14 doc_type document uploaded to first tenant for upload-URL test, deleted in same test. No leftover seed data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run: python -m pytest /app/backend/tests/test_iteration14.py -v --junitxml=/app/test_reports/pytest/iteration_14.xml. Note: when admin2 has already viewed notifications recently, /api/notifications/count will return 0 — to test the >0 path you must clear db.notification_views.delete_many({admin_id: <admin2_id>}) first OR use a freshly-late tenant with due_day < today_day-1 (since became_late_at uses due_day+1 and today is well past day 5). Hospitality PDF: pypdf was installed during this run; if testing on a clean env, run `pip install pypdf` first.",
+  "rca_of_the_issue": "All 5 user-reported issues fully resolved by previous agent's fixes: (1) Dashboard inconsistency — late_details.append always runs in the late branch and tenants_late is set to len(late_details) AFTER the loop. (2) Hospitality PDF redesigned end-to-end matching the official template (Cognome/Nome/DOB GG-MM-AA boxes/Comune/Provincia/Residenza/checkboxes alloggio vs cessione/Cittadinanza/Passaporto/Property block/Luogo+data+firma/ALLEGATI/Articolo 7 quote). (3) Badge zero: new /api/notifications/mark-seen endpoint stores last_viewed_at per admin; count uses (became_late_at > last_viewed_at) check; frontend dispatches 'notifications:seen' to drop the badge instantly. (4) Document download bug: /uploads/ URLs hit K8s ingress→frontend→catch-all redirect to /. Fixed by mounting StaticFiles at /api/uploads (backend) and migrating legacy DB URLs on startup. (5) Email: real Resend integration with mock fallback when RESEND_API_KEY is empty; never raises so reminder pipeline stays stable."
+}

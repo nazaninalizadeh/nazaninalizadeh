@@ -44,8 +44,9 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 (UPLOAD_DIR / "documents").mkdir(exist_ok=True)
 (UPLOAD_DIR / "rooms").mkdir(exist_ok=True)
 
-# Serve uploaded files
-app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+# Serve uploaded files (under /api/* so Kubernetes ingress routes them to the backend
+# instead of falling through to the frontend, which would Navigate to /)
+app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 # ============ Startup ============
 @app.on_event("startup")
@@ -60,6 +61,27 @@ async def startup_event():
     await db.ocr_scans.create_index("id")
     await db.monthly_status.create_index([("tenant_id", 1), ("month", 1), ("year", 1)], unique=True)
     await seed_admins()
+    # Migrate any pre-existing /uploads/ URLs in the DB to the new /api/uploads/ prefix.
+    # Without /api prefix the Kubernetes ingress routes the request to the frontend,
+    # which then redirects to "/" (Dashboard) — breaking document downloads.
+    await _migrate_upload_urls()
+
+
+async def _migrate_upload_urls():
+    # Documents collection: single `url` string field
+    async for doc in db.documents.find({"url": {"$regex": "^/uploads/"}}, {"_id": 1, "url": 1}):
+        await db.documents.update_one(
+            {"_id": doc["_id"]},
+            {"$set": {"url": "/api" + doc["url"]}},
+        )
+    # Rooms / properties: `images` array
+    for coll in (db.rooms, db.properties):
+        async for d in coll.find({"images": {"$elemMatch": {"$regex": "^/uploads/"}}}, {"_id": 1, "images": 1}):
+            new_imgs = [("/api" + u) if isinstance(u, str) and u.startswith("/uploads/") else u for u in (d.get("images") or [])]
+            await coll.update_one({"_id": d["_id"]}, {"$set": {"images": new_imgs}})
+    # Tenants: profile_photo and any embedded URLs
+    async for t in db.tenants.find({"profile_photo": {"$regex": "^/uploads/"}}, {"_id": 1, "profile_photo": 1}):
+        await db.tenants.update_one({"_id": t["_id"]}, {"$set": {"profile_photo": "/api" + t["profile_photo"]}})
 
 # ============ Include All Routers ============
 app.include_router(auth_router)

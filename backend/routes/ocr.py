@@ -38,7 +38,7 @@ async def ocr_scan_document(
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     async with aiofiles.open(str(filepath), "wb") as f:
         await f.write(content)
-    saved_url = f"/uploads/documents/{saved_filename}"
+    saved_url = f"/api/uploads/documents/{saved_filename}"
 
     # Run OCR
     result = await scan_document(content, file.filename or "document")
@@ -81,7 +81,7 @@ async def ocr_scan_document(
                 face_filename = f"face_{owner_id}_{uuid.uuid4().hex[:6]}.jpg"
                 face_path = UPLOAD_DIR / face_filename
                 face_crop.save(str(face_path), "JPEG", quality=80)
-                face_url = f"/uploads/documents/{face_filename}"
+                face_url = f"/api/uploads/documents/{face_filename}"
                 await db.tenants.update_one({"id": owner_id}, {"$set": {"profile_photo": face_url}})
         except Exception:
             pass
