@@ -1,109 +1,93 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Mail, Lock, ShieldCheck } from 'lucide-react';
-import ReCAPTCHA from 'react-google-recaptcha';
+import { toast } from 'sonner';
 
 const Login = () => {
-  const navigate = useNavigate();
   const { login } = useAuth();
-  const captchaRef = useRef(null);
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    if (!email || !password) { toast.error('Inserisci email e password'); return; }
     setLoading(true);
     try {
-      const captchaToken = captchaRef.current?.getValue() || '';
-      await login(email, password, captchaToken);
-      navigate('/');
+      await login(email, password);
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      setError(typeof detail === 'string' ? detail : 'Errore di accesso. Riprova.');
-      captchaRef.current?.reset();
-    } finally {
-      setLoading(false);
+      toast.error(err.response?.data?.detail || 'Errore di autenticazione');
     }
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex" data-testid="login-page">
-      {/* Left panel */}
-      <div
-        className="hidden lg:block lg:w-1/2 bg-cover bg-center relative"
-        style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1760246964044-1384f71665b9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjb3Jwb3JhdGUlMjBvZmZpY2UlMjBidWlsZGluZyUyMGV4dGVyaW9yfGVufDB8fHx8MTc3NTczMDUwNHww&ixlib=rb-4.1.0&q=85')`,
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-rose-900/90 to-red-900/90" />
-        <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-12">
-          <div className="p-4 rounded-2xl mb-6" style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)' }}>
-            <ShieldCheck size={48} strokeWidth={1.5} />
-          </div>
-          <h1
-            className="text-5xl font-semibold font-heading mb-3"
-            style={{ color: 'white', WebkitTextFillColor: 'white', textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}
-            data-testid="brand-name"
-          >
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }}>
+      <div className="w-full max-w-md">
+        {/* Logo/Brand */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
             Consulenze immobiliari
           </h1>
-          <p className="text-sm text-white/80 mb-2 tracking-wider">Via Vigonovese 114</p>
-          <p className="text-lg text-white/70 text-center max-w-md uppercase tracking-widest font-light">
-            Affitta &bull; Compra &bull; Vende &bull; Ristruttura
-          </p>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Sistema di gestione immobiliare</p>
         </div>
-      </div>
 
-      {/* Right panel */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8" style={{ background: 'linear-gradient(145deg, #FEFDFB 0%, #FAF7F0 100%)' }}>
-        <div className="w-full max-w-md luxury-fade-in">
-          <div className="mb-10">
-            <h2 className="text-3xl font-semibold font-heading mb-2" style={{ color: '#9F1239' }} data-testid="login-title">
-              Accesso Sicuro
-            </h2>
-            <p className="text-sm" style={{ color: '#8B7355' }}>Inserisci le tue credenziali per accedere al sistema</p>
-          </div>
+        {/* Login Card */}
+        <div className="rounded-2xl p-8 shadow-2xl" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.15)' }}>
+          <h2 className="text-xl font-bold mb-6 text-center" style={{ color: '#9F1239' }}>
+            Accesso Amministratore
+          </h2>
 
-          {error && (
-            <div className="mb-6 p-4 rounded-xl text-sm" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#DC2626' }} data-testid="error-message">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5" data-testid="login-form">
-            <div>
-              <Label htmlFor="email" className="text-sm font-medium" style={{ color: '#4A3B31' }}>Indirizzo Email</Label>
-              <div className="relative mt-2">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="La tua email" required className="pl-11 luxury-input" data-testid="email-input" />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium" style={{ color: '#4A3B31' }}>Email</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="admin@example.com"
+                required
+                className="h-11 rounded-xl text-sm"
+                style={{ background: 'white', border: '1.5px solid rgba(184,134,11,0.2)', color: '#2C1810' }}
+                data-testid="login-email"
+              />
             </div>
 
-            <div>
-              <Label htmlFor="password" className="text-sm font-medium" style={{ color: '#4A3B31' }}>Password</Label>
-              <div className="relative mt-2">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="La tua password" required className="pl-11 luxury-input" data-testid="password-input" />
-              </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium" style={{ color: '#4A3B31' }}>Password</Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="h-11 rounded-xl text-sm"
+                style={{ background: 'white', border: '1.5px solid rgba(184,134,11,0.2)', color: '#2C1810' }}
+                data-testid="login-password"
+              />
             </div>
 
-            <div className="flex justify-center" data-testid="captcha-container">
-              <ReCAPTCHA ref={captchaRef} sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" />
-            </div>
-
-            <Button type="submit" disabled={loading} className="w-full btn-luxury h-12 text-base" data-testid="login-button">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}
+              data-testid="login-submit"
+            >
               {loading ? 'Accesso in corso...' : 'Accedi'}
             </Button>
           </form>
+
+          <p className="text-center text-xs mt-6" style={{ color: '#8B7355' }}>
+            Accesso riservato agli amministratori autorizzati
+          </p>
         </div>
+
+        <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          Consulenze immobiliari — Via Vigonovese 114
+        </p>
       </div>
     </div>
   );

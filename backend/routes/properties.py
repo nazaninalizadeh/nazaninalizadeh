@@ -26,6 +26,7 @@ async def create_property(property_data: PropertyCreate, user: dict = Depends(ge
                 d["property_code"] = code
                 break
     d["landlord_name"] = landlord["full_name"]
+    d["images"] = []
     d["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.properties.insert_one(d)
     d.pop("_id", None)

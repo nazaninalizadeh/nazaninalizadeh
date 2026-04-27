@@ -111,6 +111,8 @@ async def upload_room_image(room_id: str, file: UploadFile = File(...), user: di
     room = await db.rooms.find_one({"id": room_id})
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    (UPLOAD_DIR / "rooms").mkdir(exist_ok=True)
     ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
     filename = f"{room_id}_{uuid.uuid4().hex[:8]}.{ext}"
     filepath = UPLOAD_DIR / "rooms" / filename
@@ -120,6 +122,36 @@ async def upload_room_image(room_id: str, file: UploadFile = File(...), user: di
     url = f"/uploads/rooms/{filename}"
     await db.rooms.update_one({"id": room_id}, {"$push": {"images": url}})
     return {"url": url}
+
+
+@router.post("/properties/{property_id}/images")
+async def upload_property_image(property_id: str, file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    prop = await db.properties.find_one({"id": property_id})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Property not found")
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    (UPLOAD_DIR / "properties").mkdir(exist_ok=True)
+    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
+    filename = f"{property_id}_{uuid.uuid4().hex[:8]}.{ext}"
+    filepath = UPLOAD_DIR / "properties" / filename
+    async with aiofiles.open(str(filepath), "wb") as f:
+        content = await file.read()
+        await f.write(content)
+    url = f"/uploads/properties/{filename}"
+    await db.properties.update_one({"id": property_id}, {"$push": {"images": url}})
+    return {"url": url}
+
+
+@router.delete("/properties/{property_id}/images")
+async def delete_property_image(property_id: str, url: str = "", user: dict = Depends(get_current_user)):
+    await db.properties.update_one({"id": property_id}, {"$pull": {"images": url}})
+    return {"message": "Immagine rimossa"}
+
+
+@router.delete("/rooms/{room_id}/images")
+async def delete_room_image(room_id: str, url: str = "", user: dict = Depends(get_current_user)):
+    await db.rooms.update_one({"id": room_id}, {"$pull": {"images": url}})
+    return {"message": "Immagine rimossa"}
 
 
 @router.get("/occupancy-overview")

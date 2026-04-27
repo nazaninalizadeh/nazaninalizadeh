@@ -141,9 +141,13 @@ const Registration = () => {
               style={{ background: 'rgba(159,18,57,0.03)', border: '1px solid rgba(159,18,57,0.1)' }}
               data-testid={`zip-btn-${t.id}`}>
               <Package size={16} style={{ color: '#9F1239' }} />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate" style={{ color: '#2C1810' }}>{t.full_name}</p>
                 <p className="text-[10px]" style={{ color: '#8B7355' }}>{t.property_address}</p>
+              </div>
+              <div className="flex gap-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(5,150,105,0.1)', color: '#059669' }} onClick={e => { e.stopPropagation(); toast.info('WhatsApp: invio pacchetto (servizio non ancora configurato)'); }}>WA</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }} onClick={e => { e.stopPropagation(); toast.info('Email: invio pacchetto (servizio non ancora configurato)'); }}>Email</span>
               </div>
             </button>
           ))}

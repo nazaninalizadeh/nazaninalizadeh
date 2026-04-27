@@ -69,6 +69,23 @@ async def ocr_scan_document(
         }
         await db.documents.insert_one(doc_record)
 
+        # Try face extraction for profile photo
+        try:
+            from PIL import Image as PILImage
+            import io as pio
+            img = PILImage.open(pio.BytesIO(content))
+            # Simple crop of top portion as face region (basic approach)
+            w, h = img.size
+            if w > 100 and h > 100:
+                face_crop = img.crop((int(w*0.3), int(h*0.05), int(w*0.7), int(h*0.45)))
+                face_filename = f"face_{owner_id}_{uuid.uuid4().hex[:6]}.jpg"
+                face_path = UPLOAD_DIR / face_filename
+                face_crop.save(str(face_path), "JPEG", quality=80)
+                face_url = f"/uploads/documents/{face_filename}"
+                await db.tenants.update_one({"id": owner_id}, {"$set": {"profile_photo": face_url}})
+        except Exception:
+            pass
+
     result["saved_file_url"] = saved_url
     result["detected_doc_type"] = doc_type
     return result

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Home, DoorOpen, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Home, DoorOpen, Users, ChevronDown, ChevronUp, Upload, UserPlus, UserMinus, Image as ImageIcon } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
@@ -9,97 +9,147 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
+const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
   const [landlords, setLandlords] = useState([]);
+  const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState(null);
   const [expandedIds, setExpandedIds] = useState(new Set());
   const [propertyDetails, setPropertyDetails] = useState({});
+  // Room form
+  const [addRoomOpen, setAddRoomOpen] = useState(false);
+  const [roomForProperty, setRoomForProperty] = useState(null);
+  const [roomForm, setRoomForm] = useState({ room_number: '', room_type: 'single', floor: '', monthly_rent: 0 });
+  // Assign tenant
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignRoom, setAssignRoom] = useState(null);
+  const [assignSearch, setAssignSearch] = useState('');
+  const [assignTenantId, setAssignTenantId] = useState('');
+
   const [formData, setFormData] = useState({
     property_code: '', address: '', property_type: '', number_of_rooms: 1,
-    capacity: 1, landlord_id: '', rental_amount: 0, deposit_amount: 0, additional_charges: '',
+    capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '',
   });
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchAll(); }, []);
 
-  const fetchData = async () => {
+  const fetchAll = async () => {
     try {
-      const [p, l] = await Promise.all([
-        axios.get(`${API_URL}/properties`, { withCredentials: true }),
-        axios.get(`${API_URL}/landlords`, { withCredentials: true }),
+      const [p, l, t] = await Promise.all([
+        axios.get(`${API}/properties`, { withCredentials: true }),
+        axios.get(`${API}/landlords`, { withCredentials: true }),
+        axios.get(`${API}/tenants`, { withCredentials: true }),
       ]);
-      setProperties(p.data);
-      setLandlords(l.data);
-    } catch { toast.error('Errore nel caricamento'); }
+      setProperties(p.data); setLandlords(l.data); setTenants(t.data);
+    } catch { toast.error('Errore'); }
     setLoading(false);
   };
 
   const toggleExpand = async (propId) => {
-    const newSet = new Set(expandedIds);
-    if (newSet.has(propId)) {
-      newSet.delete(propId);
-    } else {
-      newSet.add(propId);
-      if (!propertyDetails[propId]) {
-        try {
-          const { data } = await axios.get(`${API_URL}/properties/${propId}`, { withCredentials: true });
-          setPropertyDetails(prev => ({ ...prev, [propId]: data }));
-        } catch { toast.error('Errore nel caricamento dettagli'); }
-      }
+    const s = new Set(expandedIds);
+    if (s.has(propId)) { s.delete(propId); } else {
+      s.add(propId);
+      try {
+        const { data } = await axios.get(`${API}/properties/${propId}`, { withCredentials: true });
+        setPropertyDetails(prev => ({ ...prev, [propId]: data }));
+      } catch {}
     }
-    setExpandedIds(newSet);
+    setExpandedIds(s);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editingProperty) {
-        await axios.put(`${API_URL}/properties/${editingProperty.id}`, formData, { withCredentials: true });
-        toast.success('Immobile aggiornato');
+        await axios.put(`${API}/properties/${editingProperty.id}`, formData, { withCredentials: true });
       } else {
-        await axios.post(`${API_URL}/properties`, formData, { withCredentials: true });
-        toast.success('Immobile creato');
+        await axios.post(`${API}/properties`, formData, { withCredentials: true });
       }
-      setDialogOpen(false);
-      resetForm();
-      fetchData();
-    } catch { toast.error('Errore nel salvataggio'); }
+      toast.success(editingProperty ? 'Aggiornato' : 'Creato');
+      setDialogOpen(false); resetForm(); fetchAll();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Eliminare questo immobile?')) return;
-    try {
-      await axios.delete(`${API_URL}/properties/${id}`, { withCredentials: true });
-      toast.success('Immobile eliminato');
-      fetchData();
-    } catch { toast.error('Errore'); }
+    if (!window.confirm('Eliminare?')) return;
+    try { await axios.delete(`${API}/properties/${id}`, { withCredentials: true }); toast.success('Eliminato'); fetchAll(); } catch { toast.error('Errore'); }
   };
 
-  const resetForm = () => {
-    setFormData({ property_code: '', address: '', property_type: '', number_of_rooms: 1, capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '' });
-    setEditingProperty(null);
-  };
+  const resetForm = () => { setFormData({ property_code: '', address: '', property_type: '', number_of_rooms: 1, capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '' }); setEditingProperty(null); };
 
-  const openEditDialog = (property) => {
-    setEditingProperty(property);
-    setFormData({
-      property_code: property.property_code, address: property.address,
-      property_type: property.property_type, number_of_rooms: property.number_of_rooms,
-      capacity: property.capacity, landlord_id: property.landlord_id,
-      rental_amount: property.rental_amount,
-      additional_charges: property.additional_charges || '',
-    });
+  const openEdit = (p) => {
+    setEditingProperty(p);
+    setFormData({ property_code: p.property_code, address: p.address, property_type: p.property_type, number_of_rooms: p.number_of_rooms, capacity: p.capacity, landlord_id: p.landlord_id, rental_amount: p.rental_amount, additional_charges: p.additional_charges || '' });
     setDialogOpen(true);
   };
 
-  const filteredProperties = properties.filter(p =>
-    p.property_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  // Room operations
+  const handleAddRoom = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/rooms`, { ...roomForm, property_id: roomForProperty }, { withCredentials: true });
+      toast.success('Stanza aggiunta');
+      setAddRoomOpen(false); setRoomForm({ room_number: '', room_type: 'single', floor: '', monthly_rent: 0 });
+      const { data } = await axios.get(`${API}/properties/${roomForProperty}`, { withCredentials: true });
+      setPropertyDetails(prev => ({ ...prev, [roomForProperty]: data }));
+      fetchAll();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+  };
+
+  const handleDeleteRoom = async (roomId, propId) => {
+    if (!window.confirm('Eliminare stanza?')) return;
+    try {
+      await axios.delete(`${API}/rooms/${roomId}`, { withCredentials: true });
+      toast.success('Stanza eliminata');
+      const { data } = await axios.get(`${API}/properties/${propId}`, { withCredentials: true });
+      setPropertyDetails(prev => ({ ...prev, [propId]: data }));
+      fetchAll();
+    } catch { toast.error('Errore'); }
+  };
+
+  const handleAssign = async () => {
+    if (!assignTenantId || !assignRoom) return;
+    try {
+      const fd = new FormData(); fd.append('tenant_id', assignTenantId);
+      await axios.post(`${API}/rooms/${assignRoom.id}/assign`, fd, { withCredentials: true });
+      toast.success('Inquilino assegnato');
+      setAssignOpen(false); setAssignTenantId(''); setAssignSearch('');
+      const { data } = await axios.get(`${API}/properties/${assignRoom.property_id}`, { withCredentials: true });
+      setPropertyDetails(prev => ({ ...prev, [assignRoom.property_id]: data }));
+      fetchAll();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+  };
+
+  const handleUnassign = async (roomId, propId) => {
+    try {
+      await axios.post(`${API}/rooms/${roomId}/unassign`, {}, { withCredentials: true });
+      toast.success('Inquilino rimosso');
+      const { data } = await axios.get(`${API}/properties/${propId}`, { withCredentials: true });
+      setPropertyDetails(prev => ({ ...prev, [propId]: data }));
+      fetchAll();
+    } catch { toast.error('Errore'); }
+  };
+
+  const handleImageUpload = async (e, type, id, propId) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      await axios.post(`${API}/${type}/${id}/images`, fd, { withCredentials: true });
+      toast.success('Immagine caricata');
+      const { data } = await axios.get(`${API}/properties/${propId}`, { withCredentials: true });
+      setPropertyDetails(prev => ({ ...prev, [propId]: data }));
+    } catch { toast.error('Errore upload'); }
+  };
+
+  const filtered = properties.filter(p =>
     p.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.property_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.landlord_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -109,33 +159,32 @@ const Properties = () => {
     <div data-testid="properties-page" className="luxury-fade-in">
       <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="luxury-title mb-2" data-testid="properties-title">Immobili</h1>
-          <p className="luxury-subtitle">Gestisci immobili, stanze e inquilini assegnati</p>
+          <h1 className="luxury-title mb-2">Immobili</h1>
+          <p className="luxury-subtitle">Gestisci immobili, stanze e inquilini</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="btn-luxury" data-testid="add-property-button"><Plus size={18} className="mr-2" />Aggiungi Immobile</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl luxury-modal">
-            <DialogHeader><DialogTitle>{editingProperty ? 'Modifica Immobile' : 'Nuovo Immobile'}</DialogTitle></DialogHeader>
+          <DialogContent className="max-w-2xl luxury-modal" style={{ background: '#FFFBF5' }}>
+            <DialogHeader><DialogTitle>{editingProperty ? 'Modifica' : 'Nuovo'} Immobile</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 {editingProperty && <div><Label>Codice</Label><Input value={formData.property_code} disabled className="luxury-input bg-gray-50" /></div>}
-                <div><Label>Tipo *</Label><Input value={formData.property_type} onChange={e => setFormData({ ...formData, property_type: e.target.value })} placeholder="Appartamento, Casa..." required className="luxury-input" /></div>
+                <div><Label>Tipo *</Label><Input value={formData.property_type} onChange={e => setFormData({ ...formData, property_type: e.target.value })} required className="luxury-input" placeholder="Appartamento..." /></div>
                 {!editingProperty && <div />}
                 <div className="col-span-2"><Label>Indirizzo *</Label><Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} required className="luxury-input" /></div>
                 <div>
                   <Label>Proprietario *</Label>
                   <Select value={formData.landlord_id} onValueChange={v => setFormData({ ...formData, landlord_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona proprietario" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
                     <SelectContent>{landlords.map(l => <SelectItem key={l.id} value={l.id}>{l.full_name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>N. Stanze *</Label><Input type="number" min="1" value={formData.number_of_rooms} onChange={e => setFormData({ ...formData, number_of_rooms: parseInt(e.target.value) })} required className="luxury-input" /></div>
-                <div><Label>Capacita *</Label><Input type="number" min="1" value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} required className="luxury-input" /></div>
-                <div><Label>Affitto Mensile *</Label><Input type="number" step="0.01" value={formData.rental_amount} onChange={e => setFormData({ ...formData, rental_amount: parseFloat(e.target.value) })} required className="luxury-input" /></div>
+                <div><Label>N. Stanze</Label><Input type="number" min="1" value={formData.number_of_rooms} onChange={e => setFormData({ ...formData, number_of_rooms: parseInt(e.target.value) || 1 })} className="luxury-input" /></div>
+                <div><Label>Capacita</Label><Input type="number" min="1" value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) || 1 })} className="luxury-input" /></div>
+                <div><Label>Affitto Mensile</Label><Input type="number" step="0.01" value={formData.rental_amount} onChange={e => setFormData({ ...formData, rental_amount: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
               </div>
-              <div><Label>Costi Aggiuntivi</Label><Input value={formData.additional_charges} onChange={e => setFormData({ ...formData, additional_charges: e.target.value })} className="luxury-input" placeholder="Utenze, manutenzione..." /></div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }} className="rounded-xl">Annulla</Button>
                 <Button type="submit" className="btn-luxury">{editingProperty ? 'Aggiorna' : 'Crea'}</Button>
@@ -149,116 +198,108 @@ const Properties = () => {
       <div className="luxury-card p-4 mb-6">
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
-          <Input placeholder="Cerca per codice, indirizzo o proprietario..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-11 luxury-input" />
+          <Input placeholder="Cerca per indirizzo, codice o proprietario..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-11 luxury-input" />
         </div>
       </div>
 
       {/* Property Cards */}
-      {filteredProperties.length === 0 ? (
-        <div className="luxury-card p-14 text-center">
-          <Home className="mx-auto mb-4" size={48} style={{ color: 'rgba(184,134,11,0.3)' }} />
-          <p style={{ color: '#8B7355' }}>Nessun immobile trovato</p>
-        </div>
+      {filtered.length === 0 ? (
+        <div className="luxury-card p-14 text-center"><Home className="mx-auto mb-4" size={48} style={{ color: 'rgba(184,134,11,0.3)' }} /><p style={{ color: '#8B7355' }}>Nessun immobile</p></div>
       ) : (
         <div className="space-y-4">
-          {filteredProperties.map(property => {
-            const isExpanded = expandedIds.has(property.id);
+          {filtered.map(property => {
+            const isExp = expandedIds.has(property.id);
             const detail = propertyDetails[property.id];
             return (
               <div key={property.id} className="luxury-card overflow-hidden" data-testid={`property-card-${property.id}`}>
-                {/* Property Header */}
-                <div
-                  className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-rose-50/20 transition-colors"
-                  onClick={() => toggleExpand(property.id)}
-                >
+                <div className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-rose-50/20 transition-colors" onClick={() => toggleExpand(property.id)}>
                   <div className="flex items-center gap-4">
-                    <div className="p-2.5 rounded-xl" style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
-                      <Home size={20} className="text-white" />
-                    </div>
+                    <div className="p-2.5 rounded-xl" style={{ background: 'linear-gradient(135deg, #9F1239, #BE123C)' }}><Home size={20} className="text-white" /></div>
                     <div>
                       <h3 className="font-semibold text-lg" style={{ color: '#2C1810' }}>{property.address}</h3>
-                      <p className="text-sm" style={{ color: '#8B7355' }}>
-                        Codice: {property.property_code} | Proprietario: {property.landlord_name} | {property.property_type}
-                      </p>
+                      <p className="text-sm" style={{ color: '#8B7355' }}>{property.property_code} | {property.landlord_name} | {property.property_type}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-6 text-sm" style={{ color: '#4A3B31' }}>
-                      <div className="text-center">
-                        <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Stanze</p>
-                        <p className="font-bold">{property.total_rooms_count || 0}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Occupate</p>
-                        <p className="font-bold" style={{ color: '#059669' }}>{property.occupied_rooms_count || 0}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Libere</p>
-                        <p className="font-bold" style={{ color: '#DC2626' }}>{property.vacant_rooms_count || 0}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs uppercase" style={{ color: '#8B7355' }}>Affitto</p>
-                        <p className="font-bold">&euro;{property.rental_amount?.toFixed(0)}</p>
-                      </div>
+                    <div className="flex gap-5 text-sm">
+                      <div className="text-center"><p className="text-[10px] uppercase" style={{ color: '#8B7355' }}>Stanze</p><p className="font-bold">{property.total_rooms_count || 0}</p></div>
+                      <div className="text-center"><p className="text-[10px] uppercase" style={{ color: '#8B7355' }}>Occupate</p><p className="font-bold" style={{ color: '#059669' }}>{property.occupied_rooms_count || 0}</p></div>
+                      <div className="text-center"><p className="text-[10px] uppercase" style={{ color: '#8B7355' }}>Libere</p><p className="font-bold" style={{ color: '#DC2626' }}>{property.vacant_rooms_count || 0}</p></div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={(e) => { e.stopPropagation(); openEditDialog(property); }}>
-                        <Edit size={16} style={{ color: '#B8860B' }} />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(property.id); }}>
-                        <Trash2 size={16} className="text-red-500" />
-                      </Button>
-                      {isExpanded ? <ChevronUp size={18} style={{ color: '#8B7355' }} /> : <ChevronDown size={18} style={{ color: '#8B7355' }} />}
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={(e) => { e.stopPropagation(); openEdit(property); }}><Edit size={16} style={{ color: '#B8860B' }} /></Button>
+                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(property.id); }}><Trash2 size={16} className="text-red-500" /></Button>
+                      {isExp ? <ChevronUp size={18} style={{ color: '#8B7355' }} /> : <ChevronDown size={18} style={{ color: '#8B7355' }} />}
                     </div>
                   </div>
                 </div>
 
-                {/* Expanded Detail: Rooms + Tenants */}
-                {isExpanded && (
+                {/* Expanded: Rooms */}
+                {isExp && (
                   <div style={{ borderTop: '1px solid rgba(184,134,11,0.1)' }}>
-                    {!detail ? (
-                      <div className="p-6 text-center"><div className="luxury-spinner h-8 w-8 mx-auto" /></div>
-                    ) : detail.rooms?.length === 0 ? (
-                      <div className="p-6 text-center" style={{ color: '#8B7355' }}>
-                        Nessuna stanza creata per questo immobile. Vai a <Link to="/rooms" className="underline" style={{ color: '#9F1239' }}>Stanze</Link> per aggiungerne.
+                    {/* Property images */}
+                    {detail?.images?.length > 0 && (
+                      <div className="px-6 py-3 flex gap-2 overflow-x-auto" style={{ background: 'rgba(184,134,11,0.02)' }}>
+                        {detail.images.map((img, i) => (
+                          <img key={i} src={`${process.env.REACT_APP_BACKEND_URL}${img}`} alt="" className="h-16 w-24 rounded-lg object-cover" />
+                        ))}
                       </div>
+                    )}
+                    {/* Actions bar */}
+                    <div className="px-6 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(184,134,11,0.08)' }}>
+                      <Button size="sm" className="btn-luxury text-xs" onClick={() => { setRoomForProperty(property.id); setAddRoomOpen(true); }}>
+                        <Plus size={14} className="mr-1" /> Aggiungi Stanza
+                      </Button>
+                      <label className="cursor-pointer">
+                        <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, 'properties', property.id, property.id)} />
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>
+                          <ImageIcon size={13} /> Aggiungi Foto
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Room list */}
+                    {!detail ? (
+                      <div className="p-6 text-center"><div className="luxury-spinner h-6 w-6 mx-auto" /></div>
+                    ) : detail.rooms?.length === 0 ? (
+                      <div className="p-6 text-center" style={{ color: '#8B7355' }}>Nessuna stanza. Clicca "Aggiungi Stanza" sopra.</div>
                     ) : (
-                      <div className="divide-y" style={{ borderColor: 'rgba(184,134,11,0.08)' }}>
+                      <div className="divide-y" style={{ borderColor: 'rgba(184,134,11,0.06)' }}>
                         {detail.rooms.map(room => (
-                          <div key={room.id} className="px-6 py-3 flex items-center justify-between" data-testid={`property-room-${room.id}`}>
+                          <div key={room.id} className="px-6 py-3 flex items-center justify-between" data-testid={`room-${room.id}`}>
                             <div className="flex items-center gap-3">
                               <DoorOpen size={16} style={{ color: room.status === 'occupied' ? '#059669' : '#94A3B8' }} />
                               <div>
-                                <span className="font-semibold text-sm" style={{ color: '#2C1810' }}>
-                                  Stanza {room.room_number}
-                                </span>
-                                <span className="text-xs ml-2" style={{ color: '#8B7355' }}>
-                                  ({room.room_type === 'single' ? 'Singola' : 'Doppia'})
-                                </span>
+                                <span className="font-semibold text-sm" style={{ color: '#2C1810' }}>Stanza {room.room_number}</span>
+                                <span className="text-xs ml-2" style={{ color: '#8B7355' }}>({room.room_type === 'single' ? 'Singola' : 'Doppia'})</span>
+                                {room.monthly_rent > 0 && <span className="text-xs ml-2" style={{ color: '#059669' }}>&euro;{room.monthly_rent}</span>}
                               </div>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               {room.tenant_name ? (
-                                <Link to={`/tenants/${room.tenant_id || ''}`} className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium hover:underline" style={{ background: '#ECFDF5', color: '#059669' }}>
-                                  <Users size={14} />
-                                  {room.tenant_name}
-                                </Link>
+                                <>
+                                  <Link to={`/tenants/${room.tenant_id || ''}`} className="px-2 py-1 rounded-full text-xs font-medium hover:underline" style={{ background: '#ECFDF5', color: '#059669' }}>
+                                    <Users size={12} className="inline mr-1" />{room.tenant_name}
+                                  </Link>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-lg hover:bg-red-50" onClick={() => handleUnassign(room.id, property.id)} title="Rimuovi inquilino">
+                                    <UserMinus size={14} className="text-red-400" />
+                                  </Button>
+                                </>
                               ) : (
-                                <span className="px-3 py-1 rounded-full text-xs" style={{ background: '#f1f5f9', color: '#94A3B8' }}>
-                                  Vuota
-                                </span>
+                                <Button variant="ghost" size="sm" className="rounded-lg hover:bg-emerald-50 text-xs gap-1" onClick={() => { setAssignRoom(room); setAssignOpen(true); }}>
+                                  <UserPlus size={14} style={{ color: '#059669' }} /> Assegna
+                                </Button>
                               )}
+                              <label className="cursor-pointer">
+                                <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, 'rooms', room.id, property.id)} />
+                                <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg hover:bg-amber-50"><ImageIcon size={13} style={{ color: '#B8860B' }} /></span>
+                              </label>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-lg hover:bg-red-50" onClick={() => handleDeleteRoom(room.id, property.id)}>
+                                <Trash2 size={13} className="text-red-400" />
+                              </Button>
                             </div>
                           </div>
                         ))}
-                        {/* Tenants summary */}
-                        {detail.tenants?.length > 0 && (
-                          <div className="px-6 py-3" style={{ background: 'rgba(184,134,11,0.03)' }}>
-                            <p className="text-xs font-semibold uppercase" style={{ color: '#8B7355' }}>
-                              Totale inquilini: {detail.tenants.length}
-                            </p>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -268,6 +309,50 @@ const Properties = () => {
           })}
         </div>
       )}
+
+      {/* Add Room Dialog */}
+      <Dialog open={addRoomOpen} onOpenChange={setAddRoomOpen}>
+        <DialogContent className="luxury-modal" style={{ background: '#FFFBF5' }}>
+          <DialogHeader><DialogTitle>Nuova Stanza</DialogTitle></DialogHeader>
+          <form onSubmit={handleAddRoom} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Numero Stanza *</Label><Input value={roomForm.room_number} onChange={e => setRoomForm({ ...roomForm, room_number: e.target.value })} required className="luxury-input" /></div>
+              <div>
+                <Label>Tipo</Label>
+                <Select value={roomForm.room_type} onValueChange={v => setRoomForm({ ...roomForm, room_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="single">Singola</SelectItem><SelectItem value="double">Doppia</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div><Label>Piano</Label><Input value={roomForm.floor} onChange={e => setRoomForm({ ...roomForm, floor: e.target.value })} className="luxury-input" /></div>
+              <div><Label>Affitto</Label><Input type="number" step="0.01" value={roomForm.monthly_rent} onChange={e => setRoomForm({ ...roomForm, monthly_rent: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
+            </div>
+            <div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={() => setAddRoomOpen(false)} className="rounded-xl">Annulla</Button><Button type="submit" className="btn-luxury">Crea</Button></div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Tenant Dialog */}
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent className="luxury-modal" style={{ background: '#FFFBF5' }}>
+          <DialogHeader><DialogTitle>Assegna Inquilino a Stanza {assignRoom?.room_number}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <Input placeholder="Cerca inquilino..." value={assignSearch} onChange={e => setAssignSearch(e.target.value)} className="luxury-input" autoFocus />
+            <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(184,134,11,0.15)' }}>
+              {tenants.filter(t => !t.room_id).filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).map(t => (
+                <button key={t.id} onClick={() => setAssignTenantId(t.id)} className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${assignTenantId === t.id ? 'font-bold' : ''}`}
+                  style={{ background: assignTenantId === t.id ? 'rgba(159,18,57,0.08)' : 'transparent', color: assignTenantId === t.id ? '#9F1239' : '#4A3B31' }}>
+                  {t.full_name} {t.nationality ? `(${t.nationality})` : ''}
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setAssignOpen(false)} className="rounded-xl">Annulla</Button>
+              <Button onClick={handleAssign} className="btn-luxury" disabled={!assignTenantId}>Assegna</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

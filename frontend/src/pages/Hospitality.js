@@ -36,6 +36,7 @@ const Hospitality = () => {
     host_province: '', host_residence: '',
     property_comune: '', property_provincia: '', property_number: '',
     property_interno: '', property_piano: '', notes: '',
+    signature_type: 'owner',
   });
 
   useEffect(() => { fetchAll(); }, []);
@@ -253,6 +254,26 @@ const Hospitality = () => {
               </div>
 
               <div><Label>Note</Label><Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="luxury-input" /></div>
+
+              {/* Firma / Signature */}
+              <div className="p-3 rounded-xl" style={{ background: 'rgba(159,18,57,0.03)', border: '1px solid rgba(159,18,57,0.1)' }}>
+                <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#9F1239' }}>Firma</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'owner', label: 'Proprietario' },
+                    { value: 'agency', label: 'Agenzia' },
+                    { value: 'blank', label: 'Vuoto' },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setForm({ ...form, signature_type: opt.value })}
+                      className={`p-2 rounded-lg text-xs font-medium text-center transition-all ${form.signature_type === opt.value ? 'ring-2 ring-rose-500' : ''}`}
+                      style={{ background: form.signature_type === opt.value ? 'rgba(159,18,57,0.08)' : 'white', color: '#9F1239', border: '1px solid rgba(159,18,57,0.15)' }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} className="rounded-xl">Annulla</Button>
                 <Button type="submit" className="btn-luxury">Crea e Salva</Button>

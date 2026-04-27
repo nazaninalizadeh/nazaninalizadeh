@@ -109,3 +109,11 @@ async def get_notifications(user: dict = Depends(get_current_user)):
 
     notifications.sort(key=lambda x: {"high": 0, "medium": 1, "low": 2}.get(x.get("severity", ""), 3))
     return notifications
+
+
+@router.post("/reminders/check")
+async def trigger_reminder_check(user: dict = Depends(get_current_user)):
+    """Manually trigger email reminder check."""
+    from services.email_reminders import check_and_send_reminders
+    await check_and_send_reminders()
+    return {"message": "Reminder check completato"}
