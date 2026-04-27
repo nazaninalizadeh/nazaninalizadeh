@@ -55,10 +55,10 @@ const Layout = () => {
   };
 
   const navItems = [
+    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/landlords', label: 'Proprietari', icon: Home },
     { path: '/properties', label: 'Immobili', icon: Building2 },
     { path: '/tenants', label: 'Inquilini', icon: Users },
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/payments', label: 'Pagamenti', icon: CreditCard },
     { path: '/hospitality', label: 'Ospitalità', icon: ScrollText },
     { path: '/registration', label: 'Registrazione', icon: ClipboardList },

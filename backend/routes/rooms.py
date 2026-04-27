@@ -15,6 +15,28 @@ router = APIRouter(prefix="/api", tags=["Rooms"])
 
 UPLOAD_DIR = Path(__file__).parent.parent / "uploads"
 
+# Image upload security
+ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+ALLOWED_IMAGE_EXTS = {"jpg", "jpeg", "png", "webp"}
+MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024  # 5MB
+
+
+async def _read_and_validate_image(file: UploadFile) -> tuple[bytes, str]:
+    """Validate uploaded image file. Returns (content, ext) or raises HTTPException."""
+    if not file.filename or "." not in file.filename:
+        raise HTTPException(status_code=400, detail="Nome file non valido.")
+    ext = file.filename.rsplit(".", 1)[-1].lower()
+    if ext not in ALLOWED_IMAGE_EXTS:
+        raise HTTPException(status_code=400, detail="Formato non supportato. Usa JPG, PNG o WEBP.")
+    if file.content_type and file.content_type.lower() not in ALLOWED_IMAGE_MIMES:
+        raise HTTPException(status_code=400, detail="Tipo MIME non valido. Usa JPG, PNG o WEBP.")
+    content = await file.read()
+    if len(content) == 0:
+        raise HTTPException(status_code=400, detail="File vuoto.")
+    if len(content) > MAX_IMAGE_SIZE_BYTES:
+        raise HTTPException(status_code=413, detail="File troppo grande. Massimo 5MB.")
+    return content, ext
+
 
 @router.post("/rooms")
 async def create_room(room: RoomCreate, user: dict = Depends(get_current_user)):
@@ -111,13 +133,12 @@ async def upload_room_image(room_id: str, file: UploadFile = File(...), user: di
     room = await db.rooms.find_one({"id": room_id})
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
+    content, ext = await _read_and_validate_image(file)
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     (UPLOAD_DIR / "rooms").mkdir(exist_ok=True)
-    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
     filename = f"{room_id}_{uuid.uuid4().hex[:8]}.{ext}"
     filepath = UPLOAD_DIR / "rooms" / filename
     async with aiofiles.open(str(filepath), "wb") as f:
-        content = await file.read()
         await f.write(content)
     url = f"/uploads/rooms/{filename}"
     await db.rooms.update_one({"id": room_id}, {"$push": {"images": url}})
@@ -129,13 +150,12 @@ async def upload_property_image(property_id: str, file: UploadFile = File(...), 
     prop = await db.properties.find_one({"id": property_id})
     if not prop:
         raise HTTPException(status_code=404, detail="Property not found")
+    content, ext = await _read_and_validate_image(file)
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     (UPLOAD_DIR / "properties").mkdir(exist_ok=True)
-    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
     filename = f"{property_id}_{uuid.uuid4().hex[:8]}.{ext}"
     filepath = UPLOAD_DIR / "properties" / filename
     async with aiofiles.open(str(filepath), "wb") as f:
-        content = await file.read()
         await f.write(content)
     url = f"/uploads/properties/{filename}"
     await db.properties.update_one({"id": property_id}, {"$push": {"images": url}})
@@ -144,12 +164,16 @@ async def upload_property_image(property_id: str, file: UploadFile = File(...), 
 
 @router.delete("/properties/{property_id}/images")
 async def delete_property_image(property_id: str, url: str = "", user: dict = Depends(get_current_user)):
+    if not url:
+        raise HTTPException(status_code=400, detail="URL immagine mancante.")
     await db.properties.update_one({"id": property_id}, {"$pull": {"images": url}})
     return {"message": "Immagine rimossa"}
 
 
 @router.delete("/rooms/{room_id}/images")
 async def delete_room_image(room_id: str, url: str = "", user: dict = Depends(get_current_user)):
+    if not url:
+        raise HTTPException(status_code=400, detail="URL immagine mancante.")
     await db.rooms.update_one({"id": room_id}, {"$pull": {"images": url}})
     return {"message": "Immagine rimossa"}
 

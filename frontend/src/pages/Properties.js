@@ -138,13 +138,27 @@ const Properties = () => {
   const handleImageUpload = async (e, type, id, propId) => {
     const file = e.target.files[0];
     if (!file) return;
+    // Client-side validation (server enforces too)
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      toast.error('Formato non supportato. Usa JPG, PNG o WEBP.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File troppo grande. Massimo 5MB.');
+      e.target.value = '';
+      return;
+    }
     const fd = new FormData(); fd.append('file', file);
     try {
       await axios.post(`${API}/${type}/${id}/images`, fd, { withCredentials: true });
       toast.success('Immagine caricata');
       const { data } = await axios.get(`${API}/properties/${propId}`, { withCredentials: true });
       setPropertyDetails(prev => ({ ...prev, [propId]: data }));
-    } catch { toast.error('Errore upload'); }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore upload');
+    }
   };
 
   const filtered = properties.filter(p =>
@@ -227,9 +241,11 @@ const Properties = () => {
                       <div className="text-center"><p className="text-[10px] uppercase" style={{ color: '#8B7355' }}>Libere</p><p className="font-bold" style={{ color: '#DC2626' }}>{property.vacant_rooms_count || 0}</p></div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={(e) => { e.stopPropagation(); openEdit(property); }}><Edit size={16} style={{ color: '#B8860B' }} /></Button>
-                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(property.id); }}><Trash2 size={16} className="text-red-500" /></Button>
-                      {isExp ? <ChevronUp size={18} style={{ color: '#8B7355' }} /> : <ChevronDown size={18} style={{ color: '#8B7355' }} />}
+                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={(e) => { e.stopPropagation(); openEdit(property); }} data-testid={`edit-property-${property.id}`}><Edit size={16} style={{ color: '#B8860B' }} /></Button>
+                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(property.id); }} data-testid={`delete-property-${property.id}`}><Trash2 size={16} className="text-red-500" /></Button>
+                      <button data-testid={`expand-property-${property.id}`} aria-label={isExp ? 'Comprimi' : 'Espandi'} className="p-1 rounded-lg hover:bg-rose-50/40" onClick={(e) => { e.stopPropagation(); toggleExpand(property.id); }}>
+                        {isExp ? <ChevronUp size={18} style={{ color: '#8B7355' }} /> : <ChevronDown size={18} style={{ color: '#8B7355' }} />}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -247,12 +263,12 @@ const Properties = () => {
                     )}
                     {/* Actions bar */}
                     <div className="px-6 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(184,134,11,0.08)' }}>
-                      <Button size="sm" className="btn-luxury text-xs" onClick={() => { setRoomForProperty(property.id); setAddRoomOpen(true); }}>
+                      <Button size="sm" className="btn-luxury text-xs" onClick={() => { setRoomForProperty(property.id); setAddRoomOpen(true); }} data-testid={`add-room-${property.id}`}>
                         <Plus size={14} className="mr-1" /> Aggiungi Stanza
                       </Button>
                       <label className="cursor-pointer">
-                        <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, 'properties', property.id, property.id)} />
-                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>
+                        <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={e => handleImageUpload(e, 'properties', property.id, property.id)} data-testid={`upload-property-image-${property.id}`} />
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>
                           <ImageIcon size={13} /> Aggiungi Foto
                         </span>
                       </label>
@@ -278,23 +294,23 @@ const Properties = () => {
                             <div className="flex items-center gap-2">
                               {room.tenant_name ? (
                                 <>
-                                  <Link to={`/tenants/${room.tenant_id || ''}`} className="px-2 py-1 rounded-full text-xs font-medium hover:underline" style={{ background: '#ECFDF5', color: '#059669' }}>
+                                  <Link to={`/tenants/${room.tenant_id || ''}`} className="px-2 py-1 rounded-full text-xs font-medium hover:underline" style={{ background: '#ECFDF5', color: '#059669' }} data-testid={`tenant-link-${room.id}`}>
                                     <Users size={12} className="inline mr-1" />{room.tenant_name}
                                   </Link>
-                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-lg hover:bg-red-50" onClick={() => handleUnassign(room.id, property.id)} title="Rimuovi inquilino">
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-lg hover:bg-red-50" onClick={() => handleUnassign(room.id, property.id)} title="Rimuovi inquilino" data-testid={`unassign-room-${room.id}`}>
                                     <UserMinus size={14} className="text-red-400" />
                                   </Button>
                                 </>
                               ) : (
-                                <Button variant="ghost" size="sm" className="rounded-lg hover:bg-emerald-50 text-xs gap-1" onClick={() => { setAssignRoom(room); setAssignOpen(true); }}>
+                                <Button variant="ghost" size="sm" className="rounded-lg hover:bg-emerald-50 text-xs gap-1" onClick={() => { setAssignRoom(room); setAssignOpen(true); }} data-testid={`assign-room-${room.id}`}>
                                   <UserPlus size={14} style={{ color: '#059669' }} /> Assegna
                                 </Button>
                               )}
                               <label className="cursor-pointer">
-                                <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, 'rooms', room.id, property.id)} />
+                                <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={e => handleImageUpload(e, 'rooms', room.id, property.id)} data-testid={`upload-room-image-${room.id}`} />
                                 <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg hover:bg-amber-50"><ImageIcon size={13} style={{ color: '#B8860B' }} /></span>
                               </label>
-                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-lg hover:bg-red-50" onClick={() => handleDeleteRoom(room.id, property.id)}>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-lg hover:bg-red-50" onClick={() => handleDeleteRoom(room.id, property.id)} data-testid={`delete-room-${room.id}`}>
                                 <Trash2 size={13} className="text-red-400" />
                               </Button>
                             </div>
@@ -337,18 +353,22 @@ const Properties = () => {
         <DialogContent className="luxury-modal" style={{ background: '#FFFBF5' }}>
           <DialogHeader><DialogTitle>Assegna Inquilino a Stanza {assignRoom?.room_number}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <Input placeholder="Cerca inquilino..." value={assignSearch} onChange={e => setAssignSearch(e.target.value)} className="luxury-input" autoFocus />
-            <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(184,134,11,0.15)' }}>
+            <Input placeholder="Cerca inquilino..." value={assignSearch} onChange={e => setAssignSearch(e.target.value)} className="luxury-input" autoFocus data-testid="assign-tenant-search" />
+            <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(184,134,11,0.15)' }} data-testid="assign-tenant-list">
+              {tenants.filter(t => !t.room_id).filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).length === 0 && (
+                <p className="text-xs text-center py-3" style={{ color: '#8B7355' }}>Nessun inquilino disponibile</p>
+              )}
               {tenants.filter(t => !t.room_id).filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).map(t => (
                 <button key={t.id} onClick={() => setAssignTenantId(t.id)} className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${assignTenantId === t.id ? 'font-bold' : ''}`}
-                  style={{ background: assignTenantId === t.id ? 'rgba(159,18,57,0.08)' : 'transparent', color: assignTenantId === t.id ? '#9F1239' : '#4A3B31' }}>
+                  style={{ background: assignTenantId === t.id ? 'rgba(159,18,57,0.08)' : 'transparent', color: assignTenantId === t.id ? '#9F1239' : '#4A3B31' }}
+                  data-testid={`assign-tenant-option-${t.id}`}>
                   {t.full_name} {t.nationality ? `(${t.nationality})` : ''}
                 </button>
               ))}
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setAssignOpen(false)} className="rounded-xl">Annulla</Button>
-              <Button onClick={handleAssign} className="btn-luxury" disabled={!assignTenantId}>Assegna</Button>
+              <Button onClick={handleAssign} className="btn-luxury" disabled={!assignTenantId} data-testid="assign-tenant-confirm">Assegna</Button>
             </div>
           </div>
         </DialogContent>

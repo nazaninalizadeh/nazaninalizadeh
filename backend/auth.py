@@ -284,10 +284,12 @@ async def login_direct(body: LoginStep1Request, req: Request, response: Response
 
     user_id = str(user["_id"])
 
-    # SINGLE ADMIN SESSION: Invalidate ALL other active sessions (system-wide, any admin)
+    # SINGLE-DEVICE-PER-ACCOUNT: invalidate ONLY this admin's previous active sessions.
+    # Other admin accounts keep their sessions; same admin's tabs share the same cookie/session_id
+    # (no new session is issued for new tabs), so this only kicks the previous DEVICE.
     await db.sessions.update_many(
-        {"is_active": True},
-        {"$set": {"is_active": False, "expired_reason": "new_admin_login"}},
+        {"is_active": True, "admin_id": user_id},
+        {"$set": {"is_active": False, "expired_reason": "new_device_login"}},
     )
 
     session_id = str(uuid.uuid4())
@@ -420,10 +422,10 @@ async def verify_otp_endpoint(body: VerifyOTPRequest, req: Request, response: Re
 
     user_id = str(user["_id"])
 
-    # SINGLE ADMIN SESSION: Invalidate ALL other active sessions
+    # SINGLE-DEVICE-PER-ACCOUNT: invalidate ONLY this admin's previous active sessions.
     await db.sessions.update_many(
-        {"is_active": True},
-        {"$set": {"is_active": False, "expired_reason": "new_admin_login"}},
+        {"is_active": True, "admin_id": user_id},
+        {"$set": {"is_active": False, "expired_reason": "new_device_login"}},
     )
 
     session_id = str(uuid.uuid4())

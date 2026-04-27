@@ -14,7 +14,9 @@ MONTH_NAMES = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
 
 @router.get("/notifications/count")
 async def get_notification_count(user: dict = Depends(get_current_user)):
-    """Quick count of late tenants for notification badge."""
+    """Quick count of late tenants for notification badge.
+    Optimized: 3 bulk queries instead of N+1 per tenant.
+    """
     now = datetime.now(timezone.utc)
     today_day = int(now.strftime("%d"))
     current_month = now.month
@@ -22,18 +24,41 @@ async def get_notification_count(user: dict = Depends(get_current_user)):
     month_start = now.strftime("%Y-%m-01")
     month_end = f"{now.year + 1}-01-01" if now.month == 12 else f"{now.year}-{now.month + 1:02d}-01"
 
+    tenants_with_rooms = await db.tenants.find(
+        {"room_id": {"$ne": ""}},
+        {"_id": 0, "id": 1, "payment_due_day": 1},
+    ).to_list(10000)
+    if not tenants_with_rooms:
+        return {"count": 0}
+
+    tenant_ids = [t["id"] for t in tenants_with_rooms]
+
+    # Bulk fetch all monthly_status overrides for this period
+    overrides = await db.monthly_status.find(
+        {"tenant_id": {"$in": tenant_ids}, "month": current_month, "year": current_year},
+        {"_id": 0, "tenant_id": 1, "status": 1},
+    ).to_list(10000)
+    overrides_by_tid = {o["tenant_id"]: o.get("status") for o in overrides}
+
+    # Bulk fetch all current-month payment tenant_ids
+    payments = await db.payments.find(
+        {"tenant_id": {"$in": tenant_ids}, "payment_date": {"$gte": month_start, "$lt": month_end}},
+        {"_id": 0, "tenant_id": 1},
+    ).to_list(100000)
+    paid_tenant_ids = {p["tenant_id"] for p in payments}
+
     count = 0
-    tenants_with_rooms = await db.tenants.find({"room_id": {"$ne": ""}}, {"_id": 0, "id": 1, "payment_due_day": 1}).to_list(1000)
     for t in tenants_with_rooms:
-        due_day = t.get("payment_due_day", 5)
-        override = await db.monthly_status.find_one({"tenant_id": t["id"], "month": current_month, "year": current_year}, {"_id": 0})
-        if override and override.get("status") == "paid":
+        status = overrides_by_tid.get(t["id"])
+        if status == "paid":
             continue
-        if override and override.get("status") == "late":
+        if status == "late":
             count += 1
             continue
-        payments = await db.payments.find({"tenant_id": t["id"], "payment_date": {"$gte": month_start, "$lt": month_end}}, {"_id": 0}).to_list(1)
-        if not payments and today_day > due_day:
+        if t["id"] in paid_tenant_ids:
+            continue
+        due_day = t.get("payment_due_day", 5)
+        if today_day > due_day:
             count += 1
     return {"count": count}
 

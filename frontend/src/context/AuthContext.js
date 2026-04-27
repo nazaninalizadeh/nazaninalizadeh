@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 const AuthContext = createContext(null);
 
@@ -145,13 +146,19 @@ export const AuthProvider = ({ children }) => {
   // Session polling - check every 30 seconds if session is still valid
   useEffect(() => {
     if (!user) return;
+    let kicked = false;
     const interval = setInterval(async () => {
       try {
         await axios.get(`${API_URL}/auth/session-check`, { withCredentials: true });
       } catch (err) {
-        if (err.response?.status === 401) {
+        if (err.response?.status === 401 && !kicked) {
+          kicked = true;
           setUser(false);
-          window.alert('Un altro admin ha effettuato l\'accesso. La tua sessione è stata chiusa.');
+          // Modern, non-blocking toast (replaces window.alert)
+          toast.error("La tua sessione è stata chiusa: il tuo account è stato usato su un altro dispositivo.", {
+            duration: 8000,
+            id: 'session-kicked',
+          });
         }
       }
     }, 30000);

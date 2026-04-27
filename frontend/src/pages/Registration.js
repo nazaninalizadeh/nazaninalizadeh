@@ -136,20 +136,31 @@ const Registration = () => {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {tenants.filter(t => t.room_id).map(t => (
-            <button key={t.id} onClick={() => handleDownloadZip(t.id, t.full_name)}
-              className="flex items-center gap-3 p-3 rounded-xl text-left hover:shadow-md transition-all"
+            <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl"
               style={{ background: 'rgba(159,18,57,0.03)', border: '1px solid rgba(159,18,57,0.1)' }}
-              data-testid={`zip-btn-${t.id}`}>
-              <Package size={16} style={{ color: '#9F1239' }} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate" style={{ color: '#2C1810' }}>{t.full_name}</p>
-                <p className="text-[10px]" style={{ color: '#8B7355' }}>{t.property_address}</p>
-              </div>
+              data-testid={`zip-card-${t.id}`}>
+              <button onClick={() => handleDownloadZip(t.id, t.full_name)} className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-all min-w-0" data-testid={`zip-download-${t.id}`}>
+                <Package size={16} style={{ color: '#9F1239' }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate" style={{ color: '#2C1810' }}>{t.full_name}</p>
+                  <p className="text-[10px]" style={{ color: '#8B7355' }}>{t.property_address}</p>
+                </div>
+              </button>
               <div className="flex gap-1">
-                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(5,150,105,0.1)', color: '#059669' }} onClick={e => { e.stopPropagation(); toast.info('WhatsApp: invio pacchetto (servizio non ancora configurato)'); }}>WA</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }} onClick={e => { e.stopPropagation(); toast.info('Email: invio pacchetto (servizio non ancora configurato)'); }}>Email</span>
+                <button
+                  onClick={() => toast.info('WhatsApp: invio pacchetto (in attesa di configurazione API Business)')}
+                  className="text-[10px] px-2 py-1 rounded font-semibold hover:shadow-sm transition-all"
+                  style={{ background: 'rgba(5,150,105,0.12)', color: '#059669' }}
+                  data-testid={`zip-wa-${t.id}`}
+                  title="Condividi via WhatsApp">WA</button>
+                <button
+                  onClick={() => toast.info('Email: invio pacchetto (in attesa di configurazione SMTP/Resend)')}
+                  className="text-[10px] px-2 py-1 rounded font-semibold hover:shadow-sm transition-all"
+                  style={{ background: 'rgba(37,99,235,0.12)', color: '#2563EB' }}
+                  data-testid={`zip-email-${t.id}`}
+                  title="Invia via Email">Email</button>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>
