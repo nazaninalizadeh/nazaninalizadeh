@@ -284,7 +284,12 @@ async def login_direct(body: LoginStep1Request, req: Request, response: Response
 
     user_id = str(user["_id"])
 
-    # Allow multiple sessions for the same admin (no single-device enforcement)
+    # SINGLE ADMIN SESSION: Invalidate ALL other active sessions (system-wide, any admin)
+    await db.sessions.update_many(
+        {"is_active": True},
+        {"$set": {"is_active": False, "expired_reason": "new_admin_login"}},
+    )
+
     session_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
     await db.sessions.insert_one({
@@ -415,7 +420,12 @@ async def verify_otp_endpoint(body: VerifyOTPRequest, req: Request, response: Re
 
     user_id = str(user["_id"])
 
-    # Allow multiple sessions (no single-device enforcement)
+    # SINGLE ADMIN SESSION: Invalidate ALL other active sessions
+    await db.sessions.update_many(
+        {"is_active": True},
+        {"$set": {"is_active": False, "expired_reason": "new_admin_login"}},
+    )
+
     session_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
     await db.sessions.insert_one({
@@ -551,6 +561,13 @@ async def get_active_sessions(user: dict = Depends(get_current_user)):
         if isinstance(s.get("last_active"), datetime):
             s["last_active"] = s["last_active"].isoformat()
     return sessions
+
+
+@auth_router.get("/session-check")
+async def check_session_valid(user: dict = Depends(get_current_user)):
+    """Check if current session is still valid. Used for frontend polling."""
+    return {"valid": True, "email": user.get("email", "")}
+
 
 
 # ============ Admin Seeding ============

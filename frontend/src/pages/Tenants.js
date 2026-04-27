@@ -105,33 +105,47 @@ const Tenants = () => {
 
   const availableRooms = rooms.filter(r => r.property_id === formData.property_id && (r.status === 'available' || r.id === formData.room_id));
 
-  // Quick status change handler
-  const handleQuickStatus = async (tenant, newStatus) => {
+  // Quick status change handler - uses dialog instead of prompt
+  const [quickTenant, setQuickTenant] = useState(null);
+  const [quickMethod, setQuickMethod] = useState('contanti');
+  const [quickAmount, setQuickAmount] = useState('');
+  const [quickDialogOpen, setQuickDialogOpen] = useState(false);
+
+  const handleQuickPaid = async () => {
+    if (!quickTenant) return;
     const now = new Date();
     const month = now.getMonth() + 1;
     const year = now.getFullYear();
     try {
-      const body = { status: newStatus };
-      if (newStatus === 'paid') {
-        const method = window.prompt('Metodo di pagamento? (contanti / bonifico)', 'contanti');
-        const amount = window.prompt('Importo?', '500');
-        body.amount = parseFloat(amount) || 0;
-        body.payment_method = method || 'contanti';
-        body.payment_date = now.toISOString().slice(0, 10);
-      }
-      await axios.put(`${API_URL}/payment-calendar/${tenant.id}/${year}/${month}`, body, { withCredentials: true });
-      toast.success(`${tenant.full_name} → ${newStatus === 'paid' ? 'Pagato' : newStatus === 'late' ? 'In Ritardo' : 'Non Pagato'}`);
+      await axios.put(`${API_URL}/payment-calendar/${quickTenant.id}/${year}/${month}`, {
+        status: 'paid', amount: parseFloat(quickAmount) || 0,
+        payment_method: quickMethod, payment_date: now.toISOString().slice(0, 10),
+      }, { withCredentials: true });
+      toast.success(`${quickTenant.full_name} → Pagato`);
+      setQuickDialogOpen(false); setQuickTenant(null); setQuickAmount(''); fetchAll();
+    } catch { toast.error('Errore'); }
+  };
+
+  const handleQuickStatusChange = async (tenant, newStatus) => {
+    if (newStatus === 'paid') {
+      setQuickTenant(tenant); setQuickDialogOpen(true); return;
+    }
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    try {
+      await axios.put(`${API_URL}/payment-calendar/${tenant.id}/${year}/${month}`, { status: newStatus }, { withCredentials: true });
+      toast.success(`${tenant.full_name} → ${newStatus === 'late' ? 'In Ritardo' : 'Non Pagato'}`);
       fetchAll();
     } catch { toast.error('Errore'); }
   };
 
   // Status badge component - clickable for quick change
   const StatusBadge = ({ tenant }) => {
-    const nextStatus = tenant.payment_status === 'paid' ? 'not_paid' : 'paid';
     if (tenant.payment_status === 'paid') {
       return (
         <div className="flex items-center gap-2">
-          <button onClick={() => handleQuickStatus(tenant, 'not_paid')} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:shadow-md transition-all" style={{ background: '#ECFDF5', color: '#059669' }} title="Clicca per cambiare stato" data-testid={`status-btn-${tenant.id}`}>
+          <button onClick={() => handleQuickStatusChange(tenant, 'not_paid')} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:shadow-md transition-all" style={{ background: '#ECFDF5', color: '#059669' }} title="Clicca per cambiare stato" data-testid={`status-btn-${tenant.id}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Pagato
           </button>
           <span className="text-xs font-bold" style={{ color: '#059669' }}>&euro;{tenant.month_paid_amount?.toFixed(0)}</span>
@@ -141,14 +155,14 @@ const Tenants = () => {
     }
     if (tenant.payment_status === 'late') {
       return (
-        <button onClick={() => handleQuickStatus(tenant, 'paid')} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:shadow-md transition-all" style={{ background: '#FEF2F2', color: '#DC2626' }} title="Clicca per segnare pagato" data-testid={`status-btn-${tenant.id}`}>
+        <button onClick={() => handleQuickStatusChange(tenant, 'paid')} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:shadow-md transition-all" style={{ background: '#FEF2F2', color: '#DC2626' }} title="Clicca per segnare pagato" data-testid={`status-btn-${tenant.id}`}>
           <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> In Ritardo
         </button>
       );
     }
     if (tenant.room_id) {
       return (
-        <button onClick={() => handleQuickStatus(tenant, 'paid')} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:shadow-md transition-all" style={{ background: '#FFF7ED', color: '#D97706' }} title="Clicca per segnare pagato" data-testid={`status-btn-${tenant.id}`}>
+        <button onClick={() => handleQuickStatusChange(tenant, 'paid')} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:shadow-md transition-all" style={{ background: '#FFF7ED', color: '#D97706' }} title="Clicca per segnare pagato" data-testid={`status-btn-${tenant.id}`}>
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Non Pagato
         </button>
       );
@@ -284,6 +298,43 @@ const Tenants = () => {
           </Table>
         )}
       </div>
+
+      {/* Quick Pay Dialog */}
+      {quickDialogOpen && quickTenant && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(44,24,16,0.5)' }} onClick={() => { setQuickDialogOpen(false); setQuickTenant(null); }}>
+          <div className="p-6 rounded-2xl max-w-sm w-full mx-4" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.2)', boxShadow: '0 25px 50px rgba(159,18,57,0.2)' }}
+            onClick={e => e.stopPropagation()}>
+            <h4 className="font-semibold text-lg mb-2" style={{ color: '#059669' }}>Segna Pagamento</h4>
+            <p className="text-sm mb-4" style={{ color: '#4A3B31' }}>{quickTenant.full_name}</p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: '#8B7355' }}>Metodo Pagamento</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => setQuickMethod('contanti')} className={`p-2.5 rounded-xl text-sm font-medium text-center transition-all ${quickMethod === 'contanti' ? 'ring-2 ring-emerald-500' : ''}`} style={{ background: quickMethod === 'contanti' ? '#D1FAE5' : '#F0FDF4', color: '#059669' }}>
+                    Contanti
+                  </button>
+                  <button onClick={() => setQuickMethod('bonifico')} className={`p-2.5 rounded-xl text-sm font-medium text-center transition-all ${quickMethod === 'bonifico' ? 'ring-2 ring-emerald-500' : ''}`} style={{ background: quickMethod === 'bonifico' ? '#D1FAE5' : '#F0FDF4', color: '#059669' }}>
+                    Bonifico
+                  </button>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold mb-1" style={{ color: '#8B7355' }}>Importo (€)</p>
+                <input type="number" placeholder="500" value={quickAmount} onChange={e => setQuickAmount(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl text-sm" style={{ border: '1px solid rgba(5,150,105,0.3)', background: 'white' }} />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => { setQuickDialogOpen(false); setQuickTenant(null); }} className="flex-1 px-4 py-2 rounded-xl text-sm font-medium" style={{ color: '#8B7355', border: '1px solid rgba(184,134,11,0.2)' }}>
+                  Annulla
+                </button>
+                <button onClick={handleQuickPaid} className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: '#059669' }}>
+                  Conferma
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

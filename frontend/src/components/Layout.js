@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
@@ -27,6 +28,21 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
+
+  const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const { data } = await axios.get(`${API_URL}/notifications/count`, { withCredentials: true });
+        setNotifCount(data.count || 0);
+      } catch {}
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -39,16 +55,15 @@ const Layout = () => {
   };
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/landlords', label: 'Proprietari', icon: Home },
     { path: '/properties', label: 'Immobili', icon: Building2 },
-    { path: '/rooms', label: 'Stanze', icon: DoorOpen },
     { path: '/tenants', label: 'Inquilini', icon: Users },
+    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/payments', label: 'Pagamenti', icon: CreditCard },
-    { path: '/hospitality', label: 'Ospitalita', icon: ScrollText },
+    { path: '/hospitality', label: 'Ospitalità', icon: ScrollText },
     { path: '/registration', label: 'Registrazione', icon: ClipboardList },
     { path: '/contracts', label: 'Contratti', icon: FileText },
     { path: '/invoices', label: 'Fatture', icon: Receipt },
-    { path: '/landlords', label: 'Proprietari', icon: Home },
     { path: '/notifications', label: 'Notifiche', icon: Bell },
     { path: '/reports', label: 'Report', icon: BarChart3 },
     { path: '/data-exchange', label: 'Gestione Dati', icon: Sheet },
@@ -117,6 +132,9 @@ const Layout = () => {
                 >
                   <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                   <span className="text-sm">{item.label}</span>
+                  {item.label === 'Notifiche' && notifCount > 0 && (
+                    <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: '#DC2626', minWidth: 18, textAlign: 'center' }}>{notifCount}</span>
+                  )}
                 </Link>
               );
             })}

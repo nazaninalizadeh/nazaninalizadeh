@@ -27,7 +27,7 @@ class MonthStatusUpdate(BaseModel):
 
 
 async def _compute_month_status(tenant_id: str, month: int, year: int, due_day: int, created_at: str = "") -> dict:
-    """Compute status for a single month, checking manual overrides first, then payments, then auto-late."""
+    """Compute status for a single month, checking manual overrides first, then payments, then contract-based auto-late."""
     now = datetime.now(timezone.utc)
 
     # 1. Check for manual override
@@ -84,11 +84,14 @@ async def _compute_month_status(tenant_id: str, month: int, year: int, due_day: 
         except Exception:
             pass
 
-    # 4. Auto-determine: past due = late, else not_paid
+    # 4. Auto-determine: In Ritardo if 1 day past due_day (from contract or tenant setting)
+    # "After due date + 1 day" means: if today > due_day, it's late
     if year < now.year or (year == now.year and month < now.month):
         status = "late"
     elif year == now.year and month == now.month:
-        status = "late" if int(now.strftime("%d")) > due_day else "not_paid"
+        today_day = int(now.strftime("%d"))
+        # Late = 1 day after due date (due_day + 1)
+        status = "late" if today_day > due_day else "not_paid"
     else:
         status = "not_paid"
 
@@ -110,7 +113,12 @@ async def get_payment_calendar(tenant_id: str, year: int = 0, user: dict = Depen
     if year == 0:
         year = now.year
 
+    # Get due_day: prefer from contract, fallback to tenant setting
     due_day = tenant.get("payment_due_day", 5)
+    contract = await db.contracts.find_one({"tenant_id": tenant_id, "status": "active"}, {"_id": 0})
+    if contract and contract.get("payment_due_day"):
+        due_day = contract["payment_due_day"]
+
     created_at = tenant.get("created_at", "")
     calendar = []
 
@@ -118,7 +126,7 @@ async def get_payment_calendar(tenant_id: str, year: int = 0, user: dict = Depen
         m = await _compute_month_status(tenant_id, month, year, due_day, created_at)
         calendar.append(m)
 
-    return {"tenant_id": tenant_id, "year": year, "calendar": calendar}
+    return {"tenant_id": tenant_id, "year": year, "due_day": due_day, "calendar": calendar}
 
 
 @router.put("/payment-calendar/{tenant_id}/{year}/{month}")

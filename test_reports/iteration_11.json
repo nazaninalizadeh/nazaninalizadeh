@@ -1,0 +1,59 @@
+{
+  "summary": "Iteration 11 - Single-admin session, payment method dropdown (Contanti/Bonifico), Cancel safety, sidebar reorder + Stanze removal, notification badge. Backend pytest 13/13 passed. Frontend Playwright validated all sidebar/dialog flows.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration11.py",
+    "/app/test_reports/pytest/iteration_11.xml"
+  ],
+  "action_items": [
+    "(Carry-over from iter 10) Add unique compound index on monthly_status(tenant_id, month, year).",
+    "(Carry-over) Batch-load monthly_status in /late-tenants and /dashboard/stats to reduce N+1.",
+    "(Carry-over) DELETE /api/payment-calendar should return 404 when no override exists.",
+    "(Carry-over) Add ESC-to-close to TenantDetail edit-month dialog."
+  ],
+  "critical_code_review_comments": [
+    "auth.py login_direct: SINGLE-ADMIN enforcement uses update_many({'is_active': True}, ...) on EVERY successful login - including when the SAME admin re-logs in. This kills the user's own previous tabs unintentionally. Consider scoping by admin_id != current to allow same-admin multi-tab.",
+    "auth.py: ADMIN1_PASSWORD/ADMIN2_PASSWORD env vars must contain literal '$' characters (bcrypt hashes start with $2b$). Verify .env doesn't shell-expand them - here only plaintext passwords are stored in .env, hashed at startup, so this is safe. Confirmed.",
+    "notifications_routes.py /notifications/count duplicates the late-detection logic from payment_calendar._compute_month_status and dashboard.py - 4 different places now compute 'is late'. Extract a shared helper to avoid drift.",
+    "Layout.js: notifCount polling uses fetch every 60s with no abort on unmount race - on rapid navigation can set state on unmounted component. Minor.",
+    "AuthContext.js session-check kick UX uses window.alert() (synchronous, blocks event loop). Replace with toast or modal for better UX consistency.",
+    "TenantDetail.js edit dialog is a custom fixed overlay (not Radix Dialog). No ESC handling, no focus trap.",
+    "Tenants.js handleQuickStatusChange: when newStatus='not_paid'/'late', it triggers full fetchAll() reload instead of optimistic UI update."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration11.py (new)",
+    "/app/test_reports/pytest/iteration_11.xml (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (13/13 passed)",
+    "frontend": "100% of the 17 requested feature checks"
+  },
+  "test_credentials": {
+    "admin1": {"email": "alborz.sbd@gmail.com", "password": "1234@Admin"},
+    "admin2": {"email": "nazaninalizade890@gmail.com", "password": "1234@Admin"},
+    "captcha_bypass": "test_token_bypass_recaptcha"
+  },
+  "seed_data_creation": "No persistent seed data. Test creates monthly_status override for 2026/04 then deletes it. Single-admin kick test logs both admins in/out, leaving admin1 as the final active session.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "verification_details": {
+    "single_admin_kick": "Verified: when admin2 logs in, admin1's prior session-check returns 401. Then admin1 logs in -> admin2's session-check returns 401. Layout.js polls /api/auth/session-check every 30s and shows window.alert + setUser(false) when 401 received.",
+    "session_check": "GET /api/auth/session-check returns {valid:true, email} for authenticated, 401 for unauthenticated. Used by AuthContext.js polling.",
+    "notification_count": "GET /api/notifications/count returns {count: int}. Layout.js shows red badge with count next to 'Notifiche' menu item when count>0. Verified live UI badge showed '5'.",
+    "payment_calendar_due_day": "GET /api/payment-calendar/{tid}?year=2026 returns {tenant_id, year, due_day, calendar:[12]}. due_day from active contract (falls back to tenant.payment_due_day).",
+    "payment_calendar_put": "PUT with status=paid/not_paid/late all return 200 and persist. Invalid status -> 400. Override visible via subsequent GET (manual_override=true).",
+    "sidebar_order": "Verified live: ['Proprietari','Immobili','Inquilini','Dashboard','Pagamenti','Ospitalità','Registrazione','Contratti','Fatture','Notifiche5','Report','Gestione Dati']. No Stanze item.",
+    "tenants_quick_dialog": "Clicking status badge (testid status-btn-{id}) for not_paid/late tenant opens dialog with Contanti/Bonifico method buttons + Importo input + Annulla/Conferma. Annulla just closes dialog (no API call). Confirmed via UI.",
+    "tenant_detail_dialog": "Clicking calendar-month-{n} opens dialog with set-month-not_paid, set-month-late buttons (each fires its own PUT immediately) and a Paid section with Contanti/Bonifico method buttons + amount input + 'Conferma Pagamento' (testid set-month-paid) which fires PUT with payment_method. Annulla (testid cancel-edit-month) closes dialog with NO API call.",
+    "dashboard_links": "Dashboard renders <Link to='/tenants?status=paid'>{count}</Link>, <Link to='/tenants?status=not_paid'>{count}</Link>, <Link to='/tenants?status=late'>{count}</Link>. Numbers are clickable. 'Inquilini In Ritardo — {month}' luxury card renders with red rows linking to /tenants/{id}."
+  },
+  "context_for_next_testing_agent": "Run: python -m pytest /app/backend/tests/test_iteration11.py -v --junitxml=/app/test_reports/pytest/iteration_11.xml. The TestZZSingleAdminKick class MUST run last (it's at end of file by design) because it invalidates all module-scoped sessions. Login: alborz.sbd@gmail.com / 1234@Admin with captcha_token='test_token_bypass_recaptcha'. Note: every login (even same admin re-logging in) currently kills ALL active sessions - if multi-tab support is desired for the same admin, scope by admin_id in update_many. Layout.js shows notification badge from /api/notifications/count. AuthContext.js polls /api/auth/session-check every 30s and uses window.alert() on 401."
+}

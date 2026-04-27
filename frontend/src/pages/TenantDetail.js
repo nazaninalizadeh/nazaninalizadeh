@@ -17,6 +17,8 @@ const TenantDetail = () => {
   const [calendar, setCalendar] = useState(null);
   const [editDialog, setEditDialog] = useState(false);
   const [editMonth, setEditMonth] = useState(null);
+  const [paidMethod, setPaidMethod] = useState('contanti');
+  const [paidAmount, setPaidAmount] = useState('');
 
   useEffect(() => { fetchTenant(); fetchCalendar(); }, [id]);
 
@@ -201,51 +203,71 @@ const TenantDetail = () => {
                   {editMonth.manual_override && ' (manuale)'}
                 </p>
                 <div className="space-y-2 mb-4">
-                  {[
-                    { status: 'paid', label: 'Pagato', color: '#059669', bg: '#ECFDF5' },
-                    { status: 'not_paid', label: 'Non Pagato', color: '#D97706', bg: '#FFF7ED' },
-                    { status: 'late', label: 'In Ritardo', color: '#DC2626', bg: '#FEF2F2' },
-                  ].map(opt => (
-                    <button key={opt.status} onClick={async () => {
+                  {/* NOT PAID button */}
+                  <button onClick={async () => {
+                    try {
+                      await axios.put(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}`, { status: 'not_paid' }, { withCredentials: true });
+                      toast.success(`${editMonth.month_name} → Non Pagato`);
+                      setEditDialog(false); fetchCalendar(); fetchTenant();
+                    } catch { toast.error('Errore'); }
+                  }} className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:shadow-md transition-all" style={{ background: '#FFF7ED', border: '1.5px solid rgba(217,119,6,0.3)' }} data-testid="set-month-not_paid">
+                    <div className="w-3 h-3 rounded-full" style={{ background: '#D97706' }} />
+                    <span className="font-semibold text-sm" style={{ color: '#D97706' }}>Non Pagato</span>
+                  </button>
+
+                  {/* LATE button */}
+                  <button onClick={async () => {
+                    try {
+                      await axios.put(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}`, { status: 'late' }, { withCredentials: true });
+                      toast.success(`${editMonth.month_name} → In Ritardo`);
+                      setEditDialog(false); fetchCalendar(); fetchTenant();
+                    } catch { toast.error('Errore'); }
+                  }} className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:shadow-md transition-all" style={{ background: '#FEF2F2', border: '1.5px solid rgba(220,38,38,0.3)' }} data-testid="set-month-late">
+                    <div className="w-3 h-3 rounded-full" style={{ background: '#DC2626' }} />
+                    <span className="font-semibold text-sm" style={{ color: '#DC2626' }}>In Ritardo</span>
+                  </button>
+
+                  {/* PAID - with method selection */}
+                  <div className="p-3 rounded-xl" style={{ background: '#ECFDF5', border: '1.5px solid rgba(5,150,105,0.3)' }}>
+                    <p className="font-semibold text-sm mb-3" style={{ color: '#059669' }}>Segna come Pagato</p>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <button onClick={() => setPaidMethod('contanti')} className={`p-2 rounded-lg text-xs font-medium text-center transition-all ${paidMethod === 'contanti' ? 'ring-2 ring-emerald-500' : ''}`} style={{ background: paidMethod === 'contanti' ? '#D1FAE5' : '#F0FDF4', color: '#059669' }}>
+                        Contanti
+                      </button>
+                      <button onClick={() => setPaidMethod('bonifico')} className={`p-2 rounded-lg text-xs font-medium text-center transition-all ${paidMethod === 'bonifico' ? 'ring-2 ring-emerald-500' : ''}`} style={{ background: paidMethod === 'bonifico' ? '#D1FAE5' : '#F0FDF4', color: '#059669' }}>
+                        Bonifico
+                      </button>
+                    </div>
+                    <input type="number" placeholder="Importo (€)" value={paidAmount} onChange={e => setPaidAmount(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg text-sm mb-2" style={{ border: '1px solid rgba(5,150,105,0.3)', background: 'white' }} />
+                    <button onClick={async () => {
+                      if (!paidMethod) { toast.error('Seleziona metodo pagamento'); return; }
                       try {
-                        const body = { status: opt.status };
-                        if (opt.status === 'paid') {
-                          const method = window.prompt('Metodo di pagamento? (contanti / bonifico)', 'contanti');
-                          const amount = window.prompt('Importo?', '500');
-                          body.amount = parseFloat(amount) || 0;
-                          body.payment_method = method || 'contanti';
-                          body.payment_date = new Date().toISOString().slice(0, 10);
-                        }
-                        await axios.put(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}`, body, { withCredentials: true });
-                        toast.success(`${editMonth.month_name} → ${opt.label}`);
-                        setEditDialog(false);
-                        fetchCalendar();
-                        fetchTenant();
+                        await axios.put(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}`, {
+                          status: 'paid', amount: parseFloat(paidAmount) || 0,
+                          payment_method: paidMethod, payment_date: new Date().toISOString().slice(0, 10),
+                        }, { withCredentials: true });
+                        toast.success(`${editMonth.month_name} → Pagato (${paidMethod})`);
+                        setEditDialog(false); setPaidMethod('contanti'); setPaidAmount(''); fetchCalendar(); fetchTenant();
                       } catch { toast.error('Errore'); }
-                    }}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:shadow-md transition-all"
-                      style={{ background: opt.bg, border: `1.5px solid ${opt.color}30` }}
-                      data-testid={`set-month-${opt.status}`}>
-                      <div className="w-3 h-3 rounded-full" style={{ background: opt.color }} />
-                      <span className="font-semibold text-sm" style={{ color: opt.color }}>{opt.label}</span>
+                    }} className="w-full p-2 rounded-lg text-xs font-semibold text-white" style={{ background: '#059669' }} data-testid="set-month-paid">
+                      Conferma Pagamento
                     </button>
-                  ))}
+                  </div>
                 </div>
                 {editMonth.manual_override && (
                   <button onClick={async () => {
                     try {
                       await axios.delete(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}`, { withCredentials: true });
                       toast.success('Override rimosso');
-                      setEditDialog(false);
-                      fetchCalendar();
-                      fetchTenant();
+                      setEditDialog(false); fetchCalendar(); fetchTenant();
                     } catch { toast.error('Errore'); }
                   }} className="w-full text-center text-xs py-2 rounded-xl hover:bg-rose-50 transition-all" style={{ color: '#9F1239', border: '1px solid rgba(159,18,57,0.2)' }}>
                     Rimuovi override manuale
                   </button>
                 )}
-                <button onClick={() => setEditDialog(false)} className="w-full text-center text-xs py-2 mt-2" style={{ color: '#8B7355' }}>
-                  Chiudi
+                <button onClick={() => setEditDialog(false)} className="w-full text-center text-xs py-2 mt-2 font-medium" style={{ color: '#8B7355' }} data-testid="cancel-edit-month">
+                  Annulla
                 </button>
               </div>
             </div>

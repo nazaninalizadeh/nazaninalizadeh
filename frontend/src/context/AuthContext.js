@@ -142,6 +142,22 @@ export const AuthProvider = ({ children }) => {
     setUser(false);
   };
 
+  // Session polling - check every 30 seconds if session is still valid
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(async () => {
+      try {
+        await axios.get(`${API_URL}/auth/session-check`, { withCredentials: true });
+      } catch (err) {
+        if (err.response?.status === 401) {
+          setUser(false);
+          window.alert('Un altro admin ha effettuato l\'accesso. La tua sessione è stata chiusa.');
+        }
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const changePassword = async (currentPassword, newPassword) => {
     const { data } = await axios.post(
       `${API_URL}/auth/change-password`,
