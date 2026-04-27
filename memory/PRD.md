@@ -34,7 +34,6 @@ Proprietari | Immobili | Inquilini | Dashboard | Pagamenti | Ospitalità | Regis
 ## Recently Completed (Feb 2026)
 - DONE: Merge Stanze into Immobili detail (rooms visible when clicking property)
 - DONE: Image upload for properties/rooms
-- DONE: Hospitality form exact match to provided form
 - DONE: Owner ID front/back upload with OCR
 - DONE: Registration ZIP package (visual share buttons)
 - DONE: Face detection for profile photo
@@ -42,17 +41,22 @@ Proprietari | Immobili | Inquilini | Dashboard | Pagamenti | Ospitalità | Regis
 - DONE (Feb 27, 2026): Login auto-redirect — navigate('/') + <Navigate /> guard
 - DONE (Feb 27, 2026): Menu order — Dashboard, Proprietari, Immobili, Inquilini, then rest
 - DONE (Feb 27, 2026): Inside Immobili tenant assign/unassign with searchable dropdown (real tenant data)
-- DONE (Feb 27, 2026): data-testid for expand-property, assign-room, unassign-room, delete-room, upload-property-image, upload-room-image, edit/delete-property, assign-tenant-search/list/option/confirm, zip-wa/email/download
-- DONE (Feb 27, 2026): Image upload security — JPG/PNG/WEBP only, 5MB max, mimetype + ext check; clear 400/413 errors; both client + server side
-- DONE (Feb 27, 2026): Single-device-per-account session — invalidation scoped by admin_id (admin1 and admin2 sessions independent; same admin's tabs share cookie)
-- DONE (Feb 27, 2026): Replaced window.alert with sonner toast for session-kicked UX (non-blocking)
-- DONE (Feb 27, 2026): /notifications/count optimized — 3 bulk queries instead of N+1 (sub-200ms)
-- DONE (Feb 27, 2026): Email reminders — structured for Resend/SendGrid; logs 1-week-before / 1-day-after / 1-week-after
-- DONE (Feb 27, 2026): WhatsApp + Email mock share buttons in Registration ZIP
+- DONE (Feb 27, 2026): data-testid coverage for property/room actions
+- DONE (Feb 27, 2026): Image upload security — JPG/PNG/WEBP only, 5MB max, mimetype + ext check, client + server
+- DONE (Feb 27, 2026): Single-device-per-account session — invalidation scoped by admin_id
+- DONE (Feb 27, 2026): window.alert → sonner toast for session-kicked UX
+- DONE (Feb 27, 2026): /notifications/count optimized — 3 bulk queries (sub-200ms)
+- DONE (Feb 27, 2026): Email reminder structure (1 wk before / 1 day after / 1 wk after)
+- DONE (Feb 27, 2026): Dashboard count consistency — `tenants_late = len(late_details)` (single source of truth)
+- DONE (Feb 27, 2026): Hospitality PDF rebuilt to match official Italian template exactly (no extra branding)
+- DONE (Feb 27, 2026): Notification badge — POST /api/notifications/mark-seen + last_viewed_at vs became_late_at; sidebar listens for 'notifications:seen' event
+- DONE (Feb 27, 2026): Tenant document download bug — `/uploads/` was hitting K8s ingress and Navigate('/'); now serves at `/api/uploads/` + DB migration
+- DONE (Feb 27, 2026): Real Resend email integration with mock fallback when RESEND_API_KEY is empty (services/email_service.py)
 
 ## Backlog
-- P1: Real Resend/SendGrid integration (currently console-logged) — needs API key
-- P1: WhatsApp Business API (currently UI-toast) — needs API key
-- P2: Replace test RECAPTCHA_SECRET with real production key (or remove)
+- P1: Provide RESEND_API_KEY in production .env to switch reminders from mock to real
+- P1: WhatsApp Business API for ZIP sharing (currently UI-toast)
+- P2: Replace test RECAPTCHA_SECRET with production key (or remove)
 - P2: Persian UI translation
 - P2: Unique compound index on monthly_status(tenant_id, month, year)
+- P2: Edge case in _became_late_at for due_day > 28 (clamps to 28)
