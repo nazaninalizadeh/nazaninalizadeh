@@ -131,9 +131,16 @@ const Registration = () => {
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#9F1239' }}>
           <Package size={18} /> Pacchetto Documenti (ZIP)
         </h3>
-        <p className="text-xs mb-4" style={{ color: '#8B7355' }}>
-          Scarica Ospitalita + Registrazione + Contratto + Documento Proprietario in un unico ZIP
+        <p className="text-xs mb-2" style={{ color: '#8B7355' }}>
+          Ogni pacchetto include i file qui sotto:
         </p>
+        <ul className="text-xs mb-4 ml-5 list-disc" style={{ color: '#4A3B31' }}>
+          <li>Modulo di Registrazione</li>
+          <li>Documento del Proprietario (carta d'identità o passaporto)</li>
+          <li>Modulo di Ospitalità (Comunicazione di Ospitalità - Articolo 7)</li>
+          <li>Documento dell'Inquilino (passaporto o carta d'identità)</li>
+          <li>Contratto di locazione (se attivo)</li>
+        </ul>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {tenants.filter(t => t.room_id).map(t => (
             <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl"

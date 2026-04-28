@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 
+import { Combobox } from '../components/Combobox';
+import { COUNTRIES } from '../lib/it_dictionaries';
+
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
 const Landlords = () => {
@@ -18,11 +21,14 @@ const Landlords = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLandlord, setEditingLandlord] = useState(null);
   const [formData, setFormData] = useState({
-    full_name: '', codice_fiscale: '', phone: '', email: '', whatsapp: '',
-    id_type: '', id_number: '', bank_details: '', notes: ''
+    surname: '', name: '', codice_fiscale: '', phone: '', email: '',
+    id_type: '', id_number: '', bank_details: '', notes: '',
+    date_of_birth: '', place_of_birth: '', province_of_birth: '', country_of_birth: 'Italia',
+    residence: '', signature_url: '',
   });
   const ocrRef = useRef(null);
   const ownerDocRef = useRef(null);
+  const sigRef = useRef(null);
 
   const handleOwnerOcr = async (e) => {
     const file = e.target.files[0];
@@ -34,12 +40,17 @@ const Landlords = () => {
       const { data } = await axios.post(`${API_URL}/ocr/scan`, fd, { withCredentials: true });
       if (data.status === 'completed' && data.extracted_data) {
         const d = data.extracted_data;
+        const [surname = '', ...nameRest] = (d.full_name || '').split(' ');
         setFormData(prev => ({
           ...prev,
-          full_name: d.full_name || prev.full_name,
+          surname: prev.surname || surname,
+          name: prev.name || nameRest.join(' '),
           codice_fiscale: d.codice_fiscale || prev.codice_fiscale,
           id_number: d.passport_number || prev.id_number,
           id_type: d.document_type === 'passport' ? 'Passaporto' : d.document_type === 'id_card' ? "Carta d'identita" : prev.id_type,
+          date_of_birth: d.date_of_birth || prev.date_of_birth,
+          place_of_birth: d.place_of_birth || prev.place_of_birth,
+          country_of_birth: d.country_of_birth || prev.country_of_birth || 'Italia',
         }));
         toast.success('Dati estratti dal documento!');
       } else {
@@ -47,6 +58,23 @@ const Landlords = () => {
       }
     } catch { toast.error('Errore OCR'); }
     if (ocrRef.current) ocrRef.current.value = '';
+  };
+
+  const handleSignatureUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!allowed.includes(file.type)) { toast.error('Solo PNG/JPG/WEBP'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Max 5MB'); return; }
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('transparent', 'true');  // Ask backend to attempt background removal
+    try {
+      const { data } = await axios.post(`${API_URL}/landlords/signature`, fd, { withCredentials: true });
+      setFormData(prev => ({ ...prev, signature_url: data.url }));
+      toast.success('Firma caricata');
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore upload firma'); }
+    if (sigRef.current) sigRef.current.value = '';
   };
 
   const handleOwnerDocUpload = async (e, landlordId) => {
@@ -73,17 +101,25 @@ const Landlords = () => {
   };
 
   const resetForm = () => {
-    setFormData({ full_name: '', codice_fiscale: '', phone: '', email: '', whatsapp: '', id_type: '', id_number: '', bank_details: '', notes: '' });
+    setFormData({ surname: '', name: '', codice_fiscale: '', phone: '', email: '', id_type: '', id_number: '', bank_details: '', notes: '', date_of_birth: '', place_of_birth: '', province_of_birth: '', country_of_birth: 'Italia', residence: '', signature_url: '' });
     setEditingLandlord(null);
   };
 
   const openEditDialog = (ll) => {
     setEditingLandlord(ll);
+    const [surname = '', ...nameParts] = (ll.full_name || '').split(' ');
     setFormData({
-      full_name: ll.full_name || '', codice_fiscale: ll.codice_fiscale || '',
-      phone: ll.phone || '', email: ll.email || '', whatsapp: ll.whatsapp || '',
+      surname: ll.surname || surname, name: ll.name || nameParts.join(' '),
+      codice_fiscale: ll.codice_fiscale || '',
+      phone: ll.phone || '', email: ll.email || '',
       id_type: ll.id_type || '', id_number: ll.id_number || '',
-      bank_details: ll.bank_details || '', notes: ll.notes || ''
+      bank_details: ll.bank_details || '', notes: ll.notes || '',
+      date_of_birth: ll.date_of_birth || '',
+      place_of_birth: ll.place_of_birth || '',
+      province_of_birth: ll.province_of_birth || '',
+      country_of_birth: ll.country_of_birth || 'Italia',
+      residence: ll.residence || '',
+      signature_url: ll.signature_url || '',
     });
     setDialogOpen(true);
   };
@@ -91,11 +127,12 @@ const Landlords = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = { ...formData, full_name: `${formData.surname} ${formData.name}`.trim() };
       if (editingLandlord) {
-        await axios.put(`${API_URL}/landlords/${editingLandlord.id}`, formData, { withCredentials: true });
+        await axios.put(`${API_URL}/landlords/${editingLandlord.id}`, payload, { withCredentials: true });
         toast.success('Proprietario aggiornato');
       } else {
-        await axios.post(`${API_URL}/landlords`, formData, { withCredentials: true });
+        await axios.post(`${API_URL}/landlords`, payload, { withCredentials: true });
         toast.success('Proprietario creato');
       }
       setDialogOpen(false); resetForm(); fetchLandlords();
@@ -132,7 +169,7 @@ const Landlords = () => {
               {/* OCR for owner */}
               <div className="pb-3 mb-2" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
                 <label data-testid="owner-ocr-button">
-                  <input type="file" ref={ocrRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleOwnerOcr} />
+                  <input type="file" ref={ocrRef} className="hidden" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={handleOwnerOcr} />
                   <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer hover:shadow-md" style={{ background: '#9F1239', color: 'white' }}>
                     <ScanLine size={16} /> Scansiona Documento (OCR)
                   </span>
@@ -140,14 +177,39 @@ const Landlords = () => {
                 <p className="text-xs mt-2" style={{ color: '#8B7355' }}>Scansiona documento del proprietario per compilare automaticamente</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Nome Completo *</Label><Input value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} required className="luxury-input" /></div>
+                <div><Label>Cognome *</Label><Input value={formData.surname} onChange={e => setFormData({ ...formData, surname: e.target.value })} required className="luxury-input" data-testid="owner-surname-input" /></div>
+                <div><Label>Nome *</Label><Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="luxury-input" data-testid="owner-name-input" /></div>
                 <div><Label>Codice Fiscale</Label><Input value={formData.codice_fiscale} onChange={e => setFormData({ ...formData, codice_fiscale: e.target.value })} className="luxury-input" /></div>
                 <div><Label>Tipo Doc. ID</Label><Input value={formData.id_type} onChange={e => setFormData({ ...formData, id_type: e.target.value })} className="luxury-input" placeholder="Carta d'identita..." /></div>
                 <div><Label>Numero Documento *</Label><Input value={formData.id_number} onChange={e => setFormData({ ...formData, id_number: e.target.value })} required className="luxury-input" /></div>
-                <div><Label>Telefono *</Label><Input value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required className="luxury-input" /></div>
+                <div><Label>Data di Nascita</Label><Input type="date" value={formData.date_of_birth} onChange={e => setFormData({ ...formData, date_of_birth: e.target.value })} className="luxury-input" /></div>
+                <div><Label>Luogo di Nascita</Label><Input value={formData.place_of_birth} onChange={e => setFormData({ ...formData, place_of_birth: e.target.value })} className="luxury-input" placeholder="Città" /></div>
+                <div><Label>Provincia di Nascita</Label><Input value={formData.province_of_birth} onChange={e => setFormData({ ...formData, province_of_birth: e.target.value })} className="luxury-input" placeholder="PD" maxLength={2} /></div>
+                <div>
+                  <Label>Paese di Nascita</Label>
+                  <Combobox options={COUNTRIES} value={formData.country_of_birth} onChange={v => setFormData({ ...formData, country_of_birth: v })} placeholder="Es: Italia..." />
+                </div>
+                <div><Label>Telefono *</Label><Input value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required className="luxury-input" data-testid="owner-phone-input" /></div>
                 <div><Label>Email *</Label><Input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="luxury-input" /></div>
-                <div><Label>WhatsApp *</Label><Input value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })} required className="luxury-input" /></div>
-                <div><Label>Dati Bancari *</Label><Input value={formData.bank_details} onChange={e => setFormData({ ...formData, bank_details: e.target.value })} required className="luxury-input" /></div>
+                <div className="col-span-2"><Label>Indirizzo di Residenza</Label><Input value={formData.residence} onChange={e => setFormData({ ...formData, residence: e.target.value })} className="luxury-input" placeholder="Via, civico, città, provincia, CAP" /></div>
+                <div className="col-span-2"><Label>Dati Bancari *</Label><Input value={formData.bank_details} onChange={e => setFormData({ ...formData, bank_details: e.target.value })} required className="luxury-input" /></div>
+              </div>
+
+              {/* Signature upload */}
+              <div className="pt-3 mt-2" style={{ borderTop: '1px solid rgba(184,134,11,0.12)' }}>
+                <Label>Firma del Proprietario</Label>
+                <div className="flex items-center gap-3 mt-1">
+                  <label>
+                    <input type="file" ref={sigRef} className="hidden" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={handleSignatureUpload} data-testid="owner-signature-upload" />
+                    <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs cursor-pointer hover:shadow-sm" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>
+                      <Upload size={14} /> Carica firma (PNG transparente)
+                    </span>
+                  </label>
+                  {formData.signature_url && (
+                    <img src={`${process.env.REACT_APP_BACKEND_URL}${formData.signature_url}`} alt="Firma" className="h-12 max-w-[200px] object-contain" style={{ background: 'rgba(0,0,0,0.03)', borderRadius: 6 }} />
+                  )}
+                </div>
+                <p className="text-xs mt-1" style={{ color: '#8B7355' }}>Verrà usata in Hospitality e contratti. Lo sfondo bianco viene rimosso automaticamente.</p>
               </div>
               <div><Label>Note</Label><Input value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} className="luxury-input notes-text" /></div>
               <div className="flex justify-end gap-3 pt-2">

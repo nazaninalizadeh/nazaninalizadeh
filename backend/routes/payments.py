@@ -80,6 +80,22 @@ async def get_tenant_payments(tenant_id: str, user: dict = Depends(get_current_u
     return payments
 
 
+@router.delete("/payments/{payment_id}")
+async def delete_payment(payment_id: str, user: dict = Depends(get_current_user)):
+    """Delete a single payment record. Reverses the linked invoice's paid_amount if any."""
+    p = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not p:
+        raise HTTPException(status_code=404, detail="Pagamento non trovato")
+    if p.get("invoice_id"):
+        inv = await db.invoices.find_one({"id": p["invoice_id"]})
+        if inv:
+            new_paid = max(0, inv.get("paid_amount", 0) - p.get("amount", 0))
+            new_status = "paid" if new_paid >= inv.get("amount", 0) and new_paid > 0 else ("partial" if new_paid > 0 else "pending")
+            await db.invoices.update_one({"id": p["invoice_id"]}, {"$set": {"paid_amount": new_paid, "payment_status": new_status}})
+    await db.payments.delete_one({"id": payment_id})
+    return {"message": "Pagamento eliminato"}
+
+
 @router.get("/payments/overview")
 async def get_payment_overview(user: dict = Depends(get_current_user)):
     """Get current month payment overview grouped by property → room → tenant."""

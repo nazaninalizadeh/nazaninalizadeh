@@ -46,6 +46,8 @@ async def get_properties(user: dict = Depends(get_current_user)):
         p["total_rooms_count"] = len(rooms)
         p["occupied_rooms_count"] = occ
         p["vacant_rooms_count"] = len(rooms) - occ
+        p["single_rooms_count"] = sum(1 for r in rooms if r.get("room_type") == "single")
+        p["double_rooms_count"] = sum(1 for r in rooms if r.get("room_type") == "double")
     return properties
 
 
@@ -68,6 +70,8 @@ async def get_property(property_id: str, user: dict = Depends(get_current_user))
     p["total_rooms_count"] = len(rooms)
     p["occupied_rooms_count"] = occ
     p["vacant_rooms_count"] = len(rooms) - occ
+    p["single_rooms_count"] = sum(1 for r in rooms if r.get("room_type") == "single")
+    p["double_rooms_count"] = sum(1 for r in rooms if r.get("room_type") == "double")
     tenants = await db.tenants.find({"property_id": property_id}, {"_id": 0}).to_list(100)
     p["tenants"] = tenants
     return p

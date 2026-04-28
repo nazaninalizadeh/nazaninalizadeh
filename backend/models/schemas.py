@@ -16,18 +16,21 @@ class TenantCreate(BaseModel):
     passport_number: str
     nationality: str
     date_of_birth: str
+    place_of_birth: Optional[str] = ""
+    country_of_birth: Optional[str] = ""
     passport_issue_date: str
     passport_expiry_date: str
     id_type: Optional[str] = ""
     id_number: Optional[str] = ""
     phone: Optional[str] = ""
     email: EmailStr
-    whatsapp: str
+    whatsapp: Optional[str] = ""  # legacy: kept optional for back-compat
     notes: Optional[str] = ""
     deposit_amount: float = 0.0
     property_id: Optional[str] = ""
     room_id: Optional[str] = ""
     payment_due_day: int = 5
+    address: Optional[str] = ""
 
 
 class LandlordCreate(BaseModel):
@@ -35,29 +38,36 @@ class LandlordCreate(BaseModel):
     codice_fiscale: Optional[str] = ""
     phone: str
     email: EmailStr
-    whatsapp: str
+    whatsapp: Optional[str] = ""  # legacy: kept optional for back-compat
     id_type: Optional[str] = ""
     id_number: str
     bank_details: str
     notes: Optional[str] = ""
+    date_of_birth: Optional[str] = ""
+    place_of_birth: Optional[str] = ""
+    province_of_birth: Optional[str] = ""
+    country_of_birth: Optional[str] = ""
+    residence: Optional[str] = ""
+    signature_url: Optional[str] = ""
 
 
 class PropertyCreate(BaseModel):
     property_code: Optional[str] = ""
     address: str
-    property_type: str
+    property_type: str = "Appartamento"
     number_of_rooms: int
     capacity: int
     landlord_id: str
     rental_amount: float
     additional_charges: Optional[str] = ""
+    province: Optional[str] = "PD"
+    phone: Optional[str] = ""
 
 
 class RoomCreate(BaseModel):
     property_id: str
     room_number: str
     room_type: str
-    floor: Optional[str] = ""
     monthly_rent: float = 0.0
     description: Optional[str] = ""
     bill_responsible: Optional[str] = ""

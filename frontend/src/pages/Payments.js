@@ -5,9 +5,10 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Plus, Home, DoorOpen, Search, Receipt } from 'lucide-react';
+import { Plus, Home, DoorOpen, Search, Receipt, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { fmtDate } from '../lib/format';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -94,8 +95,17 @@ const Payments = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label>Inquilino *</Label>
-                <Select value={formData.tenant_id} onValueChange={v => setFormData({ ...formData, tenant_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Seleziona inquilino" /></SelectTrigger>
+                <Select value={formData.tenant_id} onValueChange={v => {
+                  // Auto-fill rent: room.monthly_rent (halved if double room)
+                  const tenant = allTenants.find(t => t.id === v);
+                  let amt = formData.amount;
+                  if (tenant && tenant.room_id) {
+                    const rentRoom = tenant.room_rent || 0;
+                    if (rentRoom > 0) amt = (tenant.room_type === 'double' ? rentRoom / 2 : rentRoom).toString();
+                  }
+                  setFormData({ ...formData, tenant_id: v, amount: amt });
+                }}>
+                  <SelectTrigger data-testid="payment-tenant-select"><SelectValue placeholder="Seleziona inquilino" /></SelectTrigger>
                   <SelectContent>
                     {allTenants.map(t => (
                       <SelectItem key={t.id} value={t.id}>
@@ -252,7 +262,7 @@ const Payments = () => {
             ) : filteredHistory.map(p => (
               <div key={p.id} className="px-6 py-4 flex items-center justify-between hover:bg-rose-50/20 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="text-sm" style={{ color: '#8B7355', minWidth: 90 }}>{p.payment_date}</div>
+                  <div className="text-sm" style={{ color: '#8B7355', minWidth: 90 }}>{fmtDate(p.payment_date)}</div>
                   {p.tenant_id && p.tenant_name ? (
                     <Link to={`/tenants/${p.tenant_id}`} className="font-medium text-sm hover:underline" style={{ color: '#9F1239' }}>
                       {p.tenant_name}
@@ -278,6 +288,14 @@ const Payments = () => {
                       } catch { toast.error('Errore'); }
                     }} data-testid={`ricevuta-btn-${p.id}`}>
                     <Receipt size={14} style={{ color: '#9F1239' }} />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50 h-7 px-2"
+                    onClick={async () => {
+                      if (!window.confirm(`Eliminare il pagamento di €${p.amount?.toFixed(2)}?`)) return;
+                      try { await axios.delete(`${API}/payments/${p.id}`, { withCredentials: true }); toast.success('Pagamento eliminato'); fetchAll(); }
+                      catch { toast.error('Errore eliminazione'); }
+                    }} data-testid={`delete-payment-${p.id}`}>
+                    <Trash2 size={14} className="text-red-500" />
                   </Button>
                 </div>
               </div>

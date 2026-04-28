@@ -66,6 +66,15 @@ async def update_contract_status(contract_id: str, status: str, user: dict = Dep
     return {"message": "Status updated"}
 
 
+@router.delete("/contracts/{contract_id}")
+async def delete_contract(contract_id: str, user: dict = Depends(get_current_user)):
+    """Delete a contract. Does not auto-evict tenant — that's a separate action in /tenants."""
+    result = await db.contracts.delete_one({"id": contract_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Contratto non trovato")
+    return {"message": "Contratto eliminato"}
+
+
 @router.get("/contracts/{contract_id}/pdf")
 async def generate_contract_pdf(contract_id: str, user: dict = Depends(get_current_user)):
     contract = await db.contracts.find_one({"id": contract_id}, {"_id": 0})

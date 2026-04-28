@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import OcrScanner from '../components/OcrScanner';
+import { Combobox } from '../components/Combobox';
+import { NATIONALITIES, COUNTRIES } from '../lib/it_dictionaries';
+import { fmtDate } from '../lib/format';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -25,11 +28,12 @@ const Tenants = () => {
   const [searchParams] = useSearchParams();
 
   const [formData, setFormData] = useState({
-    full_name: '', codice_fiscale: '', passport_number: '', nationality: '',
-    date_of_birth: '', passport_issue_date: '', passport_expiry_date: '',
-    id_type: '', id_number: '', phone: '', email: '', whatsapp: '',
+    surname: '', name: '', codice_fiscale: '', passport_number: '', nationality: 'Italiana',
+    date_of_birth: '', place_of_birth: '', country_of_birth: 'Italia',
+    passport_issue_date: '', passport_expiry_date: '',
+    id_type: '', id_number: '', phone: '', email: '',
     notes: '', deposit_amount: 0, property_id: '', room_id: '',
-    payment_due_day: 5,
+    payment_due_day: 5, address: '',
   });
 
   useEffect(() => {
@@ -51,22 +55,28 @@ const Tenants = () => {
   };
 
   const resetForm = () => {
-    setFormData({ full_name: '', codice_fiscale: '', passport_number: '', nationality: '', date_of_birth: '', passport_issue_date: '', passport_expiry_date: '', id_type: '', id_number: '', phone: '', email: '', whatsapp: '', notes: '', deposit_amount: 0, property_id: '', room_id: '', payment_due_day: 5 });
+    setFormData({ surname: '', name: '', codice_fiscale: '', passport_number: '', nationality: 'Italiana', date_of_birth: '', place_of_birth: '', country_of_birth: 'Italia', passport_issue_date: '', passport_expiry_date: '', id_type: '', id_number: '', phone: '', email: '', notes: '', deposit_amount: 0, property_id: '', room_id: '', payment_due_day: 5, address: '' });
     setEditingTenant(null);
   };
 
   const openEditDialog = (tenant) => {
     setEditingTenant(tenant);
+    // full_name is stored "Surname Name" — split for editing
+    const [surname = '', ...nameParts] = (tenant.full_name || '').split(' ');
     setFormData({
-      full_name: tenant.full_name || '', codice_fiscale: tenant.codice_fiscale || '',
-      passport_number: tenant.passport_number || '', nationality: tenant.nationality || '',
-      date_of_birth: tenant.date_of_birth || '', passport_issue_date: tenant.passport_issue_date || '',
+      surname: tenant.surname || surname, name: tenant.name || nameParts.join(' '),
+      codice_fiscale: tenant.codice_fiscale || '',
+      passport_number: tenant.passport_number || '', nationality: tenant.nationality || 'Italiana',
+      date_of_birth: tenant.date_of_birth || '',
+      place_of_birth: tenant.place_of_birth || '',
+      country_of_birth: tenant.country_of_birth || 'Italia',
+      passport_issue_date: tenant.passport_issue_date || '',
       passport_expiry_date: tenant.passport_expiry_date || '', id_type: tenant.id_type || '',
       id_number: tenant.id_number || '', phone: tenant.phone || '', email: tenant.email || '',
-      whatsapp: tenant.whatsapp || '',
       notes: tenant.notes || '', deposit_amount: tenant.deposit_amount || 0,
       property_id: tenant.property_id || '', room_id: tenant.room_id || '',
       payment_due_day: tenant.payment_due_day || 5,
+      address: tenant.address || '',
     });
     setDialogOpen(true);
   };
@@ -74,11 +84,13 @@ const Tenants = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Build full_name as "Surname Name" (Italian/Italian government format)
+      const payload = { ...formData, full_name: `${formData.surname} ${formData.name}`.trim() };
       if (editingTenant) {
-        await axios.put(`${API_URL}/tenants/${editingTenant.id}`, formData, { withCredentials: true });
+        await axios.put(`${API_URL}/tenants/${editingTenant.id}`, payload, { withCredentials: true });
         toast.success('Inquilino aggiornato');
       } else {
-        await axios.post(`${API_URL}/tenants`, formData, { withCredentials: true });
+        await axios.post(`${API_URL}/tenants`, payload, { withCredentials: true });
         toast.success('Inquilino creato');
       }
       setDialogOpen(false); resetForm(); fetchAll();
@@ -194,15 +206,25 @@ const Tenants = () => {
                 <p className="text-xs mt-2" style={{ color: '#8B7355' }}>Scansiona un passaporto o documento per compilare automaticamente</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Nome Completo *</Label><Input value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} required className="luxury-input" data-testid="tenant-name-input" /></div>
+                <div><Label>Cognome *</Label><Input value={formData.surname} onChange={e => setFormData({ ...formData, surname: e.target.value })} required className="luxury-input" data-testid="tenant-surname-input" /></div>
+                <div><Label>Nome *</Label><Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="luxury-input" data-testid="tenant-name-input" /></div>
                 <div><Label>Codice Fiscale</Label><Input value={formData.codice_fiscale} onChange={e => setFormData({ ...formData, codice_fiscale: e.target.value })} className="luxury-input" /></div>
                 <div><Label>Numero Passaporto *</Label><Input value={formData.passport_number} onChange={e => setFormData({ ...formData, passport_number: e.target.value })} required className="luxury-input" /></div>
-                <div><Label>Nazionalita *</Label><Input value={formData.nationality} onChange={e => setFormData({ ...formData, nationality: e.target.value })} required className="luxury-input" /></div>
+                <div>
+                  <Label>Nazionalità *</Label>
+                  <Combobox options={NATIONALITIES} value={formData.nationality} onChange={v => setFormData({ ...formData, nationality: v })} placeholder="Es: Italiana, Iraniana..." dataTestid="tenant-nationality" />
+                </div>
                 <div><Label>Data di Nascita *</Label><Input type="date" value={formData.date_of_birth} onChange={e => setFormData({ ...formData, date_of_birth: e.target.value })} required className="luxury-input" /></div>
+                <div><Label>Luogo di Nascita</Label><Input value={formData.place_of_birth} onChange={e => setFormData({ ...formData, place_of_birth: e.target.value })} className="luxury-input" placeholder="Città" /></div>
+                <div>
+                  <Label>Paese di Nascita</Label>
+                  <Combobox options={COUNTRIES} value={formData.country_of_birth} onChange={v => setFormData({ ...formData, country_of_birth: v })} placeholder="Es: Italia, Iran..." dataTestid="tenant-country" />
+                </div>
                 <div><Label>Rilascio Passaporto *</Label><Input type="date" value={formData.passport_issue_date} onChange={e => setFormData({ ...formData, passport_issue_date: e.target.value })} required className="luxury-input" /></div>
                 <div><Label>Scadenza Passaporto *</Label><Input type="date" value={formData.passport_expiry_date} onChange={e => setFormData({ ...formData, passport_expiry_date: e.target.value })} required className="luxury-input" /></div>
-                <div><Label>WhatsApp *</Label><Input value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })} required className="luxury-input" placeholder="+39 333 1234567" /></div>
+                <div><Label>Telefono *</Label><Input value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required className="luxury-input" placeholder="+39 333 1234567" data-testid="tenant-phone-input" /></div>
                 <div><Label>Email *</Label><Input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="luxury-input" data-testid="tenant-email-input" /></div>
+                <div className="col-span-2"><Label>Indirizzo di Residenza</Label><Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="luxury-input" placeholder="Via, civico, città" /></div>
                 <div><Label>Deposito (Garanzia)</Label><Input type="number" step="0.01" value={formData.deposit_amount} onChange={e => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
                 <div><Label>Giorno Scadenza Pagamento</Label><Input type="number" min="1" max="28" value={formData.payment_due_day} onChange={e => setFormData({ ...formData, payment_due_day: parseInt(e.target.value) || 5 })} className="luxury-input" /></div>
               </div>

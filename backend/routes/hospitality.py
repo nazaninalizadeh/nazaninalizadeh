@@ -105,28 +105,36 @@ async def download_hospitality_pdf(
         if room:
             room_data = room
 
-    # Try to get dates from active contract
+    # Try to get dates from active contract; default to 1-year duration if no contract
     if not check_in_date:
         contract = await db.contracts.find_one({"tenant_id": tenant_id, "status": "active"}, {"_id": 0})
         if contract:
             check_in_date = contract.get("start_date", "")
             if not check_out_date:
                 check_out_date = contract.get("end_date", "")
+    if check_in_date and not check_out_date:
+        # Default duration: 1 year from check-in
+        try:
+            from datetime import datetime as _dt, timedelta as _td
+            base = _dt.strptime(check_in_date[:10], "%Y-%m-%d")
+            check_out_date = (base.replace(year=base.year + 1)).strftime("%Y-%m-%d")
+        except Exception:
+            pass
 
     # Also check for an existing hospitality record
     hosp_record = await db.hospitality_records.find_one({"tenant_id": tenant_id}, {"_id": 0})
 
-    # Split landlord name for the form
+    # Split landlord name as "Surname Name" (Italian convention)
     ll_name = landlord_data.get("full_name", "")
-    ll_parts = ll_name.rsplit(" ", 1) if ll_name else ["", ""]
-    ll_surname = ll_parts[0] if len(ll_parts) > 1 else ll_name
-    ll_first = ll_parts[1] if len(ll_parts) > 1 else ""
+    ll_split = ll_name.split(" ", 1) if ll_name else ["", ""]
+    ll_surname = ll_split[0]
+    ll_first = ll_split[1] if len(ll_split) > 1 else ""
 
-    # Split tenant name
+    # Split tenant name as "Surname Name"
     t_name = tenant.get("full_name", "")
-    t_parts = t_name.rsplit(" ", 1) if t_name else ["", ""]
-    t_surname = t_parts[0] if len(t_parts) > 1 else t_name
-    t_first = t_parts[1] if len(t_parts) > 1 else ""
+    t_split = t_name.split(" ", 1) if t_name else ["", ""]
+    t_surname = t_split[0]
+    t_first = t_split[1] if len(t_split) > 1 else ""
 
     # Extract address parts
     addr = property_data.get("address", "")
@@ -158,16 +166,17 @@ async def download_hospitality_pdf(
         # Host (landlord/declarant)
         "host_surname": hosp_record.get("host_surname", ll_surname) if hosp_record else ll_surname,
         "host_name": hosp_record.get("host_name", ll_first) if hosp_record else ll_first,
-        "host_dob": hosp_record.get("host_dob", "") if hosp_record else "",
-        "host_birth_place": hosp_record.get("host_birth_place", "") if hosp_record else "",
-        "host_province": hosp_record.get("host_province", "") if hosp_record else "",
+        "host_dob": hosp_record.get("host_dob", landlord_data.get("date_of_birth", "")) if hosp_record else landlord_data.get("date_of_birth", ""),
+        "host_birth_place": hosp_record.get("host_birth_place", landlord_data.get("place_of_birth", "")) if hosp_record else landlord_data.get("place_of_birth", ""),
+        "host_province": hosp_record.get("host_province", landlord_data.get("province_of_birth", "")) if hosp_record else landlord_data.get("province_of_birth", ""),
         "host_residence": hosp_record.get("host_residence", auto_host_residence) if hosp_record else auto_host_residence,
+        "host_signature_url": landlord_data.get("signature_url", ""),
         # Guest (tenant)
         "guest_surname": t_surname,
         "guest_name": t_first,
         "guest_dob": tenant.get("date_of_birth", ""),
         "guest_birth_place": tenant.get("place_of_birth", ""),
-        "guest_birth_nation": tenant.get("nationality", ""),
+        "guest_birth_nation": tenant.get("country_of_birth", "") or tenant.get("nationality", ""),
         "guest_citizenship": tenant.get("nationality", ""),
         "guest_residence": tenant.get("address", ""),
         "doc_type": "PASSAPORTO",

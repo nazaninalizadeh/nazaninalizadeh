@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
+import { Combobox } from '../components/Combobox';
+import { PROVINCES } from '../lib/it_dictionaries';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -24,7 +26,7 @@ const Properties = () => {
   // Room form
   const [addRoomOpen, setAddRoomOpen] = useState(false);
   const [roomForProperty, setRoomForProperty] = useState(null);
-  const [roomForm, setRoomForm] = useState({ room_number: '', room_type: 'single', floor: '', monthly_rent: 0 });
+  const [roomForm, setRoomForm] = useState({ room_number: '', room_type: 'single', monthly_rent: 0 });
   // Assign tenant
   const [assignOpen, setAssignOpen] = useState(false);
   const [assignRoom, setAssignRoom] = useState(null);
@@ -32,8 +34,9 @@ const Properties = () => {
   const [assignTenantId, setAssignTenantId] = useState('');
 
   const [formData, setFormData] = useState({
-    property_code: '', address: '', property_type: '', number_of_rooms: 1,
+    property_code: '', address: '', property_type: 'Appartamento', number_of_rooms: 1,
     capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '',
+    province: 'PD', phone: '',
   });
 
   useEffect(() => { fetchAll(); }, []);
@@ -80,11 +83,11 @@ const Properties = () => {
     try { await axios.delete(`${API}/properties/${id}`, { withCredentials: true }); toast.success('Eliminato'); fetchAll(); } catch { toast.error('Errore'); }
   };
 
-  const resetForm = () => { setFormData({ property_code: '', address: '', property_type: '', number_of_rooms: 1, capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '' }); setEditingProperty(null); };
+  const resetForm = () => { setFormData({ property_code: '', address: '', property_type: 'Appartamento', number_of_rooms: 1, capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '', province: 'PD', phone: '' }); setEditingProperty(null); };
 
   const openEdit = (p) => {
     setEditingProperty(p);
-    setFormData({ property_code: p.property_code, address: p.address, property_type: p.property_type, number_of_rooms: p.number_of_rooms, capacity: p.capacity, landlord_id: p.landlord_id, rental_amount: p.rental_amount, additional_charges: p.additional_charges || '' });
+    setFormData({ property_code: p.property_code, address: p.address, property_type: p.property_type || 'Appartamento', number_of_rooms: p.number_of_rooms, capacity: p.capacity, landlord_id: p.landlord_id, rental_amount: p.rental_amount, additional_charges: p.additional_charges || '', province: p.province || 'PD', phone: p.phone || '' });
     setDialogOpen(true);
   };
 
@@ -92,9 +95,10 @@ const Properties = () => {
   const handleAddRoom = async (e) => {
     e.preventDefault();
     try {
+      // Auto-derive per-person rent for double rooms (UI hint only — backend stores total)
       await axios.post(`${API}/rooms`, { ...roomForm, property_id: roomForProperty }, { withCredentials: true });
       toast.success('Stanza aggiunta');
-      setAddRoomOpen(false); setRoomForm({ room_number: '', room_type: 'single', floor: '', monthly_rent: 0 });
+      setAddRoomOpen(false); setRoomForm({ room_number: '', room_type: 'single', monthly_rent: 0 });
       const { data } = await axios.get(`${API}/properties/${roomForProperty}`, { withCredentials: true });
       setPropertyDetails(prev => ({ ...prev, [roomForProperty]: data }));
       fetchAll();
@@ -185,9 +189,23 @@ const Properties = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 {editingProperty && <div><Label>Codice</Label><Input value={formData.property_code} disabled className="luxury-input bg-gray-50" /></div>}
-                <div><Label>Tipo *</Label><Input value={formData.property_type} onChange={e => setFormData({ ...formData, property_type: e.target.value })} required className="luxury-input" placeholder="Appartamento..." /></div>
+                <div>
+                  <Label>Tipo *</Label>
+                  <Select value={formData.property_type} onValueChange={v => setFormData({ ...formData, property_type: v })}>
+                    <SelectTrigger data-testid="property-type-select"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Appartamento">Appartamento</SelectItem>
+                      <SelectItem value="Studio">Studio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 {!editingProperty && <div />}
                 <div className="col-span-2"><Label>Indirizzo *</Label><Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} required className="luxury-input" /></div>
+                <div>
+                  <Label>Provincia</Label>
+                  <Combobox options={PROVINCES} value={formData.province} onChange={v => setFormData({ ...formData, province: v })} placeholder="PD - Padova" dataTestid="property-province" />
+                </div>
+                <div><Label>Telefono</Label><Input value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="luxury-input" placeholder="+39 333 1234567" data-testid="property-phone" /></div>
                 <div>
                   <Label>Proprietario *</Label>
                   <Select value={formData.landlord_id} onValueChange={v => setFormData({ ...formData, landlord_id: v })}>
@@ -237,6 +255,8 @@ const Properties = () => {
                   <div className="flex items-center gap-4">
                     <div className="flex gap-5 text-sm">
                       <div className="text-center"><p className="text-[10px] uppercase" style={{ color: '#8B7355' }}>Stanze</p><p className="font-bold">{property.total_rooms_count || 0}</p></div>
+                      <div className="text-center"><p className="text-[10px] uppercase" style={{ color: '#8B7355' }}>Singole</p><p className="font-bold" style={{ color: '#2563EB' }}>{property.single_rooms_count || 0}</p></div>
+                      <div className="text-center"><p className="text-[10px] uppercase" style={{ color: '#8B7355' }}>Doppie</p><p className="font-bold" style={{ color: '#7C3AED' }}>{property.double_rooms_count || 0}</p></div>
                       <div className="text-center"><p className="text-[10px] uppercase" style={{ color: '#8B7355' }}>Occupate</p><p className="font-bold" style={{ color: '#059669' }}>{property.occupied_rooms_count || 0}</p></div>
                       <div className="text-center"><p className="text-[10px] uppercase" style={{ color: '#8B7355' }}>Libere</p><p className="font-bold" style={{ color: '#DC2626' }}>{property.vacant_rooms_count || 0}</p></div>
                     </div>
@@ -288,7 +308,14 @@ const Properties = () => {
                               <div>
                                 <span className="font-semibold text-sm" style={{ color: '#2C1810' }}>Stanza {room.room_number}</span>
                                 <span className="text-xs ml-2" style={{ color: '#8B7355' }}>({room.room_type === 'single' ? 'Singola' : 'Doppia'})</span>
-                                {room.monthly_rent > 0 && <span className="text-xs ml-2" style={{ color: '#059669' }}>&euro;{room.monthly_rent}</span>}
+                                {room.monthly_rent > 0 && (
+                                  <span className="text-xs ml-2" style={{ color: '#059669' }}>
+                                    &euro;{room.monthly_rent}
+                                    {room.room_type === 'double' && (
+                                      <span className="ml-1" style={{ color: '#7C3AED' }}>(&euro;{(room.monthly_rent / 2).toFixed(0)} a persona)</span>
+                                    )}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -340,8 +367,15 @@ const Properties = () => {
                   <SelectContent><SelectItem value="single">Singola</SelectItem><SelectItem value="double">Doppia</SelectItem></SelectContent>
                 </Select>
               </div>
-              <div><Label>Piano</Label><Input value={roomForm.floor} onChange={e => setRoomForm({ ...roomForm, floor: e.target.value })} className="luxury-input" /></div>
-              <div><Label>Affitto</Label><Input type="number" step="0.01" value={roomForm.monthly_rent} onChange={e => setRoomForm({ ...roomForm, monthly_rent: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
+              <div className="col-span-2">
+                <Label>Affitto Totale (€)</Label>
+                <Input type="number" step="0.01" value={roomForm.monthly_rent} onChange={e => setRoomForm({ ...roomForm, monthly_rent: parseFloat(e.target.value) || 0 })} className="luxury-input" />
+                {roomForm.room_type === 'double' && roomForm.monthly_rent > 0 && (
+                  <p className="text-xs mt-1" style={{ color: '#7C3AED' }}>
+                    Stanza doppia: &euro;{(roomForm.monthly_rent / 2).toFixed(0)} a persona
+                  </p>
+                )}
+              </div>
             </div>
             <div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={() => setAddRoomOpen(false)} className="rounded-xl">Annulla</Button><Button type="submit" className="btn-luxury">Crea</Button></div>
           </form>

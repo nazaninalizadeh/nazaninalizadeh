@@ -279,16 +279,31 @@ def generate_hospitality_pdf(data: dict) -> BytesIO:
 
     y_cursor = p2_y - 24
 
-    # ===== Signature row =====
+    # Signature row — Italian convention: "Padova, 28/04/2026"
     today = datetime.now(timezone.utc).strftime("%d/%m/%Y")
-    luogo = (data.get("property_comune", "") or
-             (data.get("host_residence", "").split(",")[0] if data.get("host_residence") else ""))
+    luogo_raw = (data.get("property_comune", "") or
+                 (data.get("host_residence", "").split(",")[0] if data.get("host_residence") else ""))
+    # Title-case the city (e.g. "PADOVA" -> "Padova") for the signature line.
+    luogo = luogo_raw.strip().title() if luogo_raw else ""
     c.setFont("Helvetica", 8.5)
-    c.drawString(LEFT, y_cursor, f"Luogo e data: {luogo.upper()}, {today}")
+    c.drawString(LEFT, y_cursor, f"Luogo e data: {luogo}, {today}")
     # Signature line
     sig_x_start = LEFT + INNER_W * 0.55
     c.setLineWidth(LINE)
     c.line(sig_x_start, y_cursor - 4, RIGHT, y_cursor - 4)
+    # If owner signature uploaded, place it above the signature line
+    sig_url = data.get("host_signature_url", "")
+    if sig_url:
+        try:
+            from pathlib import Path as _Path
+            sig_path = _Path("/app/backend") / sig_url.lstrip("/").replace("api/", "", 1)
+            if sig_path.exists():
+                sig_w = 120
+                sig_h = 36
+                sig_x = (sig_x_start + RIGHT) / 2.0 - sig_w / 2.0
+                c.drawImage(str(sig_path), sig_x, y_cursor + 2, width=sig_w, height=sig_h, mask='auto', preserveAspectRatio=True)
+        except Exception:
+            pass
     c.setFont("Helvetica-Oblique", 7)
     c.drawCentredString((sig_x_start + RIGHT) / 2.0, y_cursor - 14, "(firma del dichiarante)")
 

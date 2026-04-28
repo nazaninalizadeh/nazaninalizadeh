@@ -22,10 +22,10 @@ async def ocr_scan_document(
     owner_id: Optional[str] = Form(""),
     user: dict = Depends(get_current_user),
 ):
-    """Upload a passport/ID image for OCR scanning. Saves original file."""
-    allowed_types = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
+    """Upload a passport/ID image OR PDF for OCR scanning. Saves the original file."""
+    allowed_types = {"image/jpeg", "image/png", "image/webp", "image/jpg", "application/pdf"}
     if file.content_type and file.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="Formato file non supportato. Usa JPEG, PNG o WebP.")
+        raise HTTPException(status_code=400, detail="Formato non supportato. Usa JPEG, PNG, WebP o PDF.")
 
     content = await file.read()
     if len(content) > 10 * 1024 * 1024:

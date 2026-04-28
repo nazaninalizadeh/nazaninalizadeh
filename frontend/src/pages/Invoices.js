@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
+import { fmtDate } from '../lib/format';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -45,8 +46,12 @@ const Invoices = () => {
     property_id: '',
     contract_id: '',
     invoice_type: 'rent',
-    amount: 0,
-    due_date: '',
+    rent: 0,
+    deposit: 0,
+    agency_fee: 0,
+    registration: 98,
+    discount: 0,
+    due_date: new Date().toISOString().split('T')[0],
     description: '',
   });
   const [paymentData, setPaymentData] = useState({
@@ -81,15 +86,35 @@ const Invoices = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/invoices`, formData, {
-        withCredentials: true,
-      });
-      toast.success('Invoice created successfully');
+      const total = (parseFloat(formData.rent) || 0)
+        + (parseFloat(formData.deposit) || 0)
+        + (parseFloat(formData.agency_fee) || 0)
+        + (parseFloat(formData.registration) || 0)
+        - (parseFloat(formData.discount) || 0);
+      const desc = [
+        formData.rent ? `Affitto: €${formData.rent}` : null,
+        formData.deposit ? `Deposito: €${formData.deposit}` : null,
+        formData.agency_fee ? `Spese agenzia: €${formData.agency_fee}` : null,
+        formData.registration ? `Registrazione: €${formData.registration}` : null,
+        formData.discount ? `Sconto: -€${formData.discount}` : null,
+        formData.description,
+      ].filter(Boolean).join(' | ');
+      const payload = {
+        tenant_id: formData.tenant_id,
+        property_id: formData.property_id,
+        contract_id: formData.contract_id,
+        invoice_type: formData.invoice_type,
+        amount: total,
+        due_date: formData.due_date,
+        description: desc || `Fattura del ${formData.due_date}`,
+      };
+      await axios.post(`${API_URL}/invoices`, payload, { withCredentials: true });
+      toast.success('Fattura creata');
       setDialogOpen(false);
       resetForm();
       fetchData();
     } catch (error) {
-      toast.error('Failed to create invoice');
+      toast.error(error.response?.data?.detail || 'Errore creazione fattura');
     }
   };
 
@@ -136,9 +161,30 @@ const Invoices = () => {
       property_id: '',
       contract_id: '',
       invoice_type: 'rent',
-      amount: 0,
-      due_date: '',
+      rent: 0,
+      deposit: 0,
+      agency_fee: 0,
+      registration: 98,
+      discount: 0,
+      due_date: new Date().toISOString().split('T')[0],
       description: '',
+    });
+  };
+
+  // Auto-fill property/contract/owner + rent/deposit when tenant is selected
+  const handleTenantChange = (tenantId) => {
+    const tenant = tenants.find(t => t.id === tenantId);
+    if (!tenant) { setFormData({ ...formData, tenant_id: tenantId }); return; }
+    const contract = contracts.find(c => c.tenant_id === tenantId && c.status === 'active');
+    const baseRent = tenant.room_type === 'double' ? (tenant.room_rent || 0) / 2 : (tenant.room_rent || 0);
+    setFormData({
+      ...formData,
+      tenant_id: tenantId,
+      property_id: tenant.property_id || formData.property_id,
+      contract_id: contract?.id || '',
+      rent: baseRent || (contract?.monthly_rent || 0),
+      deposit: tenant.deposit_amount || ((contract?.monthly_rent || baseRent || 0) * 2),
+      agency_fee: baseRent || (contract?.monthly_rent || 0),
     });
   };
 
@@ -189,14 +235,14 @@ const Invoices = () => {
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="invoice-form">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="tenant_id">Tenant *</Label>
+                  <Label htmlFor="tenant_id">Inquilino *</Label>
                   <Select
                     value={formData.tenant_id}
-                    onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
+                    onValueChange={handleTenantChange}
                     required
                   >
                     <SelectTrigger data-testid="invoice-tenant-select">
-                      <SelectValue placeholder="Select tenant" />
+                      <SelectValue placeholder="Seleziona inquilino" />
                     </SelectTrigger>
                     <SelectContent>
                       {tenants.map((tenant) => (
@@ -208,33 +254,31 @@ const Invoices = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="property_id">Property *</Label>
+                  <Label htmlFor="property_id">Immobile (auto)</Label>
                   <Select
                     value={formData.property_id}
                     onValueChange={(value) => setFormData({ ...formData, property_id: value })}
-                    required
                   >
                     <SelectTrigger data-testid="invoice-property-select">
-                      <SelectValue placeholder="Select property" />
+                      <SelectValue placeholder="Seleziona immobile" />
                     </SelectTrigger>
                     <SelectContent>
                       {properties.map((property) => (
                         <SelectItem key={property.id} value={property.id}>
-                          {property.property_code}
+                          {property.property_code} — {property.address}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="contract_id">Contract *</Label>
+                  <Label htmlFor="contract_id">Contratto (auto)</Label>
                   <Select
                     value={formData.contract_id}
                     onValueChange={(value) => setFormData({ ...formData, contract_id: value })}
-                    required
                   >
                     <SelectTrigger data-testid="invoice-contract-select">
-                      <SelectValue placeholder="Select contract" />
+                      <SelectValue placeholder="Seleziona contratto" />
                     </SelectTrigger>
                     <SelectContent>
                       {contracts.map((contract) => (
@@ -246,36 +290,7 @@ const Invoices = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="invoice_type">Invoice Type *</Label>
-                  <Select
-                    value={formData.invoice_type}
-                    onValueChange={(value) => setFormData({ ...formData, invoice_type: value })}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="rent">Rent</SelectItem>
-                      <SelectItem value="deposit">Deposit</SelectItem>
-                      <SelectItem value="penalty">Penalty</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="amount">Amount *</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="due_date">Due Date *</Label>
+                  <Label htmlFor="due_date">Data Fattura *</Label>
                   <Input
                     id="due_date"
                     type="date"
@@ -285,18 +300,51 @@ const Invoices = () => {
                   />
                 </div>
               </div>
+
+              {/* Dynamic invoice composition panel */}
+              <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(184,134,11,0.04)', border: '1px solid rgba(184,134,11,0.15)' }}>
+                <h4 className="text-sm font-semibold" style={{ color: '#9F1239' }}>Voci della fattura</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Affitto (1 mese)</Label>
+                    <Input type="number" step="0.01" value={formData.rent} onChange={(e) => setFormData({ ...formData, rent: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="invoice-rent" />
+                  </div>
+                  <div>
+                    <Label>Deposito (2 mesi)</Label>
+                    <Input type="number" step="0.01" value={formData.deposit} onChange={(e) => setFormData({ ...formData, deposit: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="invoice-deposit" />
+                  </div>
+                  <div>
+                    <Label>Spese agenzia (1 mese)</Label>
+                    <Input type="number" step="0.01" value={formData.agency_fee} onChange={(e) => setFormData({ ...formData, agency_fee: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="invoice-agency" />
+                  </div>
+                  <div>
+                    <Label>Registrazione</Label>
+                    <Input type="number" step="0.01" value={formData.registration} onChange={(e) => setFormData({ ...formData, registration: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="invoice-registration" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Sconto</Label>
+                    <Input type="number" step="0.01" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="invoice-discount" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'rgba(184,134,11,0.15)' }}>
+                  <span className="text-sm font-semibold" style={{ color: '#2C1810' }}>TOTALE</span>
+                  <span className="text-lg font-bold" style={{ color: '#9F1239' }} data-testid="invoice-total">
+                    €{(((parseFloat(formData.rent) || 0) + (parseFloat(formData.deposit) || 0) + (parseFloat(formData.agency_fee) || 0) + (parseFloat(formData.registration) || 0)) - (parseFloat(formData.discount) || 0)).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
               <div>
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description">Note (opzionale)</Label>
                 <Input
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  required
                 />
               </div>
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
-                  Cancel
+                  Annulla
                 </Button>
                 <Button type="submit" className="btn-luxury" data-testid="save-invoice-button">
                   Crea Fattura
@@ -415,7 +463,7 @@ const Invoices = () => {
                     <TableCell className="max-w-[200px] truncate">{invoice.property_address}</TableCell>
                     <TableCell className="capitalize">{invoice.invoice_type}</TableCell>
                     <TableCell className="font-medium">${invoice.amount.toFixed(2)}</TableCell>
-                    <TableCell>{invoice.due_date}</TableCell>
+                    <TableCell>{fmtDate(invoice.due_date)}</TableCell>
                     <TableCell>
                       <span className={`luxury-badge ${
                         invoice.payment_status === 'paid' ? 'badge-success' : 'badge-warning'

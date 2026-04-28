@@ -1,14 +1,69 @@
 """Landlord Routes."""
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
+import aiofiles
+from io import BytesIO
 
 from database import db
 from auth import get_current_user
 from models.schemas import LandlordCreate
 
 router = APIRouter(prefix="/api", tags=["Landlords"])
+
+UPLOAD_DIR = Path(__file__).parent.parent / "uploads"
+ALLOWED_IMAGE_EXTS = {"jpg", "jpeg", "png", "webp"}
+
+
+@router.post("/landlords/signature")
+async def upload_landlord_signature(
+    file: UploadFile = File(...),
+    transparent: str = Form("false"),
+    user: dict = Depends(get_current_user),
+):
+    """Upload a signature image. If transparent='true', white-ish pixels are
+    converted to alpha so the resulting PNG can be overlaid on any background."""
+    if not file.filename or "." not in file.filename:
+        raise HTTPException(status_code=400, detail="File non valido")
+    ext = file.filename.rsplit(".", 1)[-1].lower()
+    if ext not in ALLOWED_IMAGE_EXTS:
+        raise HTTPException(status_code=400, detail="Solo JPG/PNG/WEBP")
+    raw = await file.read()
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Massimo 5MB")
+
+    # Always output a transparent PNG when requested
+    out_bytes = raw
+    out_ext = ext
+    if transparent.lower() == "true":
+        try:
+            from PIL import Image
+            img = Image.open(BytesIO(raw)).convert("RGBA")
+            data = img.getdata()
+            new_data = []
+            for r, g, b, a in data:
+                # Treat near-white pixels as transparent. Threshold tuned for scanned signatures.
+                if r > 235 and g > 235 and b > 235:
+                    new_data.append((255, 255, 255, 0))
+                else:
+                    new_data.append((r, g, b, a))
+            img.putdata(new_data)
+            buf = BytesIO()
+            img.save(buf, format="PNG")
+            out_bytes = buf.getvalue()
+            out_ext = "png"
+        except Exception:
+            pass
+
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    (UPLOAD_DIR / "signatures").mkdir(exist_ok=True)
+    filename = f"sig_{uuid.uuid4().hex[:10]}.{out_ext}"
+    filepath = UPLOAD_DIR / "signatures" / filename
+    async with aiofiles.open(str(filepath), "wb") as f:
+        await f.write(out_bytes)
+    return {"url": f"/api/uploads/signatures/{filename}"}
 
 
 @router.post("/landlords")

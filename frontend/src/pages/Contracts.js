@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Plus, Search, Download, Edit } from 'lucide-react';
+import { Plus, Search, Download, Edit, Trash2 } from 'lucide-react';
+import { fmtDate } from '../lib/format';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import {
@@ -304,8 +305,8 @@ const Contracts = () => {
                     <TableCell className="font-medium font-mono text-sm" style={{ color: '#2C1810' }}>{contract.contract_number}</TableCell>
                     <TableCell style={{ color: '#4A3B31' }}>{contract.tenant_name}</TableCell>
                     <TableCell className="max-w-[200px] truncate" style={{ color: '#4A3B31' }}>{contract.property_address}</TableCell>
-                    <TableCell style={{ color: '#4A3B31' }}>{contract.start_date}</TableCell>
-                    <TableCell style={{ color: '#4A3B31' }}>{contract.end_date}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{fmtDate(contract.start_date)}</TableCell>
+                    <TableCell style={{ color: '#4A3B31' }}>{fmtDate(contract.end_date)}</TableCell>
                     <TableCell className="font-medium" style={{ color: '#2C1810' }}>&euro;{contract.rent_amount.toFixed(2)}</TableCell>
                     <TableCell>
                       <Select
@@ -324,14 +325,18 @@ const Contracts = () => {
                       </Select>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => downloadPDF(contract.id)}
-                        data-testid={`download-contract-${contract.id}`}
-                      >
-                        <Download size={16} />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => downloadPDF(contract.id)} data-testid={`download-contract-${contract.id}`} title="Scarica PDF">
+                          <Download size={16} />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="hover:bg-red-50" onClick={async () => {
+                          if (!window.confirm(`Eliminare il contratto ${contract.contract_number}?`)) return;
+                          try { await axios.delete(`${API_URL}/contracts/${contract.id}`, { withCredentials: true }); toast.success('Contratto eliminato'); fetchData(); }
+                          catch { toast.error('Errore eliminazione'); }
+                        }} data-testid={`delete-contract-${contract.id}`} title="Elimina">
+                          <Trash2 size={16} className="text-red-500" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

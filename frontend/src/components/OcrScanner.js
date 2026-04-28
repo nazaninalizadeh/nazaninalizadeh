@@ -20,9 +20,9 @@ const OcrScanner = ({ onDataExtracted }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg', 'application/pdf'];
     if (!allowed.includes(file.type)) {
-      toast.error('Formato non supportato. Usa JPEG, PNG o WebP.');
+      toast.error('Formato non supportato. Usa JPEG, PNG, WebP o PDF.');
       return;
     }
 
@@ -31,7 +31,8 @@ const OcrScanner = ({ onDataExtracted }) => {
       return;
     }
 
-    setPreview(URL.createObjectURL(file));
+    // PDFs cannot be previewed inline easily — show a placeholder
+    setPreview(file.type === 'application/pdf' ? null : URL.createObjectURL(file));
     setOpen(true);
     setScanning(true);
     setStatus('processing');
@@ -66,9 +67,14 @@ const OcrScanner = ({ onDataExtracted }) => {
     if (result && onDataExtracted) {
       onDataExtracted({
         full_name: result.full_name || '',
+        // Also pass surname/name (split by first space) so forms with separate fields can use them.
+        surname: result.full_name ? result.full_name.split(' ')[0] : '',
+        name: result.full_name ? result.full_name.split(' ').slice(1).join(' ') : '',
         passport_number: result.passport_number || '',
         nationality: result.nationality || '',
         date_of_birth: result.date_of_birth || '',
+        place_of_birth: result.place_of_birth || '',
+        country_of_birth: result.country_of_birth || '',
         passport_issue_date: result.issue_date || '',
         passport_expiry_date: result.expiry_date || '',
         codice_fiscale: result.codice_fiscale || '',
@@ -112,7 +118,7 @@ const OcrScanner = ({ onDataExtracted }) => {
           type="file"
           ref={fileInputRef}
           className="hidden"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
           onChange={handleFileSelect}
         />
         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer transition-all hover:shadow-md"

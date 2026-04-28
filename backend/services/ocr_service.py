@@ -27,8 +27,31 @@ Dates must be YYYY-MM-DD format.
 Names in title case.
 Gender: "M" or "F" or null.
 
+For "place_of_birth": ONLY the city name (e.g., "Milano", "Tehran", "Cairo").
+For "country_of_birth": ALWAYS return the FULL country name in Italian (e.g., "Italia" not "ITA", "Iran" not "IRN", "Marocco" not "MA"). Use ISO/MRZ codes ONLY as a fallback if the full country name is unreadable.
+
 JSON schema:
-{"full_name":"string|null","passport_number":"string|null","nationality":"string|null","date_of_birth":"YYYY-MM-DD|null","gender":"M/F|null","place_of_birth":"string|null","issue_date":"YYYY-MM-DD|null","expiry_date":"YYYY-MM-DD|null","document_type":"passport|id_card|other","issuing_authority":"string|null","codice_fiscale":"string|null","confidence":"high|medium|low"}"""
+{"full_name":"string|null","passport_number":"string|null","nationality":"string|null","date_of_birth":"YYYY-MM-DD|null","gender":"M/F|null","place_of_birth":"string|null","country_of_birth":"string|null","issue_date":"YYYY-MM-DD|null","expiry_date":"YYYY-MM-DD|null","document_type":"passport|id_card|other","issuing_authority":"string|null","codice_fiscale":"string|null","confidence":"high|medium|low"}"""
+
+
+def _country_from_code(code: str) -> str:
+    """Translate common MRZ ISO-3 country codes to Italian names."""
+    if not code:
+        return ""
+    upper = code.upper().strip()
+    iso_map = {
+        "ITA": "Italia", "IRN": "Iran", "FRA": "Francia", "DEU": "Germania",
+        "ESP": "Spagna", "GBR": "Regno Unito", "USA": "Stati Uniti",
+        "MAR": "Marocco", "TUN": "Tunisia", "EGY": "Egitto", "DZA": "Algeria",
+        "ROU": "Romania", "ALB": "Albania", "MDA": "Moldavia", "RUS": "Russia",
+        "UKR": "Ucraina", "POL": "Polonia", "CHN": "Cina", "IND": "India",
+        "PAK": "Pakistan", "BGD": "Bangladesh", "PHL": "Filippine",
+        "BRA": "Brasile", "ARG": "Argentina", "COL": "Colombia",
+        "NGA": "Nigeria", "GHA": "Ghana", "SEN": "Senegal", "ETH": "Etiopia",
+        "TUR": "Turchia", "SYR": "Siria", "IRQ": "Iraq", "AFG": "Afghanistan",
+        "LBN": "Libano", "PSE": "Palestina", "JOR": "Giordania",
+    }
+    return iso_map.get(upper, code)
 
 
 def _extract_json(text: str) -> dict:
@@ -60,7 +83,8 @@ def _extract_json(text: str) -> dict:
 
 async def scan_document(image_bytes: bytes, filename: str) -> dict:
     """
-    Scan a passport/ID image using OpenAI Vision and extract structured data.
+    Scan a passport/ID image (or PDF) using OpenAI Vision and extract structured data.
+    PDFs are converted to a PNG image of their first page.
     Returns OCR result dict with extracted fields and metadata.
     """
     scan_id = str(uuid.uuid4())
@@ -78,6 +102,28 @@ async def scan_document(image_bytes: bytes, filename: str) -> dict:
     try:
         if not EMERGENT_LLM_KEY:
             raise ValueError("EMERGENT_LLM_KEY not configured")
+
+        # If a PDF is uploaded, render its first page to a PNG so the vision model can read it.
+        is_pdf = filename.lower().endswith(".pdf") or image_bytes[:4] == b"%PDF"
+        if is_pdf:
+            try:
+                import subprocess
+                import tempfile
+                with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
+                    tmp_pdf.write(image_bytes)
+                    pdf_path = tmp_pdf.name
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    out_prefix = f"{tmpdir}/page"
+                    subprocess.run(
+                        ["pdftoppm", "-r", "180", "-f", "1", "-l", "1", "-png", pdf_path, out_prefix],
+                        check=True, capture_output=True, timeout=20,
+                    )
+                    rendered = f"{out_prefix}-1.png"
+                    with open(rendered, "rb") as f:
+                        image_bytes = f.read()
+            except Exception as e:
+                logger.error(f"PDF render failed: {e}")
+                raise ValueError("Impossibile leggere il PDF. Esporta in JPG/PNG e riprova.")
 
         # Convert image to base64
         image_b64 = base64.b64encode(image_bytes).decode("utf-8")
@@ -104,6 +150,16 @@ async def scan_document(image_bytes: bytes, filename: str) -> dict:
         logger.info(f"OCR raw response length: {len(response)}")
 
         extracted_data = _extract_json(response)
+
+        # Post-process: translate ISO country codes -> Italian full names
+        if extracted_data.get("country_of_birth"):
+            cb = extracted_data["country_of_birth"]
+            if len(cb) == 3 and cb.isalpha() and cb.isupper():
+                extracted_data["country_of_birth"] = _country_from_code(cb)
+        if extracted_data.get("nationality"):
+            n = extracted_data["nationality"]
+            if len(n) == 3 and n.isalpha() and n.isupper():
+                extracted_data["nationality"] = _country_from_code(n)
 
         await db.ocr_scans.update_one(
             {"id": scan_id},

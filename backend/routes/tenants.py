@@ -69,8 +69,12 @@ async def _enrich_tenant(t: dict) -> dict:
     if t.get("room_id"):
         room = await db.rooms.find_one({"id": t["room_id"]}, {"_id": 0})
         t["room_number"] = room.get("room_number", "") if room else ""
+        t["room_type"] = room.get("room_type", "") if room else ""
+        t["room_rent"] = room.get("monthly_rent", 0) if room else 0
     else:
         t["room_number"] = ""
+        t["room_type"] = ""
+        t["room_rent"] = 0
 
     # Property info
     if t.get("property_id"):
