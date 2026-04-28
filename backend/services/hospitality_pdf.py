@@ -88,13 +88,14 @@ def _draw_checkbox(c, x, y, size=9, checked=False):
 
 
 def _draw_vtag(c, x, y, h, text):
-    """Black filled vertical tag with rotated white text (e.g. 'DICHIARANTE')."""
-    c.setFillColor(black)
-    c.rect(x, y, TAG_W, h, fill=1, stroke=0)
+    """Vertical section label: thin border + rotated black text on white."""
+    c.setStrokeColor(black)
+    c.setLineWidth(0.6)
+    c.rect(x, y, TAG_W, h, fill=0, stroke=1)
     c.saveState()
     c.translate(x + TAG_W / 2.0 + 3, y + h / 2.0)
     c.rotate(90)
-    c.setFillColor(white)
+    c.setFillColor(black)
     c.setFont("Helvetica-Bold", 7.5)
     c.drawCentredString(0, 0, text)
     c.restoreState()
@@ -115,19 +116,16 @@ def generate_hospitality_pdf(data: dict) -> BytesIO:
     c.setStrokeColor(black)
     c.setFillColor(black)
 
-    # ===== TITLE BAR (black bar, white text) =====
-    bar_h = 36
-    bar_y = PAGE_H - 28 - bar_h
+    # ===== TITLE (plain centered text — no filled background) =====
+    title_top = PAGE_H - 36
     c.setFillColor(black)
-    c.rect(LEFT, bar_y, RIGHT - LEFT, bar_h, fill=1, stroke=0)
-    c.setFillColor(white)
     c.setFont("Helvetica-Bold", 13)
-    c.drawCentredString((LEFT + RIGHT) / 2.0, bar_y + 22, "COMUNICAZIONE DI OSPITALITÀ")
+    c.drawCentredString((LEFT + RIGHT) / 2.0, title_top, "COMUNICAZIONE DI OSPITALITÀ")
     c.setFont("Helvetica-Bold", 9.5)
-    c.drawCentredString((LEFT + RIGHT) / 2.0, bar_y + 11, "IN FAVORE DI CITTADINO EXTRACOMUNITARIO")
+    c.drawCentredString((LEFT + RIGHT) / 2.0, title_top - 12, "IN FAVORE DI CITTADINO EXTRACOMUNITARIO")
     c.setFont("Helvetica", 7.5)
-    c.drawCentredString((LEFT + RIGHT) / 2.0, bar_y + 2, "(ARTICOLO 7 DEL DECRETO LEGISLATIVO 25 LUGLIO 1998 NR. 286)")
-    c.setFillColor(black)
+    c.drawCentredString((LEFT + RIGHT) / 2.0, title_top - 22, "(ARTICOLO 7 DEL DECRETO LEGISLATIVO 25 LUGLIO 1998 NR. 286)")
+    bar_y = title_top - 26   # used downstream for cursor calculation
 
     # ===== "Il sottoscritto" =====
     y_cursor = bar_y - 14
