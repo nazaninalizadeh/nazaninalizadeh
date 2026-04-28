@@ -130,6 +130,29 @@ async def download_hospitality_pdf(
 
     # Extract address parts
     addr = property_data.get("address", "")
+    # Best-effort defaults for property fields when no hospitality_record exists.
+    # property_comune: prefer explicit field, fall back to city, then landlord_residence city.
+    auto_comune = (
+        property_data.get("city")
+        or property_data.get("comune")
+        or (landlord_data.get("residence", "").split(",")[0].strip() if landlord_data.get("residence") else "")
+    )
+    auto_provincia = (property_data.get("province") or property_data.get("provincia") or "")
+    # Try to extract civic number from a string like "Via X, 12" or "Via X 12"
+    auto_number = ""
+    if addr:
+        import re
+        m = re.search(r"(?:,\s*|\s)(\d+[A-Z]?)\s*$", addr.strip())
+        if m:
+            auto_number = m.group(1)
+            addr_via = addr[:m.start()].rstrip(", ").strip()
+        else:
+            addr_via = addr
+    else:
+        addr_via = ""
+
+    # Host residence default from landlord
+    auto_host_residence = landlord_data.get("residence", "") or landlord_data.get("address", "")
 
     pdf_data = {
         # Host (landlord/declarant)
@@ -138,7 +161,7 @@ async def download_hospitality_pdf(
         "host_dob": hosp_record.get("host_dob", "") if hosp_record else "",
         "host_birth_place": hosp_record.get("host_birth_place", "") if hosp_record else "",
         "host_province": hosp_record.get("host_province", "") if hosp_record else "",
-        "host_residence": hosp_record.get("host_residence", "") if hosp_record else "",
+        "host_residence": hosp_record.get("host_residence", auto_host_residence) if hosp_record else auto_host_residence,
         # Guest (tenant)
         "guest_surname": t_surname,
         "guest_name": t_first,
@@ -156,10 +179,10 @@ async def download_hospitality_pdf(
         "check_out_date": check_out_date,
         "hosting_type": hosp_record.get("hosting_type", "alloggio") if hosp_record else "alloggio",
         # Property
-        "property_comune": hosp_record.get("property_comune", "") if hosp_record else "",
-        "property_provincia": hosp_record.get("property_provincia", "") if hosp_record else "",
-        "property_address": addr,
-        "property_number": hosp_record.get("property_number", "") if hosp_record else "",
+        "property_comune": hosp_record.get("property_comune", auto_comune) if hosp_record else auto_comune,
+        "property_provincia": hosp_record.get("property_provincia", auto_provincia) if hosp_record else auto_provincia,
+        "property_address": addr_via or addr,
+        "property_number": hosp_record.get("property_number", auto_number) if hosp_record else auto_number,
         "property_interno": hosp_record.get("property_interno", "") if hosp_record else "",
         "property_piano": hosp_record.get("property_piano", "") if hosp_record else "",
     }
