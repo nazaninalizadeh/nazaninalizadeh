@@ -40,23 +40,43 @@ Proprietari | Immobili | Inquilini | Dashboard | Pagamenti | Ospitalità | Regis
 - DONE: Login page redesign (dark navy + cream card + red accent)
 - DONE (Feb 27, 2026): Login auto-redirect — navigate('/') + <Navigate /> guard
 - DONE (Feb 27, 2026): Menu order — Dashboard, Proprietari, Immobili, Inquilini, then rest
-- DONE (Feb 27, 2026): Inside Immobili tenant assign/unassign with searchable dropdown (real tenant data)
+- DONE (Feb 27, 2026): Inside Immobili tenant assign/unassign with searchable dropdown
 - DONE (Feb 27, 2026): data-testid coverage for property/room actions
-- DONE (Feb 27, 2026): Image upload security — JPG/PNG/WEBP only, 5MB max, mimetype + ext check, client + server
+- DONE (Feb 27, 2026): Image upload security — JPG/PNG/WEBP only, 5MB max, mimetype + ext check
 - DONE (Feb 27, 2026): Single-device-per-account session — invalidation scoped by admin_id
 - DONE (Feb 27, 2026): window.alert → sonner toast for session-kicked UX
-- DONE (Feb 27, 2026): /notifications/count optimized — 3 bulk queries (sub-200ms)
+- DONE (Feb 27, 2026): /notifications/count optimized — 3 bulk queries
 - DONE (Feb 27, 2026): Email reminder structure (1 wk before / 1 day after / 1 wk after)
-- DONE (Feb 27, 2026): Dashboard count consistency — `tenants_late = len(late_details)` (single source of truth)
-- DONE (Feb 27, 2026): Hospitality PDF rebuilt to match official Italian template exactly (no extra branding)
-- DONE (Feb 27, 2026): Notification badge — POST /api/notifications/mark-seen + last_viewed_at vs became_late_at; sidebar listens for 'notifications:seen' event
-- DONE (Feb 27, 2026): Tenant document download bug — `/uploads/` was hitting K8s ingress and Navigate('/'); now serves at `/api/uploads/` + DB migration
-- DONE (Feb 27, 2026): Real Resend email integration with mock fallback when RESEND_API_KEY is empty (services/email_service.py)
+- DONE (Feb 27, 2026): Dashboard count consistency — `tenants_late = len(late_details)`
+- DONE (Feb 27, 2026): Hospitality PDF rebuilt drawn-from-scratch matching JALLAB template
+- DONE (Feb 27, 2026): Notification badge mark-seen + last_viewed_at vs became_late_at
+- DONE (Feb 27, 2026): Tenant document download — `/uploads/` → `/api/uploads/`
+- DONE (Feb 27, 2026): Real Resend email integration with mock fallback
+- DONE (Feb 28, 2026): **Group 1 + Group 2 + Group 3 batch updates (25+ items)**:
+   - DD/MM/YYYY date format util (`/lib/format.js`) wired into Contracts/Payments/Invoices tables
+   - WhatsApp → Phone everywhere (Tenants/Owners/Properties forms; legacy whatsapp field optional)
+   - DELETE buttons + backend routes for Contratti and Pagamenti (Payment delete reverses invoice paid_amount)
+   - "Piano" field removed from rooms; double rooms display "(€350 a persona)" automatically
+   - ZIP package shows 5-item file list bullet
+   - OCR PDF support — pdftoppm renders first page → vision model
+   - OCR enhanced — country code (IRN/ITA/MAR…) → full Italian name
+   - Italian dictionaries (`it_dictionaries.js`): 116 nationalities + 116 countries + 107 provinces
+   - Reusable `Combobox` component for searchable autocomplete
+   - Province dropdown on Properties (default PD-Padova)
+   - Property type Select: Appartamento / Studio
+   - Single/Double room counts on property card + API
+   - Surname → Name order in Tenants & Owners (full_name = "Surname Name")
+   - Owner signature upload with PIL transparent-PNG conversion
+   - Payment dialog auto-fills rent (halved if room.room_type='double')
+   - Hospitality auto-fills check_in_date from active contract; default duration 1 year; signature image overlay
+   - "Luogo e data: Padova, DD/MM/YYYY" (city title-cased + Italian date)
+   - Invoice dynamic panel: Affitto + Deposito + Spese agenzia + Registrazione (default 98) + Sconto + auto-computed TOTALE
+   - Invoice auto-fill on tenant select (property + contract + rent + deposit)
 
 ## Backlog
-- P1: Provide RESEND_API_KEY in production .env to switch reminders from mock to real
 - P1: WhatsApp Business API for ZIP sharing (currently UI-toast)
 - P2: Replace test RECAPTCHA_SECRET with production key (or remove)
 - P2: Persian UI translation
-- P2: Unique compound index on monthly_status(tenant_id, month, year)
-- P2: Edge case in _became_late_at for due_day > 28 (clamps to 28)
+- P2: Fmt remaining table date columns app-wide (Tenants list passport_expiry, Dashboard activity, Reports)
+- P2: Make signature transparency threshold tunable (currently hard-coded RGB > 235)
+- P2: Aggregate room counts in single $facet pipeline (current: N+1 per property)
