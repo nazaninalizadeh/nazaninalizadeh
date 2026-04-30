@@ -35,7 +35,20 @@ async def create_invoice(invoice: InvoiceCreate, user: dict = Depends(get_curren
         tenant_name = invoice.recipient_name or ""
 
     d["id"] = str(uuid.uuid4())
-    d["invoice_number"] = f"INV-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+    # Sequential per-year invoice number (e.g. "1/2026", "2/2026")
+    year = datetime.now().year
+    last = await db.invoices.find_one(
+        {"invoice_number": {"$regex": f"/{year}$"}},
+        sort=[("invoice_number", -1)],
+        projection={"invoice_number": 1, "_id": 0},
+    )
+    next_n = 1
+    if last and last.get("invoice_number"):
+        try:
+            next_n = int(last["invoice_number"].split("/")[0]) + 1
+        except (ValueError, IndexError):
+            next_n = await db.invoices.count_documents({"invoice_number": {"$regex": f"/{year}$"}}) + 1
+    d["invoice_number"] = f"{next_n}/{year}"
     d["tenant_name"] = tenant_name
     d["property_address"] = property_address
     d["issue_date"] = datetime.now(timezone.utc).isoformat()

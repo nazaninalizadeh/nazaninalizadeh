@@ -1,12 +1,13 @@
 """
 Invoice PDF Generator — CONSIMMOBILIARI
-Two templates, both drawn with ReportLab canvas primitives (no table abstractions,
-no colored backgrounds) to match the official artifacts provided by the client:
 
-1. `generate_fattura_pdf(data)`      — Standard "Fattura" (replica of COEB example)
-2. `generate_preavviso_pdf(data)`    — "Preavviso di fatturazione" (replica of ELEISON example)
+Pixel-by-pixel replicas of the official reference templates using ReportLab
+canvas drawing primitives (drawString / drawRightString / line).
+NO colored backgrounds, NO modern UI, NO HTML/CSS layout.
 
-Both return a BytesIO buffer positioned at 0.
+Two templates:
+  1) generate_fattura_pdf(data)    — replica of "Fattura 20/2026" (COEB)
+  2) generate_preavviso_pdf(data)  — replica of "Preavviso fatturazione" (ELEISON)
 """
 
 from io import BytesIO
@@ -17,225 +18,256 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 
 
-# --- Fixed issuer info (CONSIMMOBILIARI) -----------------------------------
+# ---- Fixed issuer info ----------------------------------------------------
 ISSUER_NAME = "CONSIMMOBILIARI SAS DI SERRANO' ANTONINO & C."
-ISSUER_NAME_SHORT = "CONSIMMOBILIARI S.A.S."
-ISSUER_ADDRESS = "VIA VIGONOVESE 114 - 35127 - PADOVA (PD)"
-ISSUER_ADDRESS_SHORT = "Via Vigonovese, 114 - 35127 Padova"
+ISSUER_NAME_LARGE = "CONSIMMOBILIARI S.A.S."
+ISSUER_ADDR_FULL = "VIA VIGONOVESE 114 - 35127 - PADOVA (PD)"
+ISSUER_ADDR_SHORT = "Via Vigonovese, 114  35127 Padova"
 ISSUER_PIVA = "05093180288"
 ISSUER_CF = "05093180288"
-ISSUER_PHONE = "Tel: 049 8702639 / 393 9054080"
+ISSUER_PHONE = "Tel: 049 8702639 /  393 9054080"
+ISSUER_EMAIL = "consimmobiliarisas1@gmail.com"
 BANK_NAME = "Banca Monte dei Paschi di Siena"
 BANK_IBAN = "IT14P0103012108000001107662"
 
 
-# --- Helpers ---------------------------------------------------------------
-def _fmt_eur(amount: float) -> str:
-    """Italian number formatting: 1.342,00"""
+# ---- Helpers --------------------------------------------------------------
+def _fmt_eur(amount: float, with_symbol: bool = True) -> str:
+    """Italian number formatting: 1.342,00 (optionally with € prefix)."""
     try:
         v = float(amount)
     except (TypeError, ValueError):
         v = 0.0
-    # 1234567.89 -> "1.234.567,89"
     neg = v < 0
     v = abs(v)
-    s = f"{v:,.2f}"  # 1,234,567.89
-    s = s.replace(",", "_").replace(".", ",").replace("_", ".")
+    s = f"{v:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
     if neg:
         s = "-" + s
-    return f"\u20ac {s}"
+    return f"\u20ac {s}" if with_symbol else s
 
 
-def _fmt_date_it(iso_or_date: str) -> str:
-    """Return DD/MM/YYYY from an ISO date like YYYY-MM-DD or already DD/MM/YYYY."""
-    if not iso_or_date:
+def _fmt_date_it(s: str) -> str:
+    if not s:
         return ""
-    s = str(iso_or_date)[:10]
+    s = str(s)[:10]
     if "/" in s:
         return s
     try:
-        dt = datetime.strptime(s, "%Y-%m-%d")
-        return dt.strftime("%d/%m/%Y")
+        return datetime.strptime(s, "%Y-%m-%d").strftime("%d/%m/%Y")
     except ValueError:
         return s
 
 
-# =============================================================================
-# 1) FATTURA (Standard Invoice) — Replica of COEB-COSTRUZIONI example
-# =============================================================================
+def _short_invoice_no(raw: str, year: int) -> str:
+    """Always return 'N/YYYY' — strip any UUID-style prefix."""
+    if not raw:
+        return f"1/{year}"
+    raw = str(raw).strip().lstrip("INV-")
+    # if already in N/YYYY format keep it
+    if "/" in raw and raw.split("/")[1].isdigit():
+        return raw
+    # Take last segment of '-'-split that is purely digits
+    parts = [p for p in raw.replace("-", " ").split() if p.isdigit()]
+    if parts:
+        last = parts[-1].lstrip("0") or "0"
+        # Limit to 4 digits to avoid huge numbers
+        last = last[-4:]
+        return f"{last}/{year}"
+    return f"1/{year}"
+
+
+def _wrap(text: str, max_chars: int):
+    """Naive word-wrap: returns list of lines."""
+    out, line = [], ""
+    for word in str(text or "").split():
+        if len(line) + len(word) + 1 <= max_chars:
+            line = (line + " " + word).strip()
+        else:
+            if line:
+                out.append(line)
+            line = word
+    if line:
+        out.append(line)
+    return out or [""]
+
+
+# ============================================================================
+# 1) FATTURA — replica of COEB Costruzioni reference (Fattura nr. 20/2026)
+# ============================================================================
 def generate_fattura_pdf(data: dict) -> BytesIO:
     """
-    data keys (all optional with sensible defaults):
-      invoice_number     : "20/2026"
-      invoice_date       : "17/04/2026" or ISO "2026-04-17"
-      recipient_name     : "COEB COSTRUZIONI S.R.L"
-      recipient_address  : "VIA ANTONIANA 218/A"
-      recipient_city     : "35011 CAMPODARSEGO (PD)"
-      recipient_piva     : ""  (optional)
-      recipient_cf       : ""  (optional)
-      line_description   : "Ricerca inquilino per vostro appartamento ..."
-      line_amount        : 1100.00     (imponibile, senza IVA)
-      vat_rate           : 22          (percentuale)
-      due_date           : "17/04/2026"
+    Required keys (all optional with defaults):
+      invoice_number    : "20/2026"  (or any string — sanitised to N/YYYY)
+      invoice_date      : "17/04/2026" or ISO
+      recipient_name    : "COEB COSTRUZIONI S.R.L"
+      recipient_address : "VIA ANTONIANA 218/A"
+      recipient_city    : "35011 CAMPODARSEGO (PD)"
+      recipient_piva    : "04301600286"
+      recipient_cf      : "04301600286"
+      line_description  : "Ricerca inquilino per vostro appartamento ..."
+      line_amount       : 1100.00     (imponibile)
+      vat_rate          : 22
+      due_date          : "17/04/2026"
+      page_index        : "1 / 1"
     """
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     W, H = A4
 
-    LEFT = 20 * mm
-    RIGHT = W - 20 * mm
+    LEFT = 18 * mm
+    RIGHT = W - 18 * mm
 
-    # ---- Header: issuer (top-right block) --------------------------------
-    y = H - 22 * mm
-    c.setFont("Helvetica-Bold", 9)
+    # ---------- 1) Top-right header (issuer) ----------
+    y = H - 18 * mm
+    c.setFont("Helvetica-Bold", 9.5)
     c.drawRightString(RIGHT, y, ISSUER_NAME)
     y -= 11
-    c.setFont("Helvetica", 8)
-    c.drawRightString(RIGHT, y, ISSUER_ADDRESS)
-    y -= 10
+    c.setFont("Helvetica", 8.5)
+    c.drawRightString(RIGHT, y, ISSUER_ADDR_FULL)
+    y -= 11
     c.drawRightString(RIGHT, y, f"P.iva {ISSUER_PIVA} - C.F. {ISSUER_CF}")
 
-    # ---- Invoice number + date (left side, top) --------------------------
-    y_fnum = H - 22 * mm
-    c.setFont("Helvetica-Bold", 12)
-    inv_num = str(data.get("invoice_number", ""))
-    inv_date = _fmt_date_it(data.get("invoice_date") or datetime.now().strftime("%Y-%m-%d"))
-    c.drawString(LEFT, y_fnum, f"FATTURA nr.  {inv_num}    del  {inv_date}")
+    # ---------- 2) "FATTURA nr. X/YYYY del DD/MM/YYYY" (right-aligned, own row) ----------
+    inv_date_str = _fmt_date_it(data.get("invoice_date") or datetime.now().strftime("%Y-%m-%d"))
+    try:
+        year = int(inv_date_str.split("/")[-1])
+    except (ValueError, IndexError):
+        year = datetime.now().year
+    inv_no = _short_invoice_no(data.get("invoice_number"), year)
 
-    # ---- Horizontal separator line below header --------------------------
-    sep_y = H - 50 * mm
-    c.setLineWidth(0.5)
+    y -= 22
+    c.setFont("Helvetica-Bold", 12)
+    c.drawRightString(RIGHT, y, f"FATTURA  nr. {inv_no}  del  {inv_date_str}")
+
+    # ---------- 3) Horizontal separator ----------
+    sep_y = y - 18
+    c.setLineWidth(0.4)
     c.line(LEFT, sep_y, RIGHT, sep_y)
 
-    # ---- Destinatario block (right side, just below separator) -----------
-    y = sep_y - 12
+    # ---------- 4) Recipient block ----------
+    # Left: small CF/PIVA of recipient (matches reference)
+    rec_y = sep_y - 16
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(LEFT, y, "DESTINATARIO")
-    y -= 14
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(LEFT, y, str(data.get("recipient_name", "")).upper())
-    y -= 12
-    c.setFont("Helvetica", 9)
-    if data.get("recipient_address"):
-        c.drawString(LEFT, y, str(data["recipient_address"]).upper())
-        y -= 11
-    if data.get("recipient_city"):
-        c.drawString(LEFT, y, str(data["recipient_city"]).upper())
-        y -= 11
     if data.get("recipient_piva"):
-        c.drawString(LEFT, y, f"P.IVA {data['recipient_piva']}")
-        y -= 11
+        c.drawString(LEFT, rec_y, "P.IVA")
+        c.setFont("Helvetica", 9)
+        c.drawString(LEFT + 35, rec_y, str(data["recipient_piva"]))
     if data.get("recipient_cf"):
-        c.drawString(LEFT, y, f"C.F. {data['recipient_cf']}")
-        y -= 11
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(LEFT, rec_y - 12, "CF")
+        c.setFont("Helvetica", 9)
+        c.drawString(LEFT + 35, rec_y - 12, str(data["recipient_cf"]))
 
-    # ---- Item table header ------------------------------------------------
-    table_top = sep_y - 85
-    c.setLineWidth(0.5)
-    c.line(LEFT, table_top, RIGHT, table_top)
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(LEFT + 4, table_top - 14, "DESCRIZIONE")
-    c.drawRightString(RIGHT - 4, table_top - 14, "IMPORTO")
-    c.line(LEFT, table_top - 20, RIGHT, table_top - 20)
-
-    # ---- Line item --------------------------------------------------------
-    line_y = table_top - 40
+    # Right: DESTINATARIO block
+    rcol_x = LEFT + 95 * mm
+    c.setFont("Helvetica", 7.5)
+    c.drawString(rcol_x, rec_y, "DESTINATARIO")
+    c.setFont("Helvetica-Bold", 10.5)
+    c.drawString(rcol_x, rec_y - 13, str(data.get("recipient_name", "") or "").upper())
     c.setFont("Helvetica", 9)
-    desc = str(data.get("line_description", ""))
-    # wrap long description
-    max_chars = 80
-    parts = []
-    while len(desc) > max_chars:
-        cut = desc.rfind(" ", 0, max_chars)
-        if cut <= 0:
-            cut = max_chars
-        parts.append(desc[:cut])
-        desc = desc[cut:].lstrip()
-    parts.append(desc)
-    for i, p in enumerate(parts):
-        c.drawString(LEFT + 4, line_y - i * 12, p)
+    rec_addr = str(data.get("recipient_address", "") or "").upper()
+    rec_city = str(data.get("recipient_city", "") or "").upper()
+    if rec_addr:
+        c.drawString(rcol_x, rec_y - 25, rec_addr)
+    if rec_city:
+        c.drawString(rcol_x, rec_y - 36, rec_city)
 
+    # ---------- 5) Item table ----------
+    table_top = sep_y - 70
+    c.setLineWidth(0.4)
+    c.line(LEFT, table_top, RIGHT, table_top)
+    c.setFont("Helvetica", 7.5)
+    c.drawString(LEFT + 4, table_top - 11, "DESCRIZIONE")
+    c.drawRightString(RIGHT - 4, table_top - 11, "IMPORTO")
+    c.line(LEFT, table_top - 16, RIGHT, table_top - 16)
+
+    # Item row (single line)
     line_amount = float(data.get("line_amount", 0) or 0)
-    c.setFont("Helvetica", 10)
-    c.drawRightString(RIGHT - 4, line_y, _fmt_eur(line_amount))
+    desc_lines = _wrap(data.get("line_description", ""), 95)
+    row_h = 14 + (len(desc_lines) - 1) * 11
+    row_top = table_top - 16
+    row_bot = row_top - row_h
+    # very light shading (mimic reference's faint row tint via thin dotted-ish look = single bg line)
+    # but rules say "no colors" — so we keep it crisp lines only.
+    c.setFont("Helvetica-Bold", 9)
+    for i, ln in enumerate(desc_lines):
+        c.drawString(LEFT + 4, row_top - 11 - i * 11, ln)
+    c.setFont("Helvetica", 9.5)
+    c.drawRightString(RIGHT - 4, row_top - 11, _fmt_eur(line_amount))
+    c.line(LEFT, row_bot, RIGHT, row_bot)
 
-    # closing line under item
-    close_y = line_y - 12 * len(parts) - 8
-    c.setLineWidth(0.3)
-    c.line(LEFT, close_y, RIGHT, close_y)
+    # ---------- 6) NOTE / legal disclaimer ----------
+    note_y = row_bot - 16
+    c.setFont("Helvetica", 7.5)
+    c.drawString(LEFT, note_y, "NOTE")
+    c.setFont("Helvetica", 9)
+    c.drawString(LEFT, note_y - 12,
+                 "Documento privo di valenza fiscale ai sensi dell'art. 21 Dpr 633/72. "
+                 "L'originale e' disponibile all'indirizzo telematico da Lei fornito")
+    c.drawString(LEFT, note_y - 23,
+                 "oppure nella Sua area riservata dell'Agenzia delle Entrate.")
 
-    # ---- Riepilogo IVA (left side) ---------------------------------------
+    # ---------- 7) Bottom block: MODALITÀ DI PAGAMENTO + SCADENZE ----------
+    pay_top = 105 * mm
+    c.line(LEFT, pay_top, RIGHT, pay_top)
+    c.setFont("Helvetica", 7.5)
+    c.drawString(LEFT, pay_top - 11, "MODALITA' DI PAGAMENTO")
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(LEFT, pay_top - 24, "BONIFICO BANCARIO")
+    c.setFont("Helvetica", 9)
+    c.drawString(LEFT, pay_top - 36, f"IBAN: {BANK_IBAN}")
+
+    sc_x = LEFT + 95 * mm
+    c.setFont("Helvetica", 7.5)
+    c.drawString(sc_x, pay_top - 11, "SCADENZE")
+    c.setFont("Helvetica-Bold", 9)
+    due = _fmt_date_it(data.get("due_date") or data.get("invoice_date") or "")
     vat_rate = float(data.get("vat_rate", 22) or 0)
     imponibile = line_amount
     imposte = round(imponibile * vat_rate / 100.0, 2)
     totale = round(imponibile + imposte, 2)
+    c.drawString(sc_x, pay_top - 24, f"{due}: {_fmt_eur(totale)}")
 
-    ry = close_y - 30
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(LEFT, ry, "RIEPILOGO IVA")
-    ry -= 14
-    c.setFont("Helvetica-Bold", 8)
-    col1 = LEFT
-    col2 = LEFT + 60
-    col3 = LEFT + 130
-    c.drawString(col1, ry, "ALIQUOTA")
-    c.drawString(col2, ry, "IMPONIBILE")
-    c.drawString(col3, ry, "IMPOSTE")
-    ry -= 4
-    c.line(LEFT, ry, LEFT + 200, ry)
-    ry -= 12
+    # ---------- 8) Separator above RIEPILOGO IVA ----------
+    riep_top = pay_top - 50
+    c.line(LEFT, riep_top, RIGHT, riep_top)
+
+    # ---------- 9) RIEPILOGO IVA (left side, aligned columns) ----------
+    c.setFont("Helvetica", 7.5)
+    c.drawString(LEFT, riep_top - 11, "RIEPILOGO IVA")
+    col_alq = LEFT
+    col_imp = LEFT + 60 * mm
+    col_imposte = LEFT + 78 * mm
+    c.drawString(col_alq, riep_top - 22, "")  # spacer
+    c.setFont("Helvetica", 7.5)
+    c.drawRightString(col_imp + 22, riep_top - 22, "IMPONIBILE")
+    c.drawRightString(col_imposte + 22, riep_top - 22, "IMPOSTE")
+    c.setFont("Helvetica", 9.5)
+    c.drawString(col_alq, riep_top - 35, f"{int(vat_rate)}%")
+    c.drawRightString(col_imp + 22, riep_top - 35, _fmt_eur(imponibile, with_symbol=False))
+    c.drawRightString(col_imposte + 22, riep_top - 35, _fmt_eur(imposte))
+
+    # ---------- 10) TOTAL block (right side, no border) ----------
+    tx_right = RIGHT
+    ty = riep_top - 18
     c.setFont("Helvetica", 9)
-    c.drawString(col1, ry, f"{int(vat_rate)}%")
-    c.drawString(col2, ry, _fmt_eur(imponibile))
-    c.drawString(col3, ry, _fmt_eur(imposte))
+    c.drawRightString(tx_right - 70, ty, "Imponibile")
+    c.drawRightString(tx_right, ty, _fmt_eur(imponibile))
+    ty -= 12
+    c.drawRightString(tx_right - 70, ty, "Totale IVA")
+    c.drawRightString(tx_right, ty, _fmt_eur(imposte))
+    ty -= 26
+    c.setFont("Helvetica-Bold", 18)
+    c.drawRightString(tx_right, ty, _fmt_eur(totale))
 
-    # ---- Totals box (right side) -----------------------------------------
-    box_w = 180
-    box_h = 85
-    box_x = RIGHT - box_w
-    box_y = close_y - 30 - box_h
-    c.setLineWidth(0.5)
-    c.rect(box_x, box_y, box_w, box_h, stroke=1, fill=0)
-
-    inner_pad = 10
-    ty = box_y + box_h - inner_pad - 4
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(box_x + inner_pad, ty, "Imponibile")
-    c.setFont("Helvetica", 10)
-    c.drawRightString(box_x + box_w - inner_pad, ty, _fmt_eur(imponibile))
-
-    ty -= 18
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(box_x + inner_pad, ty, "Totale IVA")
-    c.setFont("Helvetica", 10)
-    c.drawRightString(box_x + box_w - inner_pad, ty, _fmt_eur(imposte))
-
-    ty -= 5
-    c.line(box_x + inner_pad, ty, box_x + box_w - inner_pad, ty)
-
-    ty -= 22
-    c.setFont("Helvetica-Bold", 16)
-    c.drawRightString(box_x + box_w - inner_pad, ty, _fmt_eur(totale))
-
-    # ---- Payment footer --------------------------------------------------
-    foot_y = 70 * mm
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(LEFT, foot_y, "MODALITA' DI PAGAMENTO")
-    c.setFont("Helvetica", 9)
-    c.drawString(LEFT, foot_y - 14, "BONIFICO BANCARIO")
-    c.drawString(LEFT, foot_y - 28, f"IBAN: {BANK_IBAN}")
-    c.drawString(LEFT, foot_y - 42, BANK_NAME)
-
-    c.setFont("Helvetica-Bold", 9)
-    c.drawRightString(RIGHT, foot_y, "SCADENZE")
-    due = _fmt_date_it(data.get("due_date") or data.get("invoice_date") or "")
-    c.setFont("Helvetica", 9)
-    c.drawRightString(RIGHT, foot_y - 14, f"{due}: {_fmt_eur(totale)}")
-
-    # bottom disclaimer
-    c.setFont("Helvetica-Oblique", 6)
-    c.drawCentredString(W / 2, 12 * mm,
-                        "Documento generato elettronicamente da CONSIMMOBILIARI S.A.S.")
+    # ---------- 11) Footer line + tiny captions ----------
+    foot_y = 12 * mm
+    c.setLineWidth(0.3)
+    c.line(LEFT, foot_y + 12, RIGHT, foot_y + 12)
+    c.setFont("Helvetica", 7)
+    page_idx = data.get("page_index", "1 / 1")
+    c.drawString(LEFT, foot_y, f"Fattura nr. {inv_no} del {inv_date_str} - {page_idx}")
+    c.drawRightString(RIGHT, foot_y, f"{ISSUER_NAME}  {ISSUER_EMAIL}")
 
     c.showPage()
     c.save()
@@ -243,19 +275,19 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     return buf
 
 
-# =============================================================================
-# 2) PREAVVISO DI FATTURAZIONE — Replica of ELEISON example
-# =============================================================================
+# ============================================================================
+# 2) PREAVVISO — replica of ELEISON Cooperativa Sociale reference
+# ============================================================================
 def generate_preavviso_pdf(data: dict) -> BytesIO:
     """
-    data keys:
+    Required keys:
       causale_date       : "29/10/25" or ISO
-      recipient_name     : "ELEISON Societa' Cooperativa Sociale"
-      recipient_address  : "Via Giorgio Pulle' 15/17 Padova"
+      recipient_name     : "ELEISON Società Cooperativa Sociale"
+      recipient_address  : "Via Giorgio Pullè 15/17 Padova"
       recipient_cf_piva  : "05028740289"
       body_text          : "Ricerca appartamento in locazione situato a Padova Via Mozart"
       imponibile         : 1300.00
-      vat_rate           : 22     (use 0 for exempt items)
+      vat_rate           : 22
       rimborso_label     : "Rimborso spese vostra quota registrazione contratto"
       rimborso_amount    : 186.00
       rimborso_note      : "(Imposta di bollo non presente in quanto cooperativa onlus)"
@@ -265,74 +297,68 @@ def generate_preavviso_pdf(data: dict) -> BytesIO:
     c = canvas.Canvas(buf, pagesize=A4)
     W, H = A4
 
-    LEFT = 20 * mm
-    RIGHT = W - 20 * mm
+    LEFT = 18 * mm
+    RIGHT = W - 18 * mm
 
-    # ---- Issuer (top-left block) -----------------------------------------
-    y = H - 25 * mm
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(LEFT, y, ISSUER_NAME_SHORT)
-    y -= 18
-    c.setFont("Helvetica", 10)
-    c.drawString(LEFT, y, ISSUER_ADDRESS_SHORT)
-    y -= 13
-    c.drawString(LEFT, y, f"Partita IVA {ISSUER_PIVA}    {ISSUER_PHONE}")
+    # ---------- 1) Top decorative horizontal accent (faint, right-side) ----------
+    c.setLineWidth(0.5)
+    c.line(W * 0.45, H - 14 * mm, RIGHT, H - 14 * mm)
 
-    # ---- Recipient (right-side block) ------------------------------------
-    ry = H - 25 * mm
-    x_rec = LEFT + 95 * mm
-    c.setFont("Helvetica", 10)
-    c.drawString(x_rec, ry, "Spett.le")
-    ry -= 14
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(x_rec, ry, str(data.get("recipient_name", "")))
-    ry -= 14
+    # ---------- 2) Issuer block (left, with vertical decorative rule) ----------
+    block_top = H - 22 * mm
+    block_bottom = H - 60 * mm
+    # vertical accent line on its left
+    c.setLineWidth(0.6)
+    c.line(LEFT, block_top, LEFT, block_bottom)
+
+    c.setFont("Helvetica-Bold", 22)
+    c.drawString(LEFT + 6 * mm, H - 30 * mm, ISSUER_NAME_LARGE)
+
+    c.setFont("Helvetica-Oblique", 10.5)
+    c.drawString(LEFT + 6 * mm, H - 41 * mm, ISSUER_ADDR_SHORT)
+    c.drawString(LEFT + 6 * mm, H - 52 * mm,
+                 f"Partita IVA {ISSUER_PIVA} {ISSUER_PHONE}")
+
+    # ---------- 3) Recipient block (right, lower) ----------
+    rcol_x = LEFT + 95 * mm
+    ry = H - 70 * mm
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(rcol_x, ry, "Spett.le")
+    ry -= 13
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(rcol_x, ry, str(data.get("recipient_name", "")))
+    ry -= 13
     c.setFont("Helvetica", 10)
     if data.get("recipient_address"):
-        c.drawString(x_rec, ry, str(data["recipient_address"]))
+        c.drawString(rcol_x, ry, str(data["recipient_address"]))
         ry -= 13
     if data.get("recipient_cf_piva"):
-        c.drawString(x_rec, ry, f"C.F. P.IVA {data['recipient_cf_piva']}")
-        ry -= 13
+        c.drawString(rcol_x, ry, f"C.F.  P.IVA {data['recipient_cf_piva']}")
 
-    # ---- Horizontal separator --------------------------------------------
-    sep_y = H - 68 * mm
+    # ---------- 4) Horizontal separator ----------
+    sep_y = H - 105 * mm
     c.setLineWidth(0.5)
     c.line(LEFT, sep_y, RIGHT, sep_y)
 
-    # ---- CAUSALE line ----------------------------------------------------
-    caus_date = _fmt_date_it(data.get("causale_date") or datetime.now().strftime("%Y-%m-%d"))
-    # the template uses DD/MM/YY (2 digits) — we mimic it if possible
+    # ---------- 5) CAUSALE row ----------
+    caus_full = _fmt_date_it(data.get("causale_date") or datetime.now().strftime("%Y-%m-%d"))
     try:
-        d = datetime.strptime(caus_date, "%d/%m/%Y")
-        caus_date_short = d.strftime("%d/%m/%y")
+        d = datetime.strptime(caus_full, "%d/%m/%Y")
+        caus_short = d.strftime("%d/%m/%y")
     except ValueError:
-        caus_date_short = caus_date
+        caus_short = caus_full
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(LEFT, sep_y - 16, f"CAUSALE : preavviso fatturazione del {caus_short}")
 
-    c.setFont("Helvetica-Bold", 13)
-    c.drawString(LEFT, sep_y - 18, f"CAUSALE : preavviso fatturazione del {caus_date_short}")
-
-    # ---- Body text --------------------------------------------------------
-    body = str(data.get("body_text", ""))
+    # ---------- 6) Body text ----------
+    body = str(data.get("body_text", "") or "")
     c.setFont("Helvetica", 11)
-    by = sep_y - 45
-    # wrap
-    max_chars = 90
-    while body:
-        if len(body) <= max_chars:
-            c.drawString(LEFT, by, body)
-            by -= 14
-            break
-        cut = body.rfind(" ", 0, max_chars)
-        if cut <= 0:
-            cut = max_chars
-        c.drawString(LEFT, by, body[:cut])
-        body = body[cut:].lstrip()
+    by = sep_y - 42
+    for ln in _wrap(body, 95):
+        c.drawString(LEFT, by, ln)
         by -= 14
 
-    by -= 15
-
-    # ---- Line items -------------------------------------------------------
+    # ---------- 7) Items: imponibile (no label), iva 22%, rimborso ----------
     imponibile = float(data.get("imponibile", 0) or 0)
     vat_rate = float(data.get("vat_rate", 22) or 0)
     imposte = round(imponibile * vat_rate / 100.0, 2)
@@ -342,51 +368,48 @@ def generate_preavviso_pdf(data: dict) -> BytesIO:
     rimb_tax_note = str(data.get("rimborso_tax_note", "") or "")
     totale = round(imponibile + imposte + rimb, 2)
 
+    by -= 16
     c.setFont("Helvetica", 11)
-    # First item: imponibile line
-    c.drawString(LEFT, by, f"Imponibile {int(vat_rate)}%" if vat_rate else "Imponibile")
     c.drawRightString(RIGHT, by, _fmt_eur(imponibile))
     by -= 16
 
     if vat_rate:
-        c.drawString(LEFT, by, f"Iva {int(vat_rate)}%")
+        c.drawString(LEFT + 95 * mm, by, f"Iva {int(vat_rate)}%")
         c.drawRightString(RIGHT, by, _fmt_eur(imposte))
-        by -= 16
+        by -= 30
 
     if rimb > 0 or rimb_label:
-        c.drawString(LEFT, by, rimb_label or "Rimborso spese")
+        c.drawString(LEFT, by, rimb_label or "Rimborso")
         amt_str = _fmt_eur(rimb)
         if rimb_tax_note:
-            amt_str = f"{amt_str}  {rimb_tax_note}"
+            amt_str = f"{amt_str} {rimb_tax_note}"
         c.drawRightString(RIGHT, by, amt_str)
         by -= 14
         if rimb_note:
-            c.setFont("Helvetica-Oblique", 8)
+            c.setFont("Helvetica", 9)
             c.drawString(LEFT, by, rimb_note)
             by -= 14
             c.setFont("Helvetica", 11)
 
+    # ---------- 8) Separator + TOTAL FATTURA ----------
     by -= 6
     c.setLineWidth(0.5)
     c.line(LEFT, by, RIGHT, by)
-    by -= 22
-
-    # ---- TOTALE FATTURA --------------------------------------------------
-    c.setFont("Helvetica-Bold", 14)
+    by -= 18
+    c.setFont("Helvetica-Bold", 13)
     c.drawString(LEFT, by, "TOTALE FATTURA")
     c.drawRightString(RIGHT, by, _fmt_eur(totale))
 
-    # ---- Payment footer --------------------------------------------------
-    foot_y = 45 * mm
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(LEFT, foot_y, "BONIFICO BANCARIO PRESSO")
+    # ---------- 9) Bank info (bottom-left) ----------
+    foot_y = 55 * mm
     c.setFont("Helvetica", 11)
-    c.drawString(LEFT, foot_y - 16, BANK_NAME)
-    c.drawString(LEFT, foot_y - 32, f"Iban {BANK_IBAN}")
+    c.drawString(LEFT, foot_y, "BONIFICO BANCARIO PRESSO")
+    c.drawString(LEFT, foot_y - 14, BANK_NAME)
+    c.drawString(LEFT, foot_y - 28, f"Iban {BANK_IBAN}")
 
-    # small company caption bottom-right
+    # ---------- 10) Bottom-right small caption ----------
     c.setFont("Helvetica-Bold", 9)
-    c.drawRightString(RIGHT, 22 * mm, ISSUER_NAME_SHORT)
+    c.drawRightString(RIGHT, 22 * mm, ISSUER_NAME_LARGE)
     c.setFont("Helvetica", 8)
     c.drawRightString(RIGHT, 22 * mm - 11, "Via Vigonovese 114 - Padova")
 

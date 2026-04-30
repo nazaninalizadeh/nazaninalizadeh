@@ -134,17 +134,36 @@ async def download_hospitality_pdf(
     # Also check for an existing hospitality record
     hosp_record = await db.hospitality_records.find_one({"tenant_id": tenant_id}, {"_id": 0})
 
-    # Split landlord name as "Surname Name" (Italian convention)
-    ll_name = landlord_data.get("full_name", "")
-    ll_split = ll_name.split(" ", 1) if ll_name else ["", ""]
-    ll_surname = ll_split[0]
-    ll_first = ll_split[1] if len(ll_split) > 1 else ""
+    # Split landlord into Surname/Name. Prefer explicit fields; otherwise
+    # treat the LAST word of full_name as surname (Italian/Cognome convention)
+    # so legacy data stored as "Larisa Pasincovschi" maps correctly to
+    # Cognome=Pasincovschi, Nome=Larisa.
+    if landlord_data.get("surname") or landlord_data.get("name"):
+        ll_surname = landlord_data.get("surname", "") or ""
+        ll_first = landlord_data.get("name", "") or ""
+    else:
+        ll_name = landlord_data.get("full_name", "") or ""
+        parts = ll_name.strip().split()
+        if len(parts) >= 2:
+            ll_surname = parts[-1]
+            ll_first = " ".join(parts[:-1])
+        else:
+            ll_surname = ll_name
+            ll_first = ""
 
-    # Split tenant name as "Surname Name"
-    t_name = tenant.get("full_name", "")
-    t_split = t_name.split(" ", 1) if t_name else ["", ""]
-    t_surname = t_split[0]
-    t_first = t_split[1] if len(t_split) > 1 else ""
+    # Same logic for tenant
+    if tenant.get("surname") or tenant.get("name"):
+        t_surname = tenant.get("surname", "") or ""
+        t_first = tenant.get("name", "") or ""
+    else:
+        t_name = tenant.get("full_name", "") or ""
+        parts = t_name.strip().split()
+        if len(parts) >= 2:
+            t_surname = parts[-1]
+            t_first = " ".join(parts[:-1])
+        else:
+            t_surname = t_name
+            t_first = ""
 
     # Extract address parts
     addr = property_data.get("address", "")
