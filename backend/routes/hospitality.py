@@ -15,14 +15,24 @@ router = APIRouter(prefix="/api/hospitality", tags=["Hospitality"])
 
 
 class HospitalityCreate(BaseModel):
-    tenant_id: str
-    property_id: str
+    # In MANUAL mode tenant_id / property_id / check_in_date may be empty.
+    # In TENANT mode (legacy) tenant_id is the natural key.
+    tenant_id: Optional[str] = ""
+    property_id: Optional[str] = ""
     room_id: Optional[str] = ""
     landlord_id: Optional[str] = ""
     contract_id: Optional[str] = ""
-    check_in_date: str
+    check_in_date: Optional[str] = ""
     check_out_date: Optional[str] = ""
     hosting_type: Optional[str] = "alloggio"
+    mode: Optional[str] = "tenant"  # "tenant" | "manual"
+    # Free-text guest fields used only in manual mode
+    guest_surname: Optional[str] = ""
+    guest_name: Optional[str] = ""
+    guest_dob: Optional[str] = ""
+    guest_birth_place: Optional[str] = ""
+    guest_nationality: Optional[str] = ""
+    guest_passport: Optional[str] = ""
     host_surname: Optional[str] = ""
     host_name: Optional[str] = ""
     host_dob: Optional[str] = ""
@@ -39,28 +49,60 @@ class HospitalityCreate(BaseModel):
     guest_doc_authority: Optional[str] = ""
 
 
+def _is_manual(record: "HospitalityCreate") -> bool:
+    """A record is manual when there is no tenant_id (landlord+contract drives it)."""
+    return (record.mode or "").lower() == "manual" or not (record.tenant_id or "").strip()
+
+
 @router.post("/records")
 async def create_hospitality_record(record: HospitalityCreate, user: dict = Depends(get_current_user)):
-    """Create or UPDATE a hospitality record for a tenant. Idempotent by tenant_id."""
-    tenant = await db.tenants.find_one({"id": record.tenant_id}, {"_id": 0})
-    if not tenant:
-        raise HTTPException(status_code=404, detail="Inquilino non trovato")
+    """Create or UPDATE a hospitality record.
 
-    prop = await db.properties.find_one({"id": record.property_id}, {"_id": 0})
-    if not prop:
-        raise HTTPException(status_code=404, detail="Immobile non trovato")
-
+    - Tenant mode (default): idempotent upsert keyed by tenant_id (legacy behavior).
+    - Manual mode: requires landlord_id + contract_id; idempotent upsert keyed by
+      (landlord_id, contract_id) so re-saving the same form does not duplicate.
+    """
+    manual = _is_manual(record)
     d = record.model_dump()
-    d["tenant_name"] = tenant.get("full_name", "")
-    d["property_address"] = prop.get("address", "")
+    d["mode"] = "manual" if manual else "tenant"
+
+    if manual:
+        if not (record.landlord_id and record.contract_id):
+            raise HTTPException(status_code=400, detail="Proprietario e contratto sono obbligatori in modalita manuale")
+        landlord = await db.landlords.find_one({"id": record.landlord_id}, {"_id": 0})
+        if not landlord:
+            raise HTTPException(status_code=404, detail="Proprietario non trovato")
+        contract = await db.contracts.find_one({"id": record.contract_id}, {"_id": 0})
+        if not contract:
+            raise HTTPException(status_code=404, detail="Contratto non trovato")
+        d["tenant_name"] = (record.guest_surname + " " + record.guest_name).strip() or contract.get("tenant_name", "")
+        d["property_address"] = ""
+        if record.property_id:
+            prop = await db.properties.find_one({"id": record.property_id}, {"_id": 0})
+            if prop:
+                d["property_address"] = prop.get("address", "")
+        natural_key = {"mode": "manual", "landlord_id": record.landlord_id, "contract_id": record.contract_id}
+    else:
+        if not record.tenant_id:
+            raise HTTPException(status_code=400, detail="Inquilino obbligatorio in modalita inquilino")
+        tenant = await db.tenants.find_one({"id": record.tenant_id}, {"_id": 0})
+        if not tenant:
+            raise HTTPException(status_code=404, detail="Inquilino non trovato")
+        prop = await db.properties.find_one({"id": record.property_id}, {"_id": 0}) if record.property_id else None
+        if not prop:
+            raise HTTPException(status_code=404, detail="Immobile non trovato")
+        d["tenant_name"] = tenant.get("full_name", "")
+        d["property_address"] = prop.get("address", "")
+        natural_key = {"tenant_id": record.tenant_id, "mode": {"$ne": "manual"}}
+
     d["status"] = "active"
     d["updated_at"] = datetime.now(timezone.utc).isoformat()
     d["updated_by"] = user.get("email", "")
 
-    existing = await db.hospitality_records.find_one({"tenant_id": record.tenant_id}, {"_id": 0})
+    existing = await db.hospitality_records.find_one(natural_key, {"_id": 0})
     if existing:
         d["id"] = existing.get("id") or str(uuid.uuid4())
-        await db.hospitality_records.update_one({"tenant_id": record.tenant_id}, {"$set": d})
+        await db.hospitality_records.update_one({"id": d["id"]}, {"$set": d})
     else:
         d["id"] = str(uuid.uuid4())
         d["created_at"] = d["updated_at"]
@@ -77,17 +119,36 @@ async def update_hospitality_record(record_id: str, record: HospitalityCreate, u
     if not existing:
         raise HTTPException(status_code=404, detail="Record ospitalita non trovato")
 
-    tenant = await db.tenants.find_one({"id": record.tenant_id}, {"_id": 0})
-    if not tenant:
-        raise HTTPException(status_code=404, detail="Inquilino non trovato")
-    prop = await db.properties.find_one({"id": record.property_id}, {"_id": 0})
-    if not prop:
-        raise HTTPException(status_code=404, detail="Immobile non trovato")
-
+    manual = _is_manual(record)
     d = record.model_dump()
     d["id"] = record_id
-    d["tenant_name"] = tenant.get("full_name", "")
-    d["property_address"] = prop.get("address", "")
+    d["mode"] = "manual" if manual else "tenant"
+
+    if manual:
+        if not (record.landlord_id and record.contract_id):
+            raise HTTPException(status_code=400, detail="Proprietario e contratto sono obbligatori in modalita manuale")
+        landlord = await db.landlords.find_one({"id": record.landlord_id}, {"_id": 0})
+        if not landlord:
+            raise HTTPException(status_code=404, detail="Proprietario non trovato")
+        contract = await db.contracts.find_one({"id": record.contract_id}, {"_id": 0})
+        if not contract:
+            raise HTTPException(status_code=404, detail="Contratto non trovato")
+        d["tenant_name"] = (record.guest_surname + " " + record.guest_name).strip() or contract.get("tenant_name", "")
+        d["property_address"] = ""
+        if record.property_id:
+            prop = await db.properties.find_one({"id": record.property_id}, {"_id": 0})
+            if prop:
+                d["property_address"] = prop.get("address", "")
+    else:
+        tenant = await db.tenants.find_one({"id": record.tenant_id}, {"_id": 0})
+        if not tenant:
+            raise HTTPException(status_code=404, detail="Inquilino non trovato")
+        prop = await db.properties.find_one({"id": record.property_id}, {"_id": 0}) if record.property_id else None
+        if not prop:
+            raise HTTPException(status_code=404, detail="Immobile non trovato")
+        d["tenant_name"] = tenant.get("full_name", "")
+        d["property_address"] = prop.get("address", "")
+
     d["status"] = existing.get("status", "active")
     d["created_at"] = existing.get("created_at")
     d["created_by"] = existing.get("created_by")
@@ -108,17 +169,34 @@ async def delete_hospitality_record(record_id: str, user: dict = Depends(get_cur
 
 @router.get("/records")
 async def get_hospitality_records(user: dict = Depends(get_current_user)):
-    """List all hospitality records."""
+    """List all hospitality records (tenant + manual)."""
     records = await db.hospitality_records.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     for r in records:
-        tenant = await db.tenants.find_one({"id": r.get("tenant_id", "")}, {"_id": 0})
-        if tenant:
-            r["tenant_name"] = tenant.get("full_name", "")
-            r["tenant_nationality"] = tenant.get("nationality", "")
-            r["tenant_passport"] = tenant.get("passport_number", "")
-        prop = await db.properties.find_one({"id": r.get("property_id", "")}, {"_id": 0})
-        if prop:
-            r["property_address"] = prop.get("address", "")
+        if r.get("tenant_id"):
+            tenant = await db.tenants.find_one({"id": r.get("tenant_id", "")}, {"_id": 0})
+            if tenant:
+                r["tenant_name"] = tenant.get("full_name", "")
+                r["tenant_nationality"] = tenant.get("nationality", "")
+                r["tenant_passport"] = tenant.get("passport_number", "")
+        else:
+            # Manual mode: synthesize tenant_name from guest fields
+            gn = (r.get("guest_surname", "") + " " + r.get("guest_name", "")).strip()
+            if gn:
+                r["tenant_name"] = gn
+            r["tenant_nationality"] = r.get("guest_nationality", "")
+            r["tenant_passport"] = r.get("guest_passport", "")
+        if r.get("property_id"):
+            prop = await db.properties.find_one({"id": r.get("property_id", "")}, {"_id": 0})
+            if prop:
+                r["property_address"] = prop.get("address", "")
+        if r.get("landlord_id") and not r.get("landlord_name"):
+            ll = await db.landlords.find_one({"id": r["landlord_id"]}, {"_id": 0})
+            if ll:
+                r["landlord_name"] = ll.get("full_name", "")
+        if r.get("contract_id") and not r.get("contract_number"):
+            ctr = await db.contracts.find_one({"id": r["contract_id"]}, {"_id": 0})
+            if ctr:
+                r["contract_number"] = ctr.get("contract_number", "")
     return records
 
 
@@ -269,4 +347,84 @@ async def download_hospitality_pdf(
         content=pdf_buf.getvalue(),
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=ospitalita_{safe_name}.pdf"},
+    )
+
+
+@router.get("/pdf/record/{record_id}")
+async def download_hospitality_pdf_by_record(record_id: str, user: dict = Depends(get_current_user)):
+    """Generate the hospitality PDF for any record by its id.
+
+    Works for both tenant-mode and manual-mode records. For manual mode the
+    guest fields stored on the record are used directly (no tenant lookup).
+    """
+    rec = await db.hospitality_records.find_one({"id": record_id}, {"_id": 0})
+    if not rec:
+        raise HTTPException(status_code=404, detail="Record ospitalita non trovato")
+
+    landlord = await db.landlords.find_one({"id": rec.get("landlord_id", "")}, {"_id": 0}) or {}
+    contract = await db.contracts.find_one({"id": rec.get("contract_id", "")}, {"_id": 0}) or {}
+    prop = await db.properties.find_one({"id": rec.get("property_id", "")}, {"_id": 0}) or {}
+
+    is_manual = (rec.get("mode") == "manual") or not rec.get("tenant_id")
+    if is_manual:
+        g_surname = rec.get("guest_surname", "")
+        g_name = rec.get("guest_name", "")
+        g_dob = rec.get("guest_dob", "")
+        g_bp = rec.get("guest_birth_place", "")
+        g_nat = rec.get("guest_nationality", "")
+        g_pass = rec.get("guest_passport", "")
+        g_residence = rec.get("guest_residence", "")
+    else:
+        tenant = await db.tenants.find_one({"id": rec["tenant_id"]}, {"_id": 0}) or {}
+        if tenant.get("surname") or tenant.get("name"):
+            g_surname = tenant.get("surname", "")
+            g_name = tenant.get("name", "")
+        else:
+            parts = (tenant.get("full_name", "") or "").strip().split()
+            g_surname = parts[-1] if len(parts) >= 2 else (parts[0] if parts else "")
+            g_name = " ".join(parts[:-1]) if len(parts) >= 2 else ""
+        g_dob = tenant.get("date_of_birth", "")
+        g_bp = tenant.get("place_of_birth", "")
+        g_nat = tenant.get("nationality", "")
+        g_pass = tenant.get("passport_number", "")
+        g_residence = tenant.get("address", "")
+
+    addr = prop.get("address", "") or rec.get("property_address", "")
+
+    pdf_data = {
+        "host_surname": rec.get("host_surname") or landlord.get("surname", ""),
+        "host_name": rec.get("host_name") or landlord.get("name", ""),
+        "host_dob": rec.get("host_dob") or landlord.get("date_of_birth", ""),
+        "host_birth_place": rec.get("host_birth_place") or landlord.get("place_of_birth", ""),
+        "host_province": rec.get("host_province") or landlord.get("province_of_birth", ""),
+        "host_residence": rec.get("host_residence") or landlord.get("residence", ""),
+        "host_signature_url": landlord.get("signature_url", ""),
+        "guest_surname": g_surname,
+        "guest_name": g_name,
+        "guest_dob": g_dob,
+        "guest_birth_place": g_bp,
+        "guest_birth_nation": g_nat,
+        "guest_citizenship": g_nat,
+        "guest_residence": g_residence,
+        "doc_type": "PASSAPORTO",
+        "passport_number": g_pass,
+        "doc_issue_date": "",
+        "doc_authority": rec.get("guest_doc_authority", ""),
+        "check_in_date": rec.get("check_in_date") or contract.get("start_date", ""),
+        "check_out_date": rec.get("check_out_date") or contract.get("end_date", ""),
+        "hosting_type": rec.get("hosting_type", "alloggio"),
+        "property_comune": rec.get("property_comune") or prop.get("comune") or prop.get("city", ""),
+        "property_provincia": rec.get("property_provincia") or prop.get("province", ""),
+        "property_address": addr,
+        "property_number": rec.get("property_number") or prop.get("civico", ""),
+        "property_interno": rec.get("property_interno", ""),
+        "property_piano": rec.get("property_piano", ""),
+    }
+
+    pdf_buf = generate_hospitality_pdf(pdf_data)
+    fname = (g_surname + "_" + g_name).strip("_").replace(" ", "_") or "ospitalita"
+    return Response(
+        content=pdf_buf.getvalue(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=ospitalita_{fname}.pdf"},
     )

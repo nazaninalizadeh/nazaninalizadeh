@@ -39,6 +39,10 @@ async def create_property(property_data: PropertyCreate, user: dict = Depends(ge
 async def get_properties(user: dict = Depends(get_current_user)):
     properties = await db.properties.find({}, {"_id": 0}).to_list(1000)
     for p in properties:
+        # Normalize structured-address fields so legacy docs hydrate cleanly in the UI
+        p.setdefault("civico", "")
+        p.setdefault("comune", "")
+        p.setdefault("province", "PD")
         rooms = await db.rooms.find({"property_id": p["id"]}, {"_id": 0}).to_list(100)
         occ = sum(1 for r in rooms if r.get("status") == "occupied")
         p["current_tenants_count"] = occ
@@ -56,6 +60,9 @@ async def get_property(property_id: str, user: dict = Depends(get_current_user))
     p = await db.properties.find_one({"id": property_id}, {"_id": 0})
     if not p:
         raise HTTPException(status_code=404, detail="Property not found")
+    p.setdefault("civico", "")
+    p.setdefault("comune", "")
+    p.setdefault("province", "PD")
     rooms = await db.rooms.find({"property_id": property_id}, {"_id": 0}).to_list(100)
     for r in rooms:
         if r.get("tenant_id"):

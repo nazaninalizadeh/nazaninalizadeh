@@ -1,0 +1,42 @@
+{
+  "summary": "Iteration 22 PASS. All iter21 critical fixes verified end-to-end. Backend: 13/13 pytest passed. Manual hospitality (mode='manual', no tenant_id) creates a record (200), is idempotent on (landlord_id, contract_id), supports PUT updates, and /api/hospitality/pdf/record/{id} returns valid %PDF for manual records. Tenant-mode hospitality regression intact. GET /api/properties and GET /api/properties/{id} now normalize legacy docs with civico/comune/province defaults. Regression smoke (landlords.authority, dashboard, invoices PDF, tenants list, /api/hospitality/pdf/{tenant_id}) all green. Frontend: /hospitality dialog has working Da Inquilino vs Crea Manualmente toggle (data-testid=hospitality-mode-tenant / hospitality-mode-manual). In manual mode the Inquilino/Immobile selects hide; OSPITATO (MANUALE) guest fields appear; Proprietario + Contratto remain. Switching back restores tenant flow. No regressions on Properties (Via/Civico/Comune/Provincia separate fields), Preavviso menu/route, owners authority, OCR sticky banner, or PDF downloads.",
+  "fixes_verified": {
+    "BACKEND_HOSPITALITY_MANUAL_POST": {"status": "PASS", "evidence": "POST /api/hospitality/records with mode='manual', landlord_id+contract_id, guest_* fields and no tenant_id/property_id/check_in_date returns 200 and persists record with mode='manual'."},
+    "BACKEND_HOSPITALITY_MANUAL_IDEMPOTENT": {"status": "PASS", "evidence": "Second POST with same (landlord_id, contract_id) returns same id (upsert; no duplicate)."},
+    "BACKEND_HOSPITALITY_MANUAL_PUT": {"status": "PASS", "evidence": "PUT /api/hospitality/records/{id} updates manual record; new guest_passport persists in subsequent GET /records list."},
+    "BACKEND_HOSPITALITY_PDF_RECORD": {"status": "PASS", "evidence": "GET /api/hospitality/pdf/record/{id} returns Content starting with %PDF for manual records."},
+    "BACKEND_HOSPITALITY_TENANT_MODE_REGRESSION": {"status": "PASS", "evidence": "POST tenant-mode (tenant_id+property_id+check_in_date) still accepted (200)."},
+    "BACKEND_PROPERTIES_NORMALIZATION": {"status": "PASS", "evidence": "Every property in GET /api/properties has civico/comune/province keys (defaulted to ''/'PD'). GET /api/properties/{id} also normalized."},
+    "FRONTEND_MODE_TOGGLE": {"status": "PASS", "evidence": "Mode buttons present (data-testid=hospitality-mode-tenant, hospitality-mode-manual). Switching to manual hides hospitality-tenant-select and reveals hospitality-guest-surname; Proprietario+Contratto selects remain. Switching back restores tenant select."},
+    "FRONTEND_REGRESSION": {"status": "PASS", "evidence": "Properties form retains Via/Civico/Comune/Provincia fields; Preavviso menu present; OCR sticky banner visible inside dialog; PDF buttons render."}
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Hospitality dialog", "issues": ["Radix DialogContent missing aria-describedby (console warning) — accessibility minor, same warning seen in iter21."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration22.py",
+    "/app/test_reports/pytest/iter22.xml"
+  ],
+  "action_items": [
+    "LOW: add aria-describedby (or DialogDescription) on Hospitality DialogContent to silence Radix accessibility warning."
+  ],
+  "critical_code_review_comments": [
+    "routes/hospitality.py: branched upsert key on (landlord_id, contract_id) for manual and tenant_id for tenant mode is correct and idempotent. Good defensive checks for landlord/contract existence.",
+    "routes/properties.py setdefault('province','PD') hard-codes Padova as default. Acceptable for this app (Padova-based) but consider empty string for purity if multi-region in future.",
+    "Hospitality.js: mode toggle via simple button group is clean; conditional rendering correct. Submit button label switches between create/update properly.",
+    "Frontend handleDownloadPdfByRecord uses /pdf/record/{id} for manual records — confirmed by code path; backend endpoint returns valid PDF."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration22.py"],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "100% (mode toggle, conditional rendering, regressions all PASS)"},
+  "test_credentials": "alborz.sbd@gmail.com / 1234@Admin (super_admin)",
+  "seed_data_creation": "Created and deleted one TEST_IT22 manual hospitality record. No persistent test data left.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 22 fully validates the iteration 21 HIGH bug fix (manual hospitality + properties normalization). All previous regression coverage retained. Backend test file /app/backend/tests/test_iteration22.py is the new regression suite — run it before any future hospitality/properties change.",
+  "rca of the issue": "Iter21's failed feature was (1) HospitalityCreate schema rejecting payloads without tenant_id (422) and (2) frontend missing mode toggle. Main agent fix made tenant_id/property_id/check_in_date Optional, added mode field, _is_manual helper, branched upsert key on (landlord_id, contract_id) for manual mode, added /pdf/record/{id} endpoint that handles both modes, and updated GET /records to synthesize tenant_name from guest_* in manual mode. Frontend added hospitality-mode-tenant / hospitality-mode-manual toggle with conditional rendering. Properties GET endpoints now setdefault civico/comune/province for legacy doc normalization. All verified by 13 passing pytest cases plus a Playwright UI smoke."
+}

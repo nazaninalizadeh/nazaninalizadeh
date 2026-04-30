@@ -32,9 +32,13 @@ const Hospitality = () => {
 
   // Create form
   const [form, setForm] = useState({
+    mode: 'tenant',
     tenant_id: '', property_id: '', room_id: '', landlord_id: '', contract_id: '',
     check_in_date: '', check_out_date: '',
     hosting_type: 'alloggio',
+    // Manual-mode guest fields
+    guest_surname: '', guest_name: '', guest_dob: '', guest_birth_place: '',
+    guest_nationality: '', guest_passport: '', guest_residence: '',
     host_surname: '', host_name: '', host_dob: '', host_birth_place: '',
     host_province: '', host_residence: '',
     property_comune: '', property_provincia: '', property_number: '',
@@ -101,6 +105,25 @@ const Hospitality = () => {
     setDownloading(null);
   };
 
+  const handleDownloadPdfByRecord = async (record) => {
+    setDownloading(record.id);
+    try {
+      const isManual = (record.mode === 'manual') || !record.tenant_id;
+      const url = isManual
+        ? `${API}/hospitality/pdf/record/${record.id}`
+        : `${API}/hospitality/pdf/${record.tenant_id}`;
+      const response = await axios.get(url, { withCredentials: true, responseType: 'blob' });
+      const objUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = objUrl;
+      a.download = `ospitalita_${(record.tenant_name || 'record').replace(/\s/g, '_')}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(objUrl);
+      toast.success('PDF scaricato');
+    } catch { toast.error('Errore nel generare il PDF'); }
+    setDownloading(null);
+  };
+
   // OCR Scan
   const handleOcrScan = async (e) => {
     const file = e.target.files[0];
@@ -146,9 +169,16 @@ const Hospitality = () => {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
-    if (!form.tenant_id || !form.property_id || !form.check_in_date) {
-      toast.error('Seleziona inquilino, immobile e data check-in');
-      return;
+    if (form.mode === 'manual') {
+      if (!form.landlord_id || !form.contract_id) {
+        toast.error('In modalita manuale: seleziona Proprietario e Contratto');
+        return;
+      }
+    } else {
+      if (!form.tenant_id || !form.property_id || !form.check_in_date) {
+        toast.error('Seleziona inquilino, immobile e data check-in');
+        return;
+      }
     }
     try {
       if (editingId) {
@@ -160,7 +190,7 @@ const Hospitality = () => {
       }
       setCreateOpen(false);
       setEditingId(null);
-      setForm({ tenant_id: '', property_id: '', room_id: '', landlord_id: '', contract_id: '', check_in_date: '', check_out_date: '', hosting_type: 'alloggio', host_surname: '', host_name: '', host_dob: '', host_birth_place: '', host_province: '', host_residence: '', property_comune: '', property_provincia: '', property_number: '', property_interno: '', property_piano: '', notes: '', signature_type: 'owner' });
+      setForm({ mode: 'tenant', tenant_id: '', property_id: '', room_id: '', landlord_id: '', contract_id: '', check_in_date: '', check_out_date: '', hosting_type: 'alloggio', guest_surname: '', guest_name: '', guest_dob: '', guest_birth_place: '', guest_nationality: '', guest_passport: '', guest_residence: '', host_surname: '', host_name: '', host_dob: '', host_birth_place: '', host_province: '', host_residence: '', property_comune: '', property_provincia: '', property_number: '', property_interno: '', property_piano: '', notes: '', signature_type: 'owner' });
       setOcrStatus('idle');
       setOcrResult(null);
       setOcrPreview(null);
@@ -200,9 +230,28 @@ const Hospitality = () => {
               <Plus size={18} className="mr-2" /> Nuova Ospitalita
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto luxury-modal">
-            <DialogHeader><DialogTitle>{editingId ? 'Modifica Comunicazione di Ospitalita' : 'Nuova Comunicazione di Ospitalita'}</DialogTitle></DialogHeader>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto luxury-modal" aria-describedby="hospitality-dialog-desc">
+            <DialogHeader>
+              <DialogTitle>{editingId ? 'Modifica Comunicazione di Ospitalita' : 'Nuova Comunicazione di Ospitalita'}</DialogTitle>
+              <p id="hospitality-dialog-desc" className="text-xs text-stone-500">Crea da inquilino esistente o manualmente con Proprietario + Contratto.</p>
+            </DialogHeader>
             <form onSubmit={handleCreateSubmit} className="space-y-5">
+
+              {/* Mode toggle */}
+              <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: 'rgba(184,134,11,0.06)' }}>
+                <button type="button" data-testid="hospitality-mode-tenant"
+                  onClick={() => setForm(prev => ({ ...prev, mode: 'tenant' }))}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${form.mode === 'tenant' ? 'bg-white shadow-sm' : ''}`}
+                  style={{ color: '#9F1239' }}>
+                  Da Inquilino
+                </button>
+                <button type="button" data-testid="hospitality-mode-manual"
+                  onClick={() => setForm(prev => ({ ...prev, mode: 'manual', tenant_id: '' }))}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${form.mode === 'manual' ? 'bg-white shadow-sm' : ''}`}
+                  style={{ color: '#9F1239' }}>
+                  Crea Manualmente
+                </button>
+              </div>
 
               {/* OCR Section */}
               <div className="p-4 rounded-xl" style={{ background: 'rgba(159,18,57,0.03)', border: '1px solid rgba(159,18,57,0.1)' }}>
@@ -236,7 +285,8 @@ const Hospitality = () => {
                 {ocrPreview && <img src={ocrPreview} alt="Preview" className="mt-2 max-h-32 rounded-lg object-contain" />}
               </div>
 
-              {/* Tenant + Property Selection */}
+              {/* Tenant + Property Selection (tenant mode only) */}
+              {form.mode === 'tenant' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Inquilino (Ospitato) *</Label>
@@ -303,6 +353,11 @@ const Hospitality = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              )}
+
+              {/* Proprietario + Contratto (always required, especially in manual mode) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Proprietario (Dichiarante) *</Label>
                   <Select value={form.landlord_id} onValueChange={(v) => {
@@ -328,18 +383,42 @@ const Hospitality = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label>Contratto (auto)</Label>
+                  <Label>Contratto {form.mode === 'manual' ? '*' : '(auto)'}</Label>
                   <Select value={form.contract_id} onValueChange={(v) => {
                     const ctr = contracts.find((c) => c.id === v);
-                    setForm((prev) => ({
-                      ...prev, contract_id: v,
-                      check_in_date: ctr?.start_date || prev.check_in_date,
-                      check_out_date: ctr?.end_date || prev.check_out_date,
-                    }));
+                    // In manual mode try to also pre-fill property + guest fields from the contract
+                    setForm((prev) => {
+                      const next = {
+                        ...prev, contract_id: v,
+                        check_in_date: ctr?.start_date || prev.check_in_date,
+                        check_out_date: ctr?.end_date || prev.check_out_date,
+                      };
+                      if (prev.mode === 'manual' && ctr) {
+                        const t = tenants.find(x => x.id === ctr.tenant_id);
+                        const prop = ctr.property_id ? properties.find(p => p.id === ctr.property_id) : null;
+                        if (t) {
+                          const tParts = (t.full_name || '').split(' ');
+                          next.guest_surname = prev.guest_surname || (tParts.length >= 2 ? tParts[tParts.length - 1] : (tParts[0] || ''));
+                          next.guest_name = prev.guest_name || (tParts.length >= 2 ? tParts.slice(0, -1).join(' ') : '');
+                          next.guest_dob = prev.guest_dob || t.date_of_birth || '';
+                          next.guest_birth_place = prev.guest_birth_place || t.place_of_birth || '';
+                          next.guest_nationality = prev.guest_nationality || t.nationality || '';
+                          next.guest_passport = prev.guest_passport || t.passport_number || '';
+                          next.guest_residence = prev.guest_residence || t.address || '';
+                        }
+                        if (prop) {
+                          next.property_id = prev.property_id || prop.id;
+                          next.property_comune = prev.property_comune || prop.comune || prop.city || '';
+                          next.property_provincia = prev.property_provincia || prop.province || '';
+                          next.property_number = prev.property_number || prop.civico || '';
+                        }
+                      }
+                      return next;
+                    });
                   }}>
                     <SelectTrigger data-testid="hospitality-contract-select"><SelectValue placeholder="Seleziona contratto" /></SelectTrigger>
                     <SelectContent>
-                      {contracts.filter((c) => !form.tenant_id || c.tenant_id === form.tenant_id).map((c) => (
+                      {contracts.filter((c) => form.mode === 'manual' ? true : (!form.tenant_id || c.tenant_id === form.tenant_id)).map((c) => (
                         <SelectItem key={c.id} value={c.id}>{c.contract_number} ({c.start_date} → {c.end_date})</SelectItem>
                       ))}
                     </SelectContent>
@@ -347,9 +426,25 @@ const Hospitality = () => {
                 </div>
               </div>
 
+              {/* Manual-mode guest fields (only when mode=manual) */}
+              {form.mode === 'manual' && (
+                <div className="p-3 rounded-xl" style={{ background: 'rgba(159,18,57,0.04)', border: '1px solid rgba(159,18,57,0.12)' }}>
+                  <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#9F1239' }}>Ospitato (Manuale)</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label className="text-xs">Cognome</Label><Input data-testid="hospitality-guest-surname" value={form.guest_surname} onChange={e => setForm({ ...form, guest_surname: e.target.value })} className="luxury-input h-8 text-sm" /></div>
+                    <div><Label className="text-xs">Nome</Label><Input data-testid="hospitality-guest-name" value={form.guest_name} onChange={e => setForm({ ...form, guest_name: e.target.value })} className="luxury-input h-8 text-sm" /></div>
+                    <div><Label className="text-xs">Data Nascita</Label><Input type="date" value={form.guest_dob} onChange={e => setForm({ ...form, guest_dob: e.target.value })} className="luxury-input h-8 text-sm" /></div>
+                    <div><Label className="text-xs">Luogo Nascita</Label><Input value={form.guest_birth_place} onChange={e => setForm({ ...form, guest_birth_place: e.target.value })} className="luxury-input h-8 text-sm" /></div>
+                    <div><Label className="text-xs">Nazionalita</Label><Input value={form.guest_nationality} onChange={e => setForm({ ...form, guest_nationality: e.target.value })} className="luxury-input h-8 text-sm" /></div>
+                    <div><Label className="text-xs">Passaporto</Label><Input value={form.guest_passport} onChange={e => setForm({ ...form, guest_passport: e.target.value })} className="luxury-input h-8 text-sm" /></div>
+                    <div className="col-span-2"><Label className="text-xs">Residenza</Label><Input value={form.guest_residence} onChange={e => setForm({ ...form, guest_residence: e.target.value })} className="luxury-input h-8 text-sm" /></div>
+                  </div>
+                </div>
+              )}
+
               {/* Dates */}
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Data Check-in (DAL) *</Label><Input type="date" value={form.check_in_date} onChange={e => setForm({ ...form, check_in_date: e.target.value })} required className="luxury-input" /></div>
+                <div><Label>Data Check-in (DAL) {form.mode === 'tenant' ? '*' : ''}</Label><Input type="date" value={form.check_in_date} onChange={e => setForm({ ...form, check_in_date: e.target.value })} required={form.mode === 'tenant'} className="luxury-input" data-testid="hospitality-checkin-date" /></div>
                 <div><Label>Data Check-out (FINO AL)</Label><Input type="date" value={form.check_out_date} onChange={e => setForm({ ...form, check_out_date: e.target.value })} className="luxury-input" /></div>
               </div>
 
@@ -424,6 +519,7 @@ const Hospitality = () => {
                     // Re-open the create dialog with this record's data so the user can edit & re-save
                     setEditingId(r.id);
                     setForm({
+                      mode: r.mode || (r.tenant_id ? 'tenant' : 'manual'),
                       tenant_id: r.tenant_id || '',
                       property_id: r.property_id || '',
                       room_id: r.room_id || '',
@@ -432,6 +528,10 @@ const Hospitality = () => {
                       check_in_date: r.check_in_date || '',
                       check_out_date: r.check_out_date || '',
                       hosting_type: r.hosting_type || 'alloggio',
+                      guest_surname: r.guest_surname || '', guest_name: r.guest_name || '',
+                      guest_dob: r.guest_dob || '', guest_birth_place: r.guest_birth_place || '',
+                      guest_nationality: r.guest_nationality || '', guest_passport: r.guest_passport || '',
+                      guest_residence: r.guest_residence || '',
                       host_surname: r.host_surname || '', host_name: r.host_name || '',
                       host_dob: r.host_dob || '', host_birth_place: r.host_birth_place || '',
                       host_province: r.host_province || '', host_residence: r.host_residence || '',
@@ -443,7 +543,7 @@ const Hospitality = () => {
                     setCreateOpen(true);
                   }} data-testid={`edit-hospitality-${r.id}`}>Modifica</Button>
                   <Button size="sm" variant="outline" className="text-xs" style={{ color: '#9F1239', borderColor: '#9F1239' }} onClick={() => handleDeleteRecord(r.id)} data-testid={`delete-hospitality-${r.id}`}>Elimina</Button>
-                  <Button size="sm" className="btn-luxury text-xs" onClick={() => handleDownloadPdf(r.tenant_id, r.tenant_name)}>
+                  <Button size="sm" className="btn-luxury text-xs" onClick={() => handleDownloadPdfByRecord(r)} data-testid={`download-record-${r.id}`}>
                     <Download size={14} className="mr-1" /> PDF
                   </Button>
                 </div>
