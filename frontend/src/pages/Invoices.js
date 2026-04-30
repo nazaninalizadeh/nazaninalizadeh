@@ -330,8 +330,8 @@ const Invoices = () => {
               </div>
 
               {/* Dynamic invoice composition panel */}
-              <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(184,134,11,0.04)', border: '1px solid rgba(184,134,11,0.15)' }}>
-                <h4 className="text-sm font-semibold" style={{ color: '#9F1239' }}>Voci della fattura</h4>
+              <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(217,42,42,0.04)', border: '1px solid rgba(217,42,42,0.15)' }}>
+                <h4 className="text-sm font-semibold" style={{ color: '#0B8A3E' }}>Voci della fattura</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label>Affitto (1 mese)</Label>
@@ -354,9 +354,9 @@ const Invoices = () => {
                     <Input type="number" step="0.01" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="invoice-discount" />
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'rgba(184,134,11,0.15)' }}>
-                  <span className="text-sm font-semibold" style={{ color: '#2C1810' }}>TOTALE</span>
-                  <span className="text-lg font-bold" style={{ color: '#9F1239' }} data-testid="invoice-total">
+                <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'rgba(217,42,42,0.15)' }}>
+                  <span className="text-sm font-semibold" style={{ color: '#0F172A' }}>TOTALE</span>
+                  <span className="text-lg font-bold" style={{ color: '#0B8A3E' }} data-testid="invoice-total">
                     €{(((parseFloat(formData.rent) || 0) + (parseFloat(formData.deposit) || 0) + (parseFloat(formData.agency_fee) || 0) + (parseFloat(formData.registration) || 0)) - (parseFloat(formData.discount) || 0)).toFixed(2)}
                   </span>
                 </div>
@@ -447,9 +447,9 @@ const Invoices = () => {
       </Dialog>
 
       <div className="luxury-card overflow-hidden">
-        <div className="p-5" style={{ borderBottom: '1px solid rgba(184, 134, 11, 0.12)' }}>
+        <div className="p-5" style={{ borderBottom: '1px solid rgba(217, 42, 42, 0.12)' }}>
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2" size={18} style={{ color: '#D92A2A' }} />
             <Input
               placeholder="Cerca per numero fattura, inquilino o immobile..."
               value={searchTerm}
@@ -465,7 +465,7 @@ const Invoices = () => {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+              <TableRow style={{ background: 'linear-gradient(135deg, #0B8A3E 0%, #076B2D 100%)' }}>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">N. Fattura</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Inquilino</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Immobile</TableHead>

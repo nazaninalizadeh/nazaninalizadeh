@@ -162,7 +162,7 @@ const Tenants = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Pagato
           </button>
           <span className="text-xs font-bold" style={{ color: '#059669' }}>&euro;{tenant.month_paid_amount?.toFixed(0)}</span>
-          {tenant.month_payment_method && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>{tenant.month_payment_method}</span>}
+          {tenant.month_payment_method && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(217,42,42,0.08)', color: '#64748B' }}>{tenant.month_payment_method}</span>}
         </div>
       );
     }
@@ -202,9 +202,9 @@ const Tenants = () => {
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto luxury-modal w-[95vw] sm:w-auto">
             <DialogHeader><DialogTitle>{editingTenant ? 'Modifica Inquilino' : 'Nuovo Inquilino'}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="pb-3 mb-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
+              <div className="pb-3 mb-3" style={{ borderBottom: '1px solid rgba(217,42,42,0.12)' }}>
                 <OcrScanner onDataExtracted={(data) => { setFormData(prev => ({ ...prev, ...Object.fromEntries(Object.entries(data).filter(([_, v]) => v)) })); }} />
-                <p className="text-xs mt-2" style={{ color: '#8B7355' }}>Scansiona un passaporto o documento per compilare automaticamente</p>
+                <p className="text-xs mt-2" style={{ color: '#64748B' }}>Scansiona un passaporto o documento per compilare automaticamente</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><Label>Cognome *</Label><Input value={formData.surname} onChange={e => setFormData({ ...formData, surname: e.target.value })} required className="luxury-input" data-testid="tenant-surname-input" /></div>
@@ -274,7 +274,7 @@ const Tenants = () => {
         ].map(tab => (
           <button key={tab.key} onClick={() => setStatusFilter(tab.key)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${statusFilter === tab.key ? 'shadow-sm' : ''}`}
-            style={statusFilter === tab.key ? { background: 'white', color: tab.color || '#9F1239', border: `1.5px solid ${tab.color || '#9F1239'}` } : { background: 'rgba(184,134,11,0.04)', color: '#8B7355', border: '1px solid transparent' }}
+            style={statusFilter === tab.key ? { background: 'white', color: tab.color || '#0B8A3E', border: `1.5px solid ${tab.color || '#0B8A3E'}` } : { background: 'rgba(217,42,42,0.04)', color: '#64748B', border: '1px solid transparent' }}
             data-testid={`filter-${tab.key}`}>
             {tab.label} ({tab.count})
           </button>
@@ -282,9 +282,9 @@ const Tenants = () => {
       </div>
 
       <div className="luxury-card overflow-hidden">
-        <div className="p-5" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
+        <div className="p-5" style={{ borderBottom: '1px solid rgba(217,42,42,0.12)' }}>
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#D92A2A' }} />
             <Input placeholder="Cerca per nome, passaporto, email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-11 luxury-input" data-testid="search-tenant-input" />
           </div>
         </div>
@@ -292,7 +292,7 @@ const Tenants = () => {
         {loading ? <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div> : (
           <Table>
             <TableHeader>
-              <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+              <TableRow style={{ background: 'linear-gradient(135deg, #0B8A3E 0%, #076B2D 100%)' }}>
                 <TableHead className="text-white font-semibold text-xs uppercase">Nome</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase">Immobile</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase">Stanza</TableHead>
@@ -303,18 +303,18 @@ const Tenants = () => {
             </TableHeader>
             <TableBody>
               {filteredTenants.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-10" style={{ color: '#8B7355' }}>Nessun inquilino trovato</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-10" style={{ color: '#64748B' }}>Nessun inquilino trovato</TableCell></TableRow>
               ) : filteredTenants.map(tenant => (
                 <TableRow key={tenant.id} className="hover:bg-rose-50/30 transition-colors" data-testid={`tenant-row-${tenant.id}`}>
-                  <TableCell><Link to={`/tenants/${tenant.id}`} className="font-medium hover:underline" style={{ color: '#9F1239' }}>{tenant.full_name}</Link></TableCell>
-                  <TableCell style={{ color: tenant.property_address ? '#4A3B31' : '#94A3B8' }}>{tenant.property_address || <span className="italic text-xs">Non assegnato</span>}</TableCell>
-                  <TableCell style={{ color: tenant.room_number ? '#4A3B31' : '#94A3B8' }}>{tenant.room_number ? `Stanza ${tenant.room_number}` : <span className="italic text-xs">Non assegnato</span>}</TableCell>
-                  <TableCell style={{ color: '#4A3B31' }}>&euro;{(tenant.deposit_amount || 0).toFixed(0)}</TableCell>
+                  <TableCell><Link to={`/tenants/${tenant.id}`} className="font-medium hover:underline" style={{ color: '#0B8A3E' }}>{tenant.full_name}</Link></TableCell>
+                  <TableCell style={{ color: tenant.property_address ? '#334155' : '#94A3B8' }}>{tenant.property_address || <span className="italic text-xs">Non assegnato</span>}</TableCell>
+                  <TableCell style={{ color: tenant.room_number ? '#334155' : '#94A3B8' }}>{tenant.room_number ? `Stanza ${tenant.room_number}` : <span className="italic text-xs">Non assegnato</span>}</TableCell>
+                  <TableCell style={{ color: '#334155' }}>&euro;{(tenant.deposit_amount || 0).toFixed(0)}</TableCell>
                   <TableCell><StatusBadge tenant={tenant} /></TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Link to={`/tenants/${tenant.id}`}><Button variant="ghost" size="sm" className="rounded-lg hover:bg-rose-50"><Eye size={16} style={{ color: '#9F1239' }} /></Button></Link>
-                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={() => openEditDialog(tenant)}><Edit size={16} style={{ color: '#B8860B' }} /></Button>
+                      <Link to={`/tenants/${tenant.id}`}><Button variant="ghost" size="sm" className="rounded-lg hover:bg-rose-50"><Eye size={16} style={{ color: '#0B8A3E' }} /></Button></Link>
+                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={() => openEditDialog(tenant)}><Edit size={16} style={{ color: '#D92A2A' }} /></Button>
                       <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={() => handleDelete(tenant.id)}><Trash2 size={16} className="text-red-500" /></Button>
                     </div>
                   </TableCell>
@@ -328,13 +328,13 @@ const Tenants = () => {
       {/* Quick Pay Dialog */}
       {quickDialogOpen && quickTenant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(44,24,16,0.5)' }} onClick={() => { setQuickDialogOpen(false); setQuickTenant(null); }}>
-          <div className="p-6 rounded-2xl max-w-sm w-full mx-4" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.2)', boxShadow: '0 25px 50px rgba(159,18,57,0.2)' }}
+          <div className="p-6 rounded-2xl max-w-sm w-full mx-4" style={{ background: '#FFFFFF', border: '1px solid rgba(217,42,42,0.2)', boxShadow: '0 25px 50px rgba(11,138,62,0.2)' }}
             onClick={e => e.stopPropagation()}>
             <h4 className="font-semibold text-lg mb-2" style={{ color: '#059669' }}>Segna Pagamento</h4>
-            <p className="text-sm mb-4" style={{ color: '#4A3B31' }}>{quickTenant.full_name}</p>
+            <p className="text-sm mb-4" style={{ color: '#334155' }}>{quickTenant.full_name}</p>
             <div className="space-y-3">
               <div>
-                <p className="text-xs font-semibold mb-2" style={{ color: '#8B7355' }}>Metodo Pagamento</p>
+                <p className="text-xs font-semibold mb-2" style={{ color: '#64748B' }}>Metodo Pagamento</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => setQuickMethod('contanti')} className={`p-2.5 rounded-xl text-sm font-medium text-center transition-all ${quickMethod === 'contanti' ? 'ring-2 ring-emerald-500' : ''}`} style={{ background: quickMethod === 'contanti' ? '#D1FAE5' : '#F0FDF4', color: '#059669' }}>
                     Contanti
@@ -345,12 +345,12 @@ const Tenants = () => {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold mb-1" style={{ color: '#8B7355' }}>Importo (€)</p>
+                <p className="text-xs font-semibold mb-1" style={{ color: '#64748B' }}>Importo (€)</p>
                 <input type="number" placeholder="500" value={quickAmount} onChange={e => setQuickAmount(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl text-sm" style={{ border: '1px solid rgba(5,150,105,0.3)', background: 'white' }} />
               </div>
               <div className="flex gap-2 pt-2">
-                <button onClick={() => { setQuickDialogOpen(false); setQuickTenant(null); }} className="flex-1 px-4 py-2 rounded-xl text-sm font-medium" style={{ color: '#8B7355', border: '1px solid rgba(184,134,11,0.2)' }}>
+                <button onClick={() => { setQuickDialogOpen(false); setQuickTenant(null); }} className="flex-1 px-4 py-2 rounded-xl text-sm font-medium" style={{ color: '#64748B', border: '1px solid rgba(217,42,42,0.2)' }}>
                   Annulla
                 </button>
                 <button onClick={handleQuickPaid} className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: '#059669' }}>

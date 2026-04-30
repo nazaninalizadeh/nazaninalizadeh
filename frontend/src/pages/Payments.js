@@ -142,10 +142,10 @@ const Payments = () => {
               <div><Label>Note</Label><Input value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} className="luxury-input" placeholder="Note opzionali..." /></div>
               {/* Receipt upload — shown only for non-cash payments */}
               {formData.payment_method !== 'contanti' && (
-                <div className="rounded-xl p-3" style={{ background: 'rgba(184,134,11,0.04)', border: '1px dashed rgba(184,134,11,0.2)' }}>
+                <div className="rounded-xl p-3" style={{ background: 'rgba(217,42,42,0.04)', border: '1px dashed rgba(217,42,42,0.2)' }}>
                   <Label>Ricevuta (POS / Carta) — opzionale</Label>
                   <Input type="file" accept="image/*,application/pdf" onChange={e => setFormData({ ...formData, _receipt: e.target.files?.[0] || null })} className="luxury-input mt-1" data-testid="payment-receipt-upload" />
-                  <p className="text-[10px] mt-1" style={{ color: '#8B7355' }}>Sarà allegata al pagamento dopo la conferma. Max 10MB.</p>
+                  <p className="text-[10px] mt-1" style={{ color: '#64748B' }}>Sarà allegata al pagamento dopo la conferma. Max 10MB.</p>
                 </div>
               )}
               <div className="flex justify-end gap-3 pt-2">
@@ -160,35 +160,35 @@ const Payments = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
         <div className="luxury-card p-4 text-center">
-          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Pagato</p>
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#64748B' }}>Pagato</p>
           <p className="text-2xl font-bold" style={{ color: '#059669' }}>{totalPaid}</p>
         </div>
         <div className="luxury-card p-4 text-center">
-          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Non Pagato</p>
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#64748B' }}>Non Pagato</p>
           <p className="text-2xl font-bold" style={{ color: '#DC2626' }}>{totalNotPaid}</p>
         </div>
         <div className="luxury-card p-4 text-center">
-          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Totale Stanze</p>
-          <p className="text-2xl font-bold" style={{ color: '#2C1810' }}>{totalPaid + totalNotPaid}</p>
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#64748B' }}>Totale Stanze</p>
+          <p className="text-2xl font-bold" style={{ color: '#0F172A' }}>{totalPaid + totalNotPaid}</p>
         </div>
       </div>
 
       {/* View Toggle + Search */}
       <div className="luxury-card p-4 mb-6 flex items-center gap-4 flex-wrap">
-        <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(184,134,11,0.06)' }}>
+        <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(217,42,42,0.06)' }}>
           <button
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${viewMode === 'overview' ? 'shadow-sm' : ''}`}
-            style={viewMode === 'overview' ? { background: 'white', color: '#9F1239' } : { color: '#8B7355' }}
+            style={viewMode === 'overview' ? { background: 'white', color: '#0B8A3E' } : { color: '#64748B' }}
             onClick={() => setViewMode('overview')}
           >Mese Corrente</button>
           <button
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${viewMode === 'history' ? 'shadow-sm' : ''}`}
-            style={viewMode === 'history' ? { background: 'white', color: '#9F1239' } : { color: '#8B7355' }}
+            style={viewMode === 'history' ? { background: 'white', color: '#0B8A3E' } : { color: '#64748B' }}
             onClick={() => setViewMode('history')}
           >Storico</button>
         </div>
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} style={{ color: '#B8860B' }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} style={{ color: '#D92A2A' }} />
           <Input placeholder="Cerca inquilino..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9 luxury-input h-9" />
         </div>
       </div>
@@ -198,12 +198,12 @@ const Payments = () => {
         <div className="space-y-6">
           {filteredOverview.length === 0 ? (
             <div className="luxury-card p-14 text-center">
-              <Home className="mx-auto mb-4" size={48} style={{ color: 'rgba(184,134,11,0.3)' }} />
-              <p style={{ color: '#8B7355' }}>Nessun immobile con stanze assegnate</p>
+              <Home className="mx-auto mb-4" size={48} style={{ color: 'rgba(217,42,42,0.3)' }} />
+              <p style={{ color: '#64748B' }}>Nessun immobile con stanze assegnate</p>
             </div>
           ) : filteredOverview.map(prop => (
             <div key={prop.id} className="luxury-card overflow-hidden" data-testid={`payment-property-${prop.id}`}>
-              <div className="px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+              <div className="px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0B8A3E 0%, #076B2D 100%)' }}>
                 <div className="flex items-center gap-3">
                   <Home size={20} className="text-white" />
                   <div>
@@ -218,17 +218,17 @@ const Payments = () => {
                 </div>
               </div>
 
-              <div className="divide-y" style={{ borderColor: 'rgba(184,134,11,0.08)' }}>
+              <div className="divide-y" style={{ borderColor: 'rgba(217,42,42,0.08)' }}>
                 {prop.rooms.map(room => (
                   <div key={room.id} className="px-6 py-4 flex items-center justify-between" data-testid={`payment-room-${room.id}`}>
                     <div className="flex items-center gap-4 min-w-0">
                       <div className="flex items-center gap-2 w-24 shrink-0">
                         <DoorOpen size={16} style={{ color: room.status === 'occupied' ? '#059669' : '#94A3B8' }} />
-                        <span className="font-semibold text-sm" style={{ color: '#2C1810' }}>Stanza {room.room_number}</span>
+                        <span className="font-semibold text-sm" style={{ color: '#0F172A' }}>Stanza {room.room_number}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         {room.tenant_name ? (
-                          <Link to={`/tenants/${room.tenant_id}`} className="font-medium text-sm hover:underline truncate block" style={{ color: '#9F1239' }}>
+                          <Link to={`/tenants/${room.tenant_id}`} className="font-medium text-sm hover:underline truncate block" style={{ color: '#0B8A3E' }}>
                             {room.tenant_name}
                           </Link>
                         ) : (
@@ -247,7 +247,7 @@ const Payments = () => {
                           <span className="font-bold text-sm" style={{ color: '#059669' }}>
                             &euro;{room.payment_amount?.toLocaleString()}
                           </span>
-                          <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>
+                          <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: 'rgba(217,42,42,0.08)', color: '#64748B' }}>
                             {room.payment_method}
                           </span>
                         </>
@@ -271,15 +271,15 @@ const Payments = () => {
       {/* History View - Flat list of all payments */}
       {viewMode === 'history' && (
         <div className="luxury-card overflow-hidden">
-          <div className="divide-y" style={{ borderColor: 'rgba(184,134,11,0.08)' }}>
+          <div className="divide-y" style={{ borderColor: 'rgba(217,42,42,0.08)' }}>
             {filteredHistory.length === 0 ? (
-              <div className="p-10 text-center" style={{ color: '#8B7355' }}>Nessun pagamento trovato</div>
+              <div className="p-10 text-center" style={{ color: '#64748B' }}>Nessun pagamento trovato</div>
             ) : filteredHistory.map(p => (
               <div key={p.id} className="px-6 py-4 flex items-center justify-between hover:bg-rose-50/20 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="text-sm" style={{ color: '#8B7355', minWidth: 90 }}>{fmtDate(p.payment_date)}</div>
+                  <div className="text-sm" style={{ color: '#64748B', minWidth: 90 }}>{fmtDate(p.payment_date)}</div>
                   {p.tenant_id && p.tenant_name ? (
-                    <Link to={`/tenants/${p.tenant_id}`} className="font-medium text-sm hover:underline" style={{ color: '#9F1239' }}>
+                    <Link to={`/tenants/${p.tenant_id}`} className="font-medium text-sm hover:underline" style={{ color: '#0B8A3E' }}>
                       {p.tenant_name}
                     </Link>
                   ) : (
@@ -288,7 +288,7 @@ const Payments = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-bold" style={{ color: '#059669' }}>&euro;{p.amount?.toFixed(2)}</span>
-                  <span className="px-2 py-0.5 rounded text-[11px] font-medium capitalize" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>
+                  <span className="px-2 py-0.5 rounded text-[11px] font-medium capitalize" style={{ background: 'rgba(217,42,42,0.08)', color: '#64748B' }}>
                     {p.payment_method}
                   </span>
                   {p.notes && <span className="text-xs" style={{ color: '#94A3B8' }}>{p.notes}</span>}
@@ -302,7 +302,7 @@ const Payments = () => {
                         toast.success('Ricevuta scaricata');
                       } catch { toast.error('Errore'); }
                     }} data-testid={`ricevuta-btn-${p.id}`}>
-                    <Receipt size={14} style={{ color: '#9F1239' }} />
+                    <Receipt size={14} style={{ color: '#0B8A3E' }} />
                   </Button>
                   {p.receipt_url && (
                     <a href={`${process.env.REACT_APP_BACKEND_URL}${p.receipt_url}`} target="_blank" rel="noreferrer"

@@ -82,12 +82,12 @@ const Layout = () => {
   ];
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #FAF7F0 0%, #F5F1E8 100%)' }}>
+    <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)' }}>
       {/* Mobile menu button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl shadow-lg"
-        style={{ background: 'white', border: '1px solid rgba(184, 134, 11, 0.15)' }}
+        style={{ background: 'white', border: '1px solid rgba(217, 42, 42, 0.15)' }}
         data-testid="mobile-menu-button"
       >
         {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
@@ -101,22 +101,23 @@ const Layout = () => {
         data-testid="sidebar"
       >
         <div className="flex flex-col h-full">
-          <div className="p-6" style={{ borderBottom: '1px solid rgba(184, 134, 11, 0.15)' }}>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl" style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)', boxShadow: '0 4px 12px rgba(159, 18, 57, 0.3)' }}>
-                <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M16 2L4 10v12c0 3.314 2.686 6 6 6h12c3.314 0 6-2.686 6-6V10L16 2z" fill="white" stroke="white" strokeWidth="1.5"/>
-                  <rect x="12" y="18" width="8" height="10" fill="#9F1239"/>
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold font-heading" style={{ color: '#9F1239' }} data-testid="app-title">
-                  Consulenze immobiliari
+          <div className="p-5" style={{ borderBottom: '1px solid #E2E8F0' }}>
+            <div className="flex items-center gap-3 mb-2">
+              <img
+                src="/assets/logo.jpeg"
+                alt="Housing in Padova"
+                className="h-14 w-14 rounded-lg object-contain bg-white"
+                style={{ border: '1px solid #E2E8F0' }}
+                data-testid="app-logo"
+              />
+              <div className="min-w-0">
+                <h1 className="text-base font-bold leading-tight truncate" style={{ color: '#0F172A', fontFamily: "'DM Sans', sans-serif" }} data-testid="app-title">
+                  Housing in Padova
                 </h1>
-                <p className="text-xs" style={{ color: '#8B7355' }}>Via Vigonovese 114</p>
+                <p className="text-[11px] font-medium" style={{ color: '#64748B' }}>Rent Room Service</p>
               </div>
             </div>
-            <p className="text-[10px] uppercase tracking-[0.15em] font-medium" style={{ color: '#B8860B' }}>Affitta &bull; Compra &bull; Vende &bull; Ristruttura</p>
+            <p className="text-[10px] uppercase tracking-[0.15em] font-medium" style={{ color: '#D92A2A' }}>by Consulenze Immobiliari</p>
           </div>
 
           <nav className="flex-1 p-4 space-y-1">
@@ -134,11 +135,11 @@ const Layout = () => {
                       : ''
                   }`}
                   style={isActive ? {
-                    background: 'linear-gradient(135deg, rgba(159, 18, 57, 0.12) 0%, rgba(190, 18, 60, 0.06) 100%)',
-                    color: '#9F1239',
-                    borderLeft: '3px solid #9F1239',
+                    background: 'linear-gradient(135deg, rgba(11, 138, 62, 0.12) 0%, rgba(7, 107, 45, 0.06) 100%)',
+                    color: '#0B8A3E',
+                    borderLeft: '3px solid #0B8A3E',
                   } : {
-                    color: '#5C4A3A',
+                    color: '#475569',
                   }}
                   data-testid={`nav-${item.label.toLowerCase()}`}
                 >
@@ -152,16 +153,16 @@ const Layout = () => {
             })}
           </nav>
 
-          <div className="p-4" style={{ borderTop: '1px solid rgba(184, 134, 11, 0.15)' }}>
+          <div className="p-4" style={{ borderTop: '1px solid rgba(217, 42, 42, 0.15)' }}>
             <div className="mb-3 px-4">
-              <p className="text-sm font-semibold" style={{ color: '#2C1810' }} data-testid="user-name">{user?.name}</p>
-              <p className="text-xs capitalize" style={{ color: '#8B7355' }} data-testid="user-role">{user?.role?.replace('_', ' ')}</p>
+              <p className="text-sm font-semibold" style={{ color: '#0F172A' }} data-testid="user-name">{user?.name}</p>
+              <p className="text-xs capitalize" style={{ color: '#64748B' }} data-testid="user-role">{user?.role?.replace('_', ' ')}</p>
             </div>
             <Button
               onClick={handleLogout}
               variant="outline"
               className="w-full justify-start rounded-xl text-sm"
-              style={{ borderColor: 'rgba(184, 134, 11, 0.2)', color: '#5C4A3A' }}
+              style={{ borderColor: 'rgba(217, 42, 42, 0.2)', color: '#475569' }}
               data-testid="logout-button"
             >
               <LogOut size={18} className="mr-2" />

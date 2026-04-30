@@ -32,25 +32,32 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#F8FAFC' }}>
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            Consulenze immobiliari
+          <img
+            src="/assets/logo.jpeg"
+            alt="Housing in Padova"
+            className="mx-auto h-28 w-28 rounded-2xl object-contain bg-white shadow-sm mb-4"
+            style={{ border: '1px solid #E2E8F0' }}
+            data-testid="login-logo"
+          />
+          <h1 className="text-3xl font-bold mb-1" style={{ color: '#0F172A', fontFamily: "'DM Sans', sans-serif" }}>
+            Housing in Padova
           </h1>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Sistema di gestione immobiliare</p>
+          <p className="text-sm" style={{ color: '#64748B' }}>Sistema di gestione immobiliare</p>
         </div>
 
         {/* Login Card */}
-        <div className="rounded-2xl p-8 shadow-2xl" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.15)' }}>
-          <h2 className="text-xl font-bold mb-6 text-center" style={{ color: '#9F1239' }}>
+        <div className="rounded-2xl p-8 shadow-sm" style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+          <h2 className="text-xl font-semibold mb-6 text-center" style={{ color: '#0B8A3E' }}>
             Accesso Amministratore
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label className="text-sm font-medium" style={{ color: '#4A3B31' }}>Email</Label>
+              <Label className="text-sm font-medium" style={{ color: '#334155' }}>Email</Label>
               <Input
                 type="email"
                 value={email}
@@ -58,13 +65,13 @@ const Login = () => {
                 placeholder="admin@example.com"
                 required
                 className="h-11 rounded-xl text-sm"
-                style={{ background: 'white', border: '1.5px solid rgba(184,134,11,0.2)', color: '#2C1810' }}
+                style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', color: '#0F172A' }}
                 data-testid="login-email"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium" style={{ color: '#4A3B31' }}>Password</Label>
+              <Label className="text-sm font-medium" style={{ color: '#334155' }}>Password</Label>
               <Input
                 type="password"
                 value={password}
@@ -72,7 +79,7 @@ const Login = () => {
                 placeholder="••••••••"
                 required
                 className="h-11 rounded-xl text-sm"
-                style={{ background: 'white', border: '1.5px solid rgba(184,134,11,0.2)', color: '#2C1810' }}
+                style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', color: '#0F172A' }}
                 data-testid="login-password"
               />
             </div>
@@ -80,21 +87,21 @@ const Login = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}
+              className="w-full h-11 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-md"
+              style={{ background: '#0B8A3E' }}
               data-testid="login-submit"
             >
               {loading ? 'Accesso in corso...' : 'Accedi'}
             </Button>
           </form>
 
-          <p className="text-center text-xs mt-6" style={{ color: '#8B7355' }}>
+          <p className="text-center text-xs mt-6" style={{ color: '#64748B' }}>
             Accesso riservato agli amministratori autorizzati
           </p>
         </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Consulenze immobiliari — Via Vigonovese 114
+        <p className="text-center text-xs mt-6" style={{ color: '#94A3B8' }}>
+          Housing in Padova — by Consulenze Immobiliari
         </p>
       </div>
     </div>

@@ -157,18 +157,18 @@ const Rooms = () => {
           <DialogTrigger asChild>
             <Button className="btn-luxury" data-testid="add-room-button"><Plus size={18} className="mr-2" /> Aggiungi Stanza</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg luxury-modal" style={{ background: '#FFFBF5' }}>
+          <DialogContent className="max-w-lg luxury-modal" style={{ background: '#FFFFFF' }}>
             <DialogHeader><DialogTitle>Nuova Stanza</DialogTitle></DialogHeader>
             <form onSubmit={handleAddRoom} className="space-y-4">
               <div>
                 <Label>Cerca Immobile *</Label>
                 <Input placeholder="Cerca per nome/indirizzo..." value={roomPropertySearch} onChange={e => setRoomPropertySearch(e.target.value)} className="luxury-input mb-2" />
-                <div className="max-h-36 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(184,134,11,0.15)' }}>
+                <div className="max-h-36 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(217,42,42,0.15)' }}>
                   {properties.filter(p => !roomPropertySearch || p.address?.toLowerCase().includes(roomPropertySearch.toLowerCase()) || p.property_code?.toLowerCase().includes(roomPropertySearch.toLowerCase())).map(p => (
                     <button type="button" key={p.id} onClick={() => setRoomForm({ ...roomForm, property_id: p.id })}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${roomForm.property_id === p.id ? 'font-bold' : ''}`}
-                      style={{ background: roomForm.property_id === p.id ? 'rgba(159,18,57,0.08)' : 'transparent', color: roomForm.property_id === p.id ? '#9F1239' : '#4A3B31' }}>
-                      <span className="font-medium">{p.address}</span> <span className="text-xs" style={{ color: '#8B7355' }}>({p.property_code})</span>
+                      style={{ background: roomForm.property_id === p.id ? 'rgba(11,138,62,0.08)' : 'transparent', color: roomForm.property_id === p.id ? '#0B8A3E' : '#334155' }}>
+                      <span className="font-medium">{p.address}</span> <span className="text-xs" style={{ color: '#64748B' }}>({p.property_code})</span>
                     </button>
                   ))}
                 </div>
@@ -197,19 +197,19 @@ const Rooms = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <div className="luxury-card p-4 text-center">
-          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Occupate</p>
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#64748B' }}>Occupate</p>
           <p className="text-2xl font-bold" style={{ color: '#059669' }}>{totalOccupied}</p>
         </div>
         <div className="luxury-card p-4 text-center">
-          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Libere</p>
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#64748B' }}>Libere</p>
           <p className="text-2xl font-bold" style={{ color: '#DC2626' }}>{totalVacant}</p>
         </div>
         <div className="luxury-card p-4 text-center">
-          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Pagato</p>
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#64748B' }}>Pagato</p>
           <p className="text-2xl font-bold" style={{ color: '#059669' }}>{totalPaid}</p>
         </div>
         <div className="luxury-card p-4 text-center">
-          <p className="text-xs uppercase tracking-wide" style={{ color: '#8B7355' }}>Non Pagato</p>
+          <p className="text-xs uppercase tracking-wide" style={{ color: '#64748B' }}>Non Pagato</p>
           <p className="text-2xl font-bold" style={{ color: '#DC2626' }}>{totalNotPaid}</p>
         </div>
       </div>
@@ -217,8 +217,8 @@ const Rooms = () => {
       {/* Filters */}
       <div className="luxury-card p-5 mb-8">
         <div className="flex items-center gap-2 mb-3">
-          <Filter size={16} style={{ color: '#B8860B' }} />
-          <span className="text-sm font-semibold" style={{ color: '#4A3B31' }}>Filtri</span>
+          <Filter size={16} style={{ color: '#D92A2A' }} />
+          <span className="text-sm font-semibold" style={{ color: '#334155' }}>Filtri</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
@@ -263,23 +263,23 @@ const Rooms = () => {
 
       {/* Assign Dialog - with search */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-        <DialogContent className="luxury-modal" style={{ background: '#FFFBF5' }}>
+        <DialogContent className="luxury-modal" style={{ background: '#FFFFFF' }}>
           <DialogHeader><DialogTitle>Assegna Inquilino a Stanza {selectedRoom?.room_number}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
               <Label className="text-xs mb-1 block">Cerca Inquilino</Label>
               <Input placeholder="Cerca per nome..." value={assignSearch} onChange={e => setAssignSearch(e.target.value)} className="luxury-input mb-2" autoFocus />
             </div>
-            <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(184,134,11,0.15)' }}>
+            <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(217,42,42,0.15)' }}>
               {tenants.filter(t => !t.room_id).filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).map(t => (
                 <button key={t.id} onClick={() => setAssignTenantId(t.id)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${assignTenantId === t.id ? 'font-bold' : ''}`}
-                  style={{ background: assignTenantId === t.id ? 'rgba(159,18,57,0.08)' : 'transparent', color: assignTenantId === t.id ? '#9F1239' : '#4A3B31' }}>
+                  style={{ background: assignTenantId === t.id ? 'rgba(11,138,62,0.08)' : 'transparent', color: assignTenantId === t.id ? '#0B8A3E' : '#334155' }}>
                   {t.full_name} {t.nationality ? `(${t.nationality})` : ''}
                 </button>
               ))}
               {tenants.filter(t => !t.room_id).filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).length === 0 && (
-                <p className="text-center text-xs py-4" style={{ color: '#8B7355' }}>Nessun inquilino disponibile</p>
+                <p className="text-center text-xs py-4" style={{ color: '#64748B' }}>Nessun inquilino disponibile</p>
               )}
             </div>
             <div className="flex justify-end gap-3">
@@ -293,16 +293,16 @@ const Rooms = () => {
       {/* Property Cards with Rooms */}
       {filteredOverview.length === 0 ? (
         <div className="luxury-card p-14 text-center">
-          <Home className="mx-auto mb-4" size={64} style={{ color: 'rgba(184,134,11,0.3)' }} />
-          <h3 className="text-lg font-semibold mb-2" style={{ color: '#2C1810' }}>Nessun Immobile</h3>
-          <p style={{ color: '#8B7355' }}>Aggiungi immobili e stanze per vedere la panoramica</p>
+          <Home className="mx-auto mb-4" size={64} style={{ color: 'rgba(217,42,42,0.3)' }} />
+          <h3 className="text-lg font-semibold mb-2" style={{ color: '#0F172A' }}>Nessun Immobile</h3>
+          <p style={{ color: '#64748B' }}>Aggiungi immobili e stanze per vedere la panoramica</p>
         </div>
       ) : (
         <div className="space-y-6">
           {filteredOverview.map(prop => (
             <div key={prop.id} className="luxury-card overflow-hidden" data-testid={`property-card-${prop.id}`}>
               {/* Property Header */}
-              <div className="px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+              <div className="px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0B8A3E 0%, #076B2D 100%)' }}>
                 <div className="flex items-center gap-3">
                   <Home size={22} className="text-white" />
                   <div>
@@ -320,9 +320,9 @@ const Rooms = () => {
               </div>
 
               {/* Rooms List */}
-              <div className="divide-y" style={{ borderColor: 'rgba(184,134,11,0.08)' }}>
+              <div className="divide-y" style={{ borderColor: 'rgba(217,42,42,0.08)' }}>
                 {prop.rooms.length === 0 ? (
-                  <div className="p-6 text-center" style={{ color: '#8B7355' }}>
+                  <div className="p-6 text-center" style={{ color: '#64748B' }}>
                     Nessuna stanza in questo immobile. Aggiungi stanze per iniziare.
                   </div>
                 ) : prop.rooms.map(room => (
@@ -336,8 +336,8 @@ const Rooms = () => {
                       <div className="flex items-center gap-2.5 w-28 shrink-0">
                         <DoorOpen size={18} style={{ color: room.status === 'occupied' ? '#059669' : '#94A3B8' }} />
                         <div>
-                          <span className="font-semibold text-sm" style={{ color: '#2C1810' }}>Stanza {room.room_number}</span>
-                          <p className="text-[11px]" style={{ color: '#8B7355' }}>{room.room_type === 'single' ? 'Singola' : 'Doppia'}</p>
+                          <span className="font-semibold text-sm" style={{ color: '#0F172A' }}>Stanza {room.room_number}</span>
+                          <p className="text-[11px]" style={{ color: '#64748B' }}>{room.room_type === 'single' ? 'Singola' : 'Doppia'}</p>
                         </div>
                       </div>
 
@@ -347,7 +347,7 @@ const Rooms = () => {
                           <Link
                             to={`/tenants/${room.tenant_id}`}
                             className="font-medium text-sm hover:underline truncate block"
-                            style={{ color: '#9F1239' }}
+                            style={{ color: '#0B8A3E' }}
                             data-testid={`tenant-link-${room.tenant_id}`}
                           >
                             {room.tenant_name}
@@ -376,7 +376,7 @@ const Rooms = () => {
                             </span>
                             <span
                               className="px-2 py-0.5 rounded text-[11px] font-medium"
-                              style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}
+                              style={{ background: 'rgba(217,42,42,0.08)', color: '#64748B' }}
                             >
                               {room.payment_method}
                             </span>
@@ -420,7 +420,7 @@ const Rooms = () => {
                         )}
                         <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50 h-8 w-8 p-0"
                           onClick={() => openEditRoom(room)} title="Modifica stanza">
-                          <Edit size={15} style={{ color: '#B8860B' }} />
+                          <Edit size={15} style={{ color: '#D92A2A' }} />
                         </Button>
                         <Button
                           variant="ghost"

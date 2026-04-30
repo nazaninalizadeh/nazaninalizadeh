@@ -192,17 +192,17 @@ const Landlords = () => {
             <DialogHeader><DialogTitle>{editingLandlord ? 'Modifica' : 'Nuovo'} Proprietario</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* OCR for owner — prominent banner, same pattern as Tenants */}
-              <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, rgba(159,18,57,0.08), rgba(184,134,11,0.05))', border: '1px solid rgba(159,18,57,0.2)' }}>
-                <div className="p-3 rounded-xl shrink-0" style={{ background: 'linear-gradient(135deg, #9F1239, #BE123C)' }}>
+              <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, rgba(11,138,62,0.08), rgba(217,42,42,0.05))', border: '1px solid rgba(11,138,62,0.2)' }}>
+                <div className="p-3 rounded-xl shrink-0" style={{ background: 'linear-gradient(135deg, #0B8A3E, #076B2D)' }}>
                   <ScanLine size={22} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: '#2C1810' }}>Scansione OCR Documento</p>
-                  <p className="text-xs" style={{ color: '#8B7355' }}>Carta d'identità, passaporto o patente (JPG/PNG/PDF) — compilazione automatica</p>
+                  <p className="text-sm font-semibold" style={{ color: '#0F172A' }}>Scansione OCR Documento</p>
+                  <p className="text-xs" style={{ color: '#64748B' }}>Carta d'identità, passaporto o patente (JPG/PNG/PDF) — compilazione automatica</p>
                 </div>
                 <label data-testid="owner-ocr-button" className="shrink-0">
                   <input type="file" ref={ocrRef} className="hidden" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={handleOwnerOcr} />
-                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer hover:shadow-lg transition-all font-semibold" style={{ background: '#9F1239', color: 'white' }}>
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer hover:shadow-lg transition-all font-semibold" style={{ background: '#0B8A3E', color: 'white' }}>
                     <Upload size={15} /> Carica
                   </span>
                 </label>
@@ -241,12 +241,12 @@ const Landlords = () => {
               </div>
 
               {/* Signature upload */}
-              <div className="pt-3 mt-2" style={{ borderTop: '1px solid rgba(184,134,11,0.12)' }}>
+              <div className="pt-3 mt-2" style={{ borderTop: '1px solid rgba(217,42,42,0.12)' }}>
                 <Label>Firma del Proprietario</Label>
                 <div className="flex items-center gap-3 mt-1">
                   <label>
                     <input type="file" ref={sigRef} className="hidden" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={handleSignatureUpload} data-testid="owner-signature-upload" />
-                    <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs cursor-pointer hover:shadow-sm" style={{ background: 'rgba(184,134,11,0.08)', color: '#8B7355' }}>
+                    <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs cursor-pointer hover:shadow-sm" style={{ background: 'rgba(217,42,42,0.08)', color: '#64748B' }}>
                       <Upload size={14} /> Carica firma (PNG transparente)
                     </span>
                   </label>
@@ -254,7 +254,7 @@ const Landlords = () => {
                     <img src={`${process.env.REACT_APP_BACKEND_URL}${formData.signature_url}`} alt="Firma" className="h-12 max-w-[200px] object-contain" style={{ background: 'rgba(0,0,0,0.03)', borderRadius: 6 }} />
                   )}
                 </div>
-                <p className="text-xs mt-1" style={{ color: '#8B7355' }}>Verrà usata in Hospitality e contratti. Lo sfondo bianco viene rimosso automaticamente.</p>
+                <p className="text-xs mt-1" style={{ color: '#64748B' }}>Verrà usata in Hospitality e contratti. Lo sfondo bianco viene rimosso automaticamente.</p>
               </div>
               <div><Label>Note</Label><Input value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} className="luxury-input notes-text" /></div>
               <div className="flex justify-end gap-3 pt-2">
@@ -267,9 +267,9 @@ const Landlords = () => {
       </div>
 
       <div className="luxury-card overflow-hidden">
-        <div className="p-5" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
+        <div className="p-5" style={{ borderBottom: '1px solid rgba(217,42,42,0.12)' }}>
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#D92A2A' }} />
             <Input placeholder="Cerca proprietario..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-11 luxury-input" />
           </div>
         </div>
@@ -278,7 +278,7 @@ const Landlords = () => {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+              <TableRow style={{ background: 'linear-gradient(135deg, #0B8A3E 0%, #076B2D 100%)' }}>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Nome</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Codice Fiscale</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Email</TableHead>
@@ -290,27 +290,27 @@ const Landlords = () => {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-10" style={{ color: '#8B7355' }}>Nessun proprietario</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-10" style={{ color: '#64748B' }}>Nessun proprietario</TableCell></TableRow>
               ) : filtered.map(ll => (
                 <TableRow key={ll.id} className="hover:bg-rose-50/30 transition-colors">
-                  <TableCell className="font-medium" style={{ color: '#2C1810' }}>{ll.full_name}</TableCell>
-                  <TableCell className="font-mono text-xs" style={{ color: '#4A3B31' }}>{ll.codice_fiscale || '-'}</TableCell>
-                  <TableCell style={{ color: '#4A3B31' }}>{ll.email}</TableCell>
-                  <TableCell className="font-medium" style={{ color: '#2C1810' }}>{ll.properties_count}</TableCell>
+                  <TableCell className="font-medium" style={{ color: '#0F172A' }}>{ll.full_name}</TableCell>
+                  <TableCell className="font-mono text-xs" style={{ color: '#334155' }}>{ll.codice_fiscale || '-'}</TableCell>
+                  <TableCell style={{ color: '#334155' }}>{ll.email}</TableCell>
+                  <TableCell className="font-medium" style={{ color: '#0F172A' }}>{ll.properties_count}</TableCell>
                   <TableCell>
-                    <span style={{ color: '#059669' }}>{ll.occupied_rooms || 0}</span>/<span style={{ color: '#2C1810' }}>{ll.total_rooms || 0}</span>
+                    <span style={{ color: '#059669' }}>{ll.occupied_rooms || 0}</span>/<span style={{ color: '#0F172A' }}>{ll.total_rooms || 0}</span>
                   </TableCell>
                   <TableCell>
                     <span className="font-bold" style={{ color: (ll.vacant_rooms || 0) > 0 ? '#DC2626' : '#059669' }}>{ll.vacant_rooms || 0}</span>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Link to={`/landlords/${ll.id}`}><Button variant="ghost" size="sm" className="rounded-lg hover:bg-rose-50"><Eye size={16} style={{ color: '#9F1239' }} /></Button></Link>
+                      <Link to={`/landlords/${ll.id}`}><Button variant="ghost" size="sm" className="rounded-lg hover:bg-rose-50"><Eye size={16} style={{ color: '#0B8A3E' }} /></Button></Link>
                       <label className="cursor-pointer">
                         <input type="file" className="hidden" onChange={e => handleOwnerDocUpload(e, ll.id)} accept=".pdf,.jpg,.jpeg,.png" />
                         <span className="inline-flex items-center justify-center rounded-lg h-8 w-8 hover:bg-emerald-50 transition-colors"><Upload size={16} style={{ color: '#059669' }} /></span>
                       </label>
-                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={() => openEditDialog(ll)}><Edit size={16} style={{ color: '#B8860B' }} /></Button>
+                      <Button variant="ghost" size="sm" className="rounded-lg hover:bg-amber-50" onClick={() => openEditDialog(ll)}><Edit size={16} style={{ color: '#D92A2A' }} /></Button>
                       <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50" onClick={() => handleDelete(ll.id)}><Trash2 size={16} className="text-red-500" /></Button>
                     </div>
                   </TableCell>

@@ -92,20 +92,20 @@ async def _send_reminder(tenant: dict, prop_addr: str, room_num: str, due_day: i
     to_email = tenant.get("email", "")
 
     html = f"""
-<table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; color: #2C1810; background:#FAF7F0; padding:24px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; color: #0F172A; background:#F8FAFC; padding:24px;">
   <tr><td align="center">
-    <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFBF5;border:1px solid rgba(184,134,11,0.2);border-radius:12px;overflow:hidden;">
-      <tr><td style="background:#9F1239;color:#fff;padding:18px 24px;font-size:18px;font-weight:bold;">Consulenze immobiliari</td></tr>
+    <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;">
+      <tr><td style="background:#0B8A3E;color:#fff;padding:18px 24px;font-size:18px;font-weight:bold;">Housing in Padova</td></tr>
       <tr><td style="padding:24px;">
         <p style="font-size:14px;line-height:1.6;margin:0 0 16px 0;">{message}</p>
-        <table width="100%" cellpadding="6" cellspacing="0" style="background:rgba(159,18,57,0.04);border-radius:8px;font-size:13px;color:#5C4A3A;">
+        <table width="100%" cellpadding="6" cellspacing="0" style="background:#F8FAFC;border-radius:8px;font-size:13px;color:#334155;">
           <tr><td><b>Immobile:</b></td><td>{prop_addr}</td></tr>
           <tr><td><b>Stanza:</b></td><td>{room_num}</td></tr>
           <tr><td><b>Scadenza:</b></td><td>giorno {due_day} del mese</td></tr>
         </table>
-        <p style="font-size:12px;color:#8B7355;margin-top:18px;">Per qualsiasi domanda risponda direttamente a questa email.</p>
+        <p style="font-size:12px;color:#64748B;margin-top:18px;">Per qualsiasi domanda risponda direttamente a questa email.</p>
       </td></tr>
-      <tr><td style="background:#FAF7F0;padding:12px 24px;font-size:11px;color:#8B7355;">Consulenze immobiliari — Via Vigonovese 114</td></tr>
+      <tr><td style="background:#F8FAFC;padding:12px 24px;font-size:11px;color:#64748B;">Housing in Padova — by Consulenze Immobiliari</td></tr>
     </table>
   </td></tr>
 </table>"""

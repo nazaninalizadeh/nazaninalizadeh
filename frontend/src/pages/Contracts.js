@@ -263,9 +263,9 @@ const Contracts = () => {
       </div>
 
       <div className="luxury-card overflow-hidden">
-        <div className="p-5" style={{ borderBottom: '1px solid rgba(184, 134, 11, 0.12)' }}>
+        <div className="p-5" style={{ borderBottom: '1px solid rgba(217, 42, 42, 0.12)' }}>
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2" size={18} style={{ color: '#D92A2A' }} />
             <Input
               placeholder="Cerca per numero contratto, inquilino o immobile..."
               value={searchTerm}
@@ -281,7 +281,7 @@ const Contracts = () => {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow style={{ background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)' }}>
+              <TableRow style={{ background: 'linear-gradient(135deg, #0B8A3E 0%, #076B2D 100%)' }}>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">N. Contratto</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Inquilino</TableHead>
                 <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">Immobile</TableHead>
@@ -295,19 +295,19 @@ const Contracts = () => {
             <TableBody>
               {filteredContracts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-10" style={{ color: '#8B7355' }}>
+                  <TableCell colSpan={8} className="text-center py-10" style={{ color: '#64748B' }}>
                     Nessun contratto trovato
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredContracts.map((contract) => (
                   <TableRow key={contract.id} className="hover:bg-rose-50/30 transition-colors" data-testid={`contract-row-${contract.id}`}>
-                    <TableCell className="font-medium font-mono text-sm" style={{ color: '#2C1810' }}>{contract.contract_number}</TableCell>
-                    <TableCell style={{ color: '#4A3B31' }}>{contract.tenant_name}</TableCell>
-                    <TableCell className="max-w-[200px] truncate" style={{ color: '#4A3B31' }}>{contract.property_address}</TableCell>
-                    <TableCell style={{ color: '#4A3B31' }}>{fmtDate(contract.start_date)}</TableCell>
-                    <TableCell style={{ color: '#4A3B31' }}>{fmtDate(contract.end_date)}</TableCell>
-                    <TableCell className="font-medium" style={{ color: '#2C1810' }}>&euro;{contract.rent_amount.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium font-mono text-sm" style={{ color: '#0F172A' }}>{contract.contract_number}</TableCell>
+                    <TableCell style={{ color: '#334155' }}>{contract.tenant_name}</TableCell>
+                    <TableCell className="max-w-[200px] truncate" style={{ color: '#334155' }}>{contract.property_address}</TableCell>
+                    <TableCell style={{ color: '#334155' }}>{fmtDate(contract.start_date)}</TableCell>
+                    <TableCell style={{ color: '#334155' }}>{fmtDate(contract.end_date)}</TableCell>
+                    <TableCell className="font-medium" style={{ color: '#0F172A' }}>&euro;{contract.rent_amount.toFixed(2)}</TableCell>
                     <TableCell>
                       <Select
                         value={contract.status}

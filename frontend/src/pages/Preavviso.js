@@ -103,14 +103,14 @@ const Preavviso = () => {
     } catch (err) { toast.error('Errore eliminazione'); }
   };
 
-  if (loading) return <div className="text-center py-12" style={{ color: '#8B7355' }}>Caricamento...</div>;
+  if (loading) return <div className="text-center py-12" style={{ color: '#64748B' }}>Caricamento...</div>;
 
   return (
     <div data-testid="preavviso-page">
       <div className="mb-10 flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="luxury-title text-4xl mb-1" style={{ color: '#9F1239' }}>Preavviso di Fatturazione</h1>
-          <p className="text-sm" style={{ color: '#8B7355' }}>Documenti di preavviso per clienti commerciali</p>
+          <h1 className="luxury-title text-4xl mb-1" style={{ color: '#0B8A3E' }}>Preavviso di Fatturazione</h1>
+          <p className="text-sm" style={{ color: '#64748B' }}>Documenti di preavviso per clienti commerciali</p>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setForm(blankForm()); }}>
           <DialogTrigger asChild>
@@ -141,8 +141,8 @@ const Preavviso = () => {
                   <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} required className="luxury-input" data-testid="preavviso-date" />
                 </div>
               </div>
-              <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(184,134,11,0.04)', border: '1px solid rgba(184,134,11,0.15)' }}>
-                <h4 className="text-sm font-semibold" style={{ color: '#9F1239' }}>Importi</h4>
+              <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(217,42,42,0.04)', border: '1px solid rgba(217,42,42,0.15)' }}>
+                <h4 className="text-sm font-semibold" style={{ color: '#0B8A3E' }}>Importi</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><Label>Imponibile (€)</Label><Input type="number" step="0.01" value={form.imponibile} onChange={(e) => setForm({ ...form, imponibile: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="preavviso-imponibile" /></div>
                   <div><Label>IVA (%)</Label><Input type="number" step="1" value={form.vat_rate} onChange={(e) => setForm({ ...form, vat_rate: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="preavviso-vat" /></div>
@@ -151,9 +151,9 @@ const Preavviso = () => {
                   <div><Label>Nota IVA</Label><Input value={form.rimborso_tax_note} onChange={(e) => setForm({ ...form, rimborso_tax_note: e.target.value })} className="luxury-input" data-testid="preavviso-rimborso-tax-note" /></div>
                   <div className="col-span-1 sm:col-span-2"><Label>Nota aggiuntiva</Label><Input value={form.rimborso_note} onChange={(e) => setForm({ ...form, rimborso_note: e.target.value })} className="luxury-input" data-testid="preavviso-rimborso-note" /></div>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'rgba(184,134,11,0.15)' }}>
-                  <span className="text-sm font-semibold" style={{ color: '#2C1810' }}>TOTALE FATTURA</span>
-                  <span className="text-lg font-bold" style={{ color: '#9F1239' }} data-testid="preavviso-total">€{totalLive.toFixed(2)}</span>
+                <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'rgba(217,42,42,0.15)' }}>
+                  <span className="text-sm font-semibold" style={{ color: '#0F172A' }}>TOTALE FATTURA</span>
+                  <span className="text-lg font-bold" style={{ color: '#0B8A3E' }} data-testid="preavviso-total">€{totalLive.toFixed(2)}</span>
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
@@ -179,7 +179,7 @@ const Preavviso = () => {
           </TableHeader>
           <TableBody>
             {items.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-12" style={{ color: '#8B7355' }}>
+              <TableRow><TableCell colSpan={6} className="text-center py-12" style={{ color: '#64748B' }}>
                 <Receipt size={36} className="mx-auto mb-3 opacity-30" />Nessun preavviso. Clicca su "Nuovo Preavviso" per iniziare.
               </TableCell></TableRow>
             ) : items.map((p) => (
@@ -188,11 +188,11 @@ const Preavviso = () => {
                 <TableCell className="font-semibold">{p.recipient_name || p.tenant_name}</TableCell>
                 <TableCell className="text-sm max-w-[280px] truncate">{p.body_text || p.description}</TableCell>
                 <TableCell>{formatItDate(p.due_date || p.issue_date)}</TableCell>
-                <TableCell className="text-right font-bold" style={{ color: '#9F1239' }}>€{(p.amount || 0).toFixed(2)}</TableCell>
+                <TableCell className="text-right font-bold" style={{ color: '#0B8A3E' }}>€{(p.amount || 0).toFixed(2)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button size="sm" variant="outline" onClick={() => handleDownload(p.id)} data-testid={`preavviso-download-${p.id}`}><Download size={14} /></Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDelete(p.id)} style={{ color: '#9F1239', borderColor: '#9F1239' }} data-testid={`preavviso-delete-${p.id}`}><Trash2 size={14} /></Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDelete(p.id)} style={{ color: '#0B8A3E', borderColor: '#0B8A3E' }} data-testid={`preavviso-delete-${p.id}`}><Trash2 size={14} /></Button>
                   </div>
                 </TableCell>
               </TableRow>

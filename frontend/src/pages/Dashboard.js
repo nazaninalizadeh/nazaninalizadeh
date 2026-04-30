@@ -21,8 +21,8 @@ const Dashboard = () => {
   if (loading) return <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div>;
 
   const cards = [
-    { label: 'Inquilini', value: stats?.total_tenants || 0, icon: Users, color: '#9F1239', link: '/tenants' },
-    { label: 'Proprietari', value: stats?.total_landlords || 0, icon: Home, color: '#B8860B', link: '/landlords' },
+    { label: 'Inquilini', value: stats?.total_tenants || 0, icon: Users, color: '#0B8A3E', link: '/tenants' },
+    { label: 'Proprietari', value: stats?.total_landlords || 0, icon: Home, color: '#D92A2A', link: '/landlords' },
     { label: 'Immobili', value: stats?.total_properties || 0, icon: Home, color: '#059669', link: '/properties' },
     { label: 'Stanze', value: stats?.total_rooms || 0, icon: DoorOpen, color: '#7C3AED', link: '/rooms' },
     { label: 'Contratti Attivi', value: stats?.active_contracts || 0, icon: FileText, color: '#2563EB', link: '/contracts' },
@@ -41,7 +41,7 @@ const Dashboard = () => {
           <Link key={card.label} to={card.link} className="luxury-card p-6 hover:shadow-lg transition-all group" data-testid={`stat-${card.label.toLowerCase().replace(/\s/g, '-')}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium" style={{ color: '#8B7355' }}>{card.label}</p>
+                <p className="text-sm font-medium" style={{ color: '#64748B' }}>{card.label}</p>
                 <p className="text-3xl font-bold mt-1" style={{ color: card.color }}>{card.value}</p>
               </div>
               <div className="p-3 rounded-xl transition-transform group-hover:scale-110" style={{ background: `${card.color}15` }}>
@@ -55,48 +55,48 @@ const Dashboard = () => {
       {/* Financial Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
         <div className="luxury-card p-7">
-          <h3 className="text-lg font-semibold font-heading mb-5 flex items-center gap-2" style={{ color: '#9F1239' }}>
+          <h3 className="text-lg font-semibold font-heading mb-5 flex items-center gap-2" style={{ color: '#0B8A3E' }}>
             <TrendingUp size={20} /> Riepilogo Mese Corrente
           </h3>
           <div className="space-y-4">
-            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-              <span style={{ color: '#5C4A3A' }}>Incassato Questo Mese</span>
+            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(217,42,42,0.1)' }}>
+              <span style={{ color: '#475569' }}>Incassato Questo Mese</span>
               <span className="font-bold text-lg" style={{ color: '#059669' }}>&euro;{(stats?.month_collected || 0).toLocaleString()}</span>
             </div>
-            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-              <span style={{ color: '#5C4A3A' }}>Inquilini Pagato</span>
+            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(217,42,42,0.1)' }}>
+              <span style={{ color: '#475569' }}>Inquilini Pagato</span>
               <Link to="/tenants?status=paid" className="font-bold text-lg hover:underline" style={{ color: '#059669' }}>{stats?.tenants_paid || 0}</Link>
             </div>
-            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-              <span style={{ color: '#5C4A3A' }}>Inquilini Non Pagato</span>
+            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(217,42,42,0.1)' }}>
+              <span style={{ color: '#475569' }}>Inquilini Non Pagato</span>
               <Link to="/tenants?status=not_paid" className="font-bold text-lg hover:underline" style={{ color: '#D97706' }}>{stats?.tenants_not_paid || 0}</Link>
             </div>
-            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-              <span style={{ color: '#5C4A3A' }}>Inquilini In Ritardo</span>
+            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(217,42,42,0.1)' }}>
+              <span style={{ color: '#475569' }}>Inquilini In Ritardo</span>
               <Link to="/tenants?status=late" className="font-bold text-lg hover:underline" style={{ color: '#DC2626' }}>{stats?.tenants_late || 0}</Link>
             </div>
             <div className="flex justify-between items-center py-3">
-              <span style={{ color: '#5C4A3A' }}>Depositi Totali (Garanzia)</span>
+              <span style={{ color: '#475569' }}>Depositi Totali (Garanzia)</span>
               <span className="font-bold text-lg" style={{ color: '#7C3AED' }}>&euro;{(stats?.total_deposits || 0).toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         <div className="luxury-card p-7">
-          <h3 className="text-lg font-semibold font-heading mb-5 flex items-center gap-2" style={{ color: '#9F1239' }}>
+          <h3 className="text-lg font-semibold font-heading mb-5 flex items-center gap-2" style={{ color: '#0B8A3E' }}>
             <DoorOpen size={20} /> Occupazione Stanze
           </h3>
           <div className="space-y-4">
-            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-              <span style={{ color: '#5C4A3A' }}>Stanze Totali</span>
-              <span className="font-bold text-lg" style={{ color: '#2C1810' }}>{stats?.total_rooms || 0}</span>
+            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(217,42,42,0.1)' }}>
+              <span style={{ color: '#475569' }}>Stanze Totali</span>
+              <span className="font-bold text-lg" style={{ color: '#0F172A' }}>{stats?.total_rooms || 0}</span>
             </div>
-            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.1)' }}>
-              <span style={{ color: '#5C4A3A' }}>Occupate</span>
+            <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(217,42,42,0.1)' }}>
+              <span style={{ color: '#475569' }}>Occupate</span>
               <span className="font-bold text-lg" style={{ color: '#059669' }}>{stats?.occupied_rooms || 0}</span>
             </div>
             <div className="flex justify-between items-center py-3">
-              <span style={{ color: '#5C4A3A' }}>Libere</span>
+              <span style={{ color: '#475569' }}>Libere</span>
               <span className="font-bold text-lg" style={{ color: '#DC2626' }}>{stats?.vacant_rooms || 0}</span>
             </div>
             {stats?.total_rooms > 0 && (
@@ -104,7 +104,7 @@ const Dashboard = () => {
                 <div className="h-3 rounded-full overflow-hidden" style={{ background: '#f1f5f9' }}>
                   <div className="h-full rounded-full transition-all" style={{ width: `${(stats.occupied_rooms / stats.total_rooms) * 100}%`, background: 'linear-gradient(90deg, #059669, #10B981)' }} />
                 </div>
-                <p className="text-xs mt-2 text-center" style={{ color: '#8B7355' }}>
+                <p className="text-xs mt-2 text-center" style={{ color: '#64748B' }}>
                   {Math.round((stats.occupied_rooms / stats.total_rooms) * 100)}% occupazione
                 </p>
               </div>
@@ -125,8 +125,8 @@ const Dashboard = () => {
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
                   <div>
-                    <p className="font-medium text-sm" style={{ color: '#2C1810' }}>{t.tenant_name}</p>
-                    <p className="text-xs" style={{ color: '#8B7355' }}>{t.property_address}{t.room_number ? ` — Stanza ${t.room_number}` : ''}</p>
+                    <p className="font-medium text-sm" style={{ color: '#0F172A' }}>{t.tenant_name}</p>
+                    <p className="text-xs" style={{ color: '#64748B' }}>{t.property_address}{t.room_number ? ` — Stanza ${t.room_number}` : ''}</p>
                   </div>
                 </div>
                 <span className="text-xs font-semibold" style={{ color: '#DC2626' }}>Scadenza: giorno {t.due_day}</span>
@@ -139,15 +139,15 @@ const Dashboard = () => {
       {/* Recent Payments */}
       {stats?.recent_payments?.length > 0 && (
         <div className="luxury-card p-7">
-          <h3 className="text-lg font-semibold font-heading mb-5 flex items-center gap-2" style={{ color: '#9F1239' }}>
+          <h3 className="text-lg font-semibold font-heading mb-5 flex items-center gap-2" style={{ color: '#0B8A3E' }}>
             <CreditCard size={20} /> Pagamenti Recenti
           </h3>
           <div className="space-y-3">
             {stats.recent_payments.map((p, i) => (
-              <div key={i} className="flex items-center justify-between py-3 px-4 rounded-xl" style={{ background: 'rgba(250,247,240,0.5)', border: '1px solid rgba(184,134,11,0.08)' }}>
+              <div key={i} className="flex items-center justify-between py-3 px-4 rounded-xl" style={{ background: 'rgba(250,247,240,0.5)', border: '1px solid rgba(217,42,42,0.08)' }}>
                 <div>
-                  <p className="font-medium text-sm" style={{ color: '#2C1810' }}>{p.tenant_name || 'N/A'}</p>
-                  <p className="text-xs" style={{ color: '#8B7355' }}>{p.payment_date} - {p.payment_method}</p>
+                  <p className="font-medium text-sm" style={{ color: '#0F172A' }}>{p.tenant_name || 'N/A'}</p>
+                  <p className="text-xs" style={{ color: '#64748B' }}>{p.payment_date} - {p.payment_method}</p>
                 </div>
                 <span className="font-bold" style={{ color: '#059669' }}>&euro;{p.amount?.toFixed(2)}</span>
               </div>

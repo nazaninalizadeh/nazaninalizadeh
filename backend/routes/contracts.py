@@ -86,7 +86,7 @@ async def generate_contract_pdf(contract_id: str, user: dict = Depends(get_curre
     elems = []
     title_s = ParagraphStyle('T', parent=styles['Heading1'], fontSize=22, textColor=colors.HexColor('#9F1239'), spaceAfter=20, alignment=1)
     elems.append(Paragraph("CONTRATTO DI LOCAZIONE", title_s))
-    elems.append(Paragraph("Consulenze immobiliari - Via Vigonovese 114", ParagraphStyle('Sub', parent=styles['Normal'], fontSize=10, textColor=colors.grey, alignment=1)))
+    elems.append(Paragraph("Housing in Padova - by Consulenze Immobiliari", ParagraphStyle('Sub', parent=styles['Normal'], fontSize=10, textColor=colors.grey, alignment=1)))
     elems.append(Spacer(1, 0.4 * inch))
     data = [
         ["N. Contratto:", contract['contract_number']],

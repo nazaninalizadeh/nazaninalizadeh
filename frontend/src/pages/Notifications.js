@@ -39,9 +39,9 @@ const Notifications = () => {
 
       {notifications.length === 0 ? (
         <div className="luxury-card p-14 text-center">
-          <Bell className="mx-auto mb-4" size={64} style={{ color: 'rgba(184,134,11,0.3)' }} />
-          <h3 className="text-lg font-semibold mb-2" style={{ color: '#2C1810' }}>Nessuna Notifica</h3>
-          <p style={{ color: '#8B7355' }}>Tutto in ordine!</p>
+          <Bell className="mx-auto mb-4" size={64} style={{ color: 'rgba(217,42,42,0.3)' }} />
+          <h3 className="text-lg font-semibold mb-2" style={{ color: '#0F172A' }}>Nessuna Notifica</h3>
+          <p style={{ color: '#64748B' }}>Tutto in ordine!</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -54,12 +54,12 @@ const Notifications = () => {
                   <Icon size={20} style={{ color: cfg.color }} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-sm" style={{ color: '#2C1810' }}>{n.title}</p>
-                  <p className="text-sm mt-1" style={{ color: '#5C4A3A' }}>{n.message}</p>
-                  <p className="text-xs mt-2" style={{ color: '#8B7355' }}>{n.date}</p>
+                  <p className="font-semibold text-sm" style={{ color: '#0F172A' }}>{n.title}</p>
+                  <p className="text-sm mt-1" style={{ color: '#475569' }}>{n.message}</p>
+                  <p className="text-xs mt-2" style={{ color: '#64748B' }}>{n.date}</p>
                 </div>
                 {n.tenant_id && (
-                  <Link to={`/tenants/${n.tenant_id}`} className="text-xs underline whitespace-nowrap" style={{ color: '#9F1239' }}>
+                  <Link to={`/tenants/${n.tenant_id}`} className="text-xs underline whitespace-nowrap" style={{ color: '#0B8A3E' }}>
                     Vedi Profilo
                   </Link>
                 )}

@@ -238,36 +238,36 @@ const Hospitality = () => {
             <form onSubmit={handleCreateSubmit} className="space-y-5">
 
               {/* Mode toggle */}
-              <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: 'rgba(184,134,11,0.06)' }}>
+              <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: 'rgba(217,42,42,0.06)' }}>
                 <button type="button" data-testid="hospitality-mode-tenant"
                   onClick={() => setForm(prev => ({ ...prev, mode: 'tenant' }))}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${form.mode === 'tenant' ? 'bg-white shadow-sm' : ''}`}
-                  style={{ color: '#9F1239' }}>
+                  style={{ color: '#0B8A3E' }}>
                   Da Inquilino
                 </button>
                 <button type="button" data-testid="hospitality-mode-manual"
                   onClick={() => setForm(prev => ({ ...prev, mode: 'manual', tenant_id: '' }))}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${form.mode === 'manual' ? 'bg-white shadow-sm' : ''}`}
-                  style={{ color: '#9F1239' }}>
+                  style={{ color: '#0B8A3E' }}>
                   Crea Manualmente
                 </button>
               </div>
 
               {/* OCR Section */}
-              <div className="p-4 rounded-xl" style={{ background: 'rgba(159,18,57,0.03)', border: '1px solid rgba(159,18,57,0.1)' }}>
+              <div className="p-4 rounded-xl" style={{ background: 'rgba(11,138,62,0.03)', border: '1px solid rgba(11,138,62,0.1)' }}>
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#9F1239' }}>
+                  <h4 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#0B8A3E' }}>
                     <ScanLine size={16} /> Scansione OCR Documento
                   </h4>
                   <label data-testid="ocr-upload-button">
                     <input type="file" ref={fileRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleOcrScan} />
-                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer" style={{ background: '#9F1239', color: 'white' }}>
+                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer" style={{ background: '#0B8A3E', color: 'white' }}>
                       <ScanLine size={14} /> Scansiona Documento
                     </span>
                   </label>
                 </div>
                 {ocrStatus === 'processing' && (
-                  <div className="flex items-center gap-2 text-sm" style={{ color: '#B8860B' }}>
+                  <div className="flex items-center gap-2 text-sm" style={{ color: '#D92A2A' }}>
                     <Loader2 size={16} className="animate-spin" /> Analisi in corso...
                   </div>
                 )}
@@ -428,8 +428,8 @@ const Hospitality = () => {
 
               {/* Manual-mode guest fields (only when mode=manual) */}
               {form.mode === 'manual' && (
-                <div className="p-3 rounded-xl" style={{ background: 'rgba(159,18,57,0.04)', border: '1px solid rgba(159,18,57,0.12)' }}>
-                  <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#9F1239' }}>Ospitato (Manuale)</h4>
+                <div className="p-3 rounded-xl" style={{ background: 'rgba(11,138,62,0.04)', border: '1px solid rgba(11,138,62,0.12)' }}>
+                  <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#0B8A3E' }}>Ospitato (Manuale)</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label className="text-xs">Cognome</Label><Input data-testid="hospitality-guest-surname" value={form.guest_surname} onChange={e => setForm({ ...form, guest_surname: e.target.value })} className="luxury-input h-8 text-sm" /></div>
                     <div><Label className="text-xs">Nome</Label><Input data-testid="hospitality-guest-name" value={form.guest_name} onChange={e => setForm({ ...form, guest_name: e.target.value })} className="luxury-input h-8 text-sm" /></div>
@@ -449,8 +449,8 @@ const Hospitality = () => {
               </div>
 
               {/* Host (Dichiarante) */}
-              <div className="p-3 rounded-xl" style={{ background: 'rgba(184,134,11,0.04)', border: '1px solid rgba(184,134,11,0.1)' }}>
-                <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#8B7355' }}>Dichiarante (Ospitante)</h4>
+              <div className="p-3 rounded-xl" style={{ background: 'rgba(217,42,42,0.04)', border: '1px solid rgba(217,42,42,0.1)' }}>
+                <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#64748B' }}>Dichiarante (Ospitante)</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label className="text-xs">Cognome</Label><Input value={form.host_surname} onChange={e => setForm({ ...form, host_surname: e.target.value })} className="luxury-input h-8 text-sm" /></div>
                   <div><Label className="text-xs">Nome</Label><Input value={form.host_name} onChange={e => setForm({ ...form, host_name: e.target.value })} className="luxury-input h-8 text-sm" /></div>
@@ -462,8 +462,8 @@ const Hospitality = () => {
               </div>
 
               {/* Property Details */}
-              <div className="p-3 rounded-xl" style={{ background: 'rgba(184,134,11,0.04)', border: '1px solid rgba(184,134,11,0.1)' }}>
-                <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#8B7355' }}>Dettagli Immobile</h4>
+              <div className="p-3 rounded-xl" style={{ background: 'rgba(217,42,42,0.04)', border: '1px solid rgba(217,42,42,0.1)' }}>
+                <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#64748B' }}>Dettagli Immobile</h4>
                 <div className="grid grid-cols-3 gap-3">
                   <div><Label className="text-xs">Comune</Label><Input value={form.property_comune} onChange={e => setForm({ ...form, property_comune: e.target.value })} className="luxury-input h-8 text-sm" /></div>
                   <div><Label className="text-xs">Provincia</Label><Input value={form.property_provincia} onChange={e => setForm({ ...form, property_provincia: e.target.value })} className="luxury-input h-8 text-sm" /></div>
@@ -476,8 +476,8 @@ const Hospitality = () => {
               <div><Label>Note</Label><Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="luxury-input" /></div>
 
               {/* Firma / Signature */}
-              <div className="p-3 rounded-xl" style={{ background: 'rgba(159,18,57,0.03)', border: '1px solid rgba(159,18,57,0.1)' }}>
-                <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#9F1239' }}>Firma</h4>
+              <div className="p-3 rounded-xl" style={{ background: 'rgba(11,138,62,0.03)', border: '1px solid rgba(11,138,62,0.1)' }}>
+                <h4 className="text-xs font-semibold uppercase mb-3" style={{ color: '#0B8A3E' }}>Firma</h4>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { value: 'owner', label: 'Proprietario' },
@@ -487,7 +487,7 @@ const Hospitality = () => {
                     <button key={opt.value} type="button"
                       onClick={() => setForm({ ...form, signature_type: opt.value })}
                       className={`p-2 rounded-lg text-xs font-medium text-center transition-all ${form.signature_type === opt.value ? 'ring-2 ring-rose-500' : ''}`}
-                      style={{ background: form.signature_type === opt.value ? 'rgba(159,18,57,0.08)' : 'white', color: '#9F1239', border: '1px solid rgba(159,18,57,0.15)' }}>
+                      style={{ background: form.signature_type === opt.value ? 'rgba(11,138,62,0.08)' : 'white', color: '#0B8A3E', border: '1px solid rgba(11,138,62,0.15)' }}>
                       {opt.label}
                     </button>
                   ))}
@@ -506,13 +506,13 @@ const Hospitality = () => {
       {/* Existing Records */}
       {records.length > 0 && (
         <div className="luxury-card p-5 mb-6">
-          <h3 className="text-sm font-semibold mb-3" style={{ color: '#9F1239' }}>Record Salvati ({records.length})</h3>
+          <h3 className="text-sm font-semibold mb-3" style={{ color: '#0B8A3E' }}>Record Salvati ({records.length})</h3>
           <div className="space-y-2">
             {records.map(r => (
-              <div key={r.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-rose-50/20" style={{ border: '1px solid rgba(184,134,11,0.08)' }}>
+              <div key={r.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-rose-50/20" style={{ border: '1px solid rgba(217,42,42,0.08)' }}>
                 <div>
-                  <span className="font-medium text-sm" style={{ color: '#2C1810' }}>{r.tenant_name}</span>
-                  <span className="text-xs ml-3" style={{ color: '#8B7355' }}>{r.property_address} | {fmtDate(r.check_in_date)} → {r.check_out_date ? fmtDate(r.check_out_date) : 'Indeterminato'}</span>
+                  <span className="font-medium text-sm" style={{ color: '#0F172A' }}>{r.tenant_name}</span>
+                  <span className="text-xs ml-3" style={{ color: '#64748B' }}>{r.property_address} | {fmtDate(r.check_in_date)} → {r.check_out_date ? fmtDate(r.check_out_date) : 'Indeterminato'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => {
@@ -542,7 +542,7 @@ const Hospitality = () => {
                     });
                     setCreateOpen(true);
                   }} data-testid={`edit-hospitality-${r.id}`}>Modifica</Button>
-                  <Button size="sm" variant="outline" className="text-xs" style={{ color: '#9F1239', borderColor: '#9F1239' }} onClick={() => handleDeleteRecord(r.id)} data-testid={`delete-hospitality-${r.id}`}>Elimina</Button>
+                  <Button size="sm" variant="outline" className="text-xs" style={{ color: '#0B8A3E', borderColor: '#0B8A3E' }} onClick={() => handleDeleteRecord(r.id)} data-testid={`delete-hospitality-${r.id}`}>Elimina</Button>
                   <Button size="sm" className="btn-luxury text-xs" onClick={() => handleDownloadPdfByRecord(r)} data-testid={`download-record-${r.id}`}>
                     <Download size={14} className="mr-1" /> PDF
                   </Button>
@@ -556,23 +556,23 @@ const Hospitality = () => {
       {/* Search */}
       <div className="luxury-card p-4 mb-6">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#D92A2A' }} />
           <Input placeholder="Cerca inquilino..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-11 luxury-input" />
         </div>
       </div>
 
       {/* Tenant List for Quick PDF */}
-      <h3 className="text-sm font-semibold mb-3" style={{ color: '#8B7355' }}>Genera PDF Rapido per Inquilino</h3>
+      <h3 className="text-sm font-semibold mb-3" style={{ color: '#64748B' }}>Genera PDF Rapido per Inquilino</h3>
       <div className="space-y-2">
         {sorted.map(tenant => (
           <div key={tenant.id} className="luxury-card p-4 flex items-center justify-between hover:shadow-md transition-all" data-testid={`hospitality-tenant-${tenant.id}`}>
             <div className="flex items-center gap-3 min-w-0">
               <Users size={16} style={{ color: tenant.room_id ? '#059669' : '#94A3B8' }} />
               <div className="min-w-0">
-                <Link to={`/tenants/${tenant.id}`} className="font-medium text-sm hover:underline truncate block" style={{ color: '#9F1239' }}>
+                <Link to={`/tenants/${tenant.id}`} className="font-medium text-sm hover:underline truncate block" style={{ color: '#0B8A3E' }}>
                   {tenant.full_name}
                 </Link>
-                <div className="flex items-center gap-2 mt-0.5 text-xs" style={{ color: '#8B7355' }}>
+                <div className="flex items-center gap-2 mt-0.5 text-xs" style={{ color: '#64748B' }}>
                   {tenant.nationality && <span>{tenant.nationality}</span>}
                   {tenant.property_address && <span className="inline-flex items-center gap-1"><Home size={10} /> {tenant.property_address}</span>}
                   {tenant.room_number && <span className="inline-flex items-center gap-1"><DoorOpen size={10} /> Stanza {tenant.room_number}</span>}

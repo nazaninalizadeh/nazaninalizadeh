@@ -102,7 +102,7 @@ const Registration = () => {
 
       {/* Upload Section */}
       <div className="luxury-card p-6 mb-6">
-        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
+        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: '#0B8A3E' }}>
           <Upload size={18} /> Carica Documento
         </h3>
         <div className="flex items-end gap-4 flex-wrap">
@@ -119,7 +119,7 @@ const Registration = () => {
           </div>
           <label>
             <input type="file" ref={fileRef} className="hidden" onChange={handleUpload} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer transition-all hover:shadow-md" style={{ background: '#9F1239', color: 'white' }}>
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer transition-all hover:shadow-md" style={{ background: '#0B8A3E', color: 'white' }}>
               <Upload size={15} /> {uploading ? 'Caricamento...' : 'Carica File'}
             </span>
           </label>
@@ -128,13 +128,13 @@ const Registration = () => {
 
       {/* ZIP Bundle Section */}
       <div className="luxury-card p-6 mb-6">
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#9F1239' }}>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#0B8A3E' }}>
           <Package size={18} /> Pacchetto Documenti (ZIP)
         </h3>
-        <p className="text-xs mb-2" style={{ color: '#8B7355' }}>
+        <p className="text-xs mb-2" style={{ color: '#64748B' }}>
           Ogni pacchetto include i file qui sotto:
         </p>
-        <ul className="text-xs mb-4 ml-5 list-disc" style={{ color: '#4A3B31' }}>
+        <ul className="text-xs mb-4 ml-5 list-disc" style={{ color: '#334155' }}>
           <li>Modulo di Registrazione</li>
           <li>Documento del Proprietario (carta d'identità o passaporto)</li>
           <li>Modulo di Ospitalità (Comunicazione di Ospitalità - Articolo 7)</li>
@@ -144,13 +144,13 @@ const Registration = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {tenants.filter(t => t.room_id).map(t => (
             <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl"
-              style={{ background: 'rgba(159,18,57,0.03)', border: '1px solid rgba(159,18,57,0.1)' }}
+              style={{ background: 'rgba(11,138,62,0.03)', border: '1px solid rgba(11,138,62,0.1)' }}
               data-testid={`zip-card-${t.id}`}>
               <button onClick={() => handleDownloadZip(t.id, t.full_name)} className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-all min-w-0" data-testid={`zip-download-${t.id}`}>
-                <Package size={16} style={{ color: '#9F1239' }} />
+                <Package size={16} style={{ color: '#0B8A3E' }} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate" style={{ color: '#2C1810' }}>{t.full_name}</p>
-                  <p className="text-[10px]" style={{ color: '#8B7355' }}>{t.property_address}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>{t.full_name}</p>
+                  <p className="text-[10px]" style={{ color: '#64748B' }}>{t.property_address}</p>
                 </div>
               </button>
               <div className="flex gap-1">
@@ -174,26 +174,26 @@ const Registration = () => {
 
       {/* Documents List */}
       <div className="luxury-card overflow-hidden">
-        <div className="p-4" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
+        <div className="p-4" style={{ borderBottom: '1px solid rgba(217,42,42,0.12)' }}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} style={{ color: '#B8860B' }} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} style={{ color: '#D92A2A' }} />
             <Input placeholder="Cerca documenti..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9 luxury-input" />
           </div>
         </div>
-        <div className="divide-y" style={{ borderColor: 'rgba(184,134,11,0.08)' }}>
+        <div className="divide-y" style={{ borderColor: 'rgba(217,42,42,0.08)' }}>
           {filteredDocs.length === 0 ? (
-            <div className="p-10 text-center" style={{ color: '#8B7355' }}>Nessun documento</div>
+            <div className="p-10 text-center" style={{ color: '#64748B' }}>Nessun documento</div>
           ) : filteredDocs.map(doc => (
             <div key={doc.id} className="px-5 py-3 flex items-center justify-between hover:bg-rose-50/20">
               <div className="flex items-center gap-3">
-                <FileText size={16} style={{ color: '#9F1239' }} />
+                <FileText size={16} style={{ color: '#0B8A3E' }} />
                 <div>
-                  <Link to={`/tenants/${doc.tenant_id}`} className="text-sm font-medium hover:underline" style={{ color: '#9F1239' }}>{doc.tenant_name}</Link>
+                  <Link to={`/tenants/${doc.tenant_id}`} className="text-sm font-medium hover:underline" style={{ color: '#0B8A3E' }}>{doc.tenant_name}</Link>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'rgba(159,18,57,0.08)', color: '#9F1239' }}>
+                    <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'rgba(11,138,62,0.08)', color: '#0B8A3E' }}>
                       {docTypeLabels[doc.doc_type] || doc.doc_type}
                     </span>
-                    <span className="text-xs" style={{ color: '#8B7355' }}>{doc.filename}</span>
+                    <span className="text-xs" style={{ color: '#64748B' }}>{doc.filename}</span>
                   </div>
                 </div>
               </div>

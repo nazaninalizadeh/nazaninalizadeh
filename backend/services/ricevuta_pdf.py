@@ -1,6 +1,6 @@
 """
 Ricevuta (Receipt/Invoice) PDF Generator.
-Design based on Consulenze immobiliari brand template.
+Design based on Housing in Padova brand template.
 """
 
 from io import BytesIO
@@ -55,7 +55,7 @@ def _number_to_italian(n):
 
 def generate_ricevuta_pdf(data: dict) -> BytesIO:
     """
-    Generate a professional Ricevuta (Receipt) PDF matching Consulenze immobiliari design.
+    Generate a professional Ricevuta (Receipt) PDF matching Housing in Padova design.
     
     data keys:
     - receipt_number, date, time, amount
@@ -101,10 +101,10 @@ def generate_ricevuta_pdf(data: dict) -> BytesIO:
         except Exception:
             pass
 
-    elems.append(Paragraph("Consulenze immobiliari", brand_style))
+    elems.append(Paragraph("Housing in Padova", brand_style))
     elems.append(Paragraph("AFFITTA &bull; COMPRA &bull; VENDE &bull; RISTRUTTURA &bull; APPARTAMENTI", tagline_style))
     elems.append(Paragraph("VIA VIGONOVESE 114", addr_style))
-    elems.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#9F1239"), spaceAfter=6*mm))
+    elems.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#0B8A3E"), spaceAfter=6*mm))
 
     # ========== RECEIPT INFO ==========
     info_data = [
@@ -170,7 +170,7 @@ def generate_ricevuta_pdf(data: dict) -> BytesIO:
     # ========== FOOTER ==========
     elems.append(Spacer(1, 15*mm))
     elems.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#DDDDDD"), spaceAfter=3*mm))
-    elems.append(Paragraph("Consulenze immobiliari - Via Vigonovese 114 | Documento generato automaticamente", footer_style))
+    elems.append(Paragraph("Housing in Padova — by Consulenze Immobiliari | Documento generato automaticamente", footer_style))
     now = datetime.now(timezone.utc)
     elems.append(Paragraph(f"Generato il {now.strftime('%d/%m/%Y alle %H:%M')} UTC", footer_style))
 

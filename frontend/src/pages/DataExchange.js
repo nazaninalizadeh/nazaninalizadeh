@@ -91,7 +91,7 @@ const DataExchange = () => {
   const sections = [
     {
       title: 'Inquilini',
-      icon: <Sheet size={22} style={{ color: '#9F1239' }} />,
+      icon: <Sheet size={22} style={{ color: '#0B8A3E' }} />,
       description: 'Importa ed esporta dati degli inquilini',
       actions: [
         { label: 'Esporta Inquilini', icon: <Download size={15} />, onClick: () => handleExport('tenants'), variant: 'export' },
@@ -111,7 +111,7 @@ const DataExchange = () => {
     },
     {
       title: 'Occupazione',
-      icon: <Sheet size={22} style={{ color: '#B8860B' }} />,
+      icon: <Sheet size={22} style={{ color: '#D92A2A' }} />,
       description: 'Esporta dati occupazione immobili e stanze',
       actions: [
         { label: 'Esporta Occupazione', icon: <Download size={15} />, onClick: () => handleExport('occupancy'), variant: 'export' },
@@ -120,9 +120,9 @@ const DataExchange = () => {
   ];
 
   const variantStyles = {
-    export: { background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)', color: 'white' },
+    export: { background: 'linear-gradient(135deg, #0B8A3E 0%, #076B2D 100%)', color: 'white' },
     import: { background: 'rgba(5,150,105,0.1)', color: '#059669', border: '1px solid rgba(5,150,105,0.3)' },
-    template: { background: 'rgba(184,134,11,0.08)', color: '#8B7355', border: '1px solid rgba(184,134,11,0.2)' },
+    template: { background: 'rgba(217,42,42,0.08)', color: '#64748B', border: '1px solid rgba(217,42,42,0.2)' },
   };
 
   return (
@@ -138,8 +138,8 @@ const DataExchange = () => {
             <div className="flex items-center gap-3 mb-4">
               {section.icon}
               <div>
-                <h3 className="font-semibold" style={{ color: '#2C1810' }}>{section.title}</h3>
-                <p className="text-xs" style={{ color: '#8B7355' }}>{section.description}</p>
+                <h3 className="font-semibold" style={{ color: '#0F172A' }}>{section.title}</h3>
+                <p className="text-xs" style={{ color: '#64748B' }}>{section.description}</p>
               </div>
             </div>
             <div className="space-y-2">
@@ -169,8 +169,8 @@ const DataExchange = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="p-4 rounded-xl" style={{ background: 'rgba(184,134,11,0.04)', border: '1px solid rgba(184,134,11,0.1)' }}>
-              <p className="text-sm" style={{ color: '#4A3B31' }}>
+            <div className="p-4 rounded-xl" style={{ background: 'rgba(217,42,42,0.04)', border: '1px solid rgba(217,42,42,0.1)' }}>
+              <p className="text-sm" style={{ color: '#334155' }}>
                 Carica un file Excel (.xlsx) o CSV (.csv) con i dati da importare.
                 Puoi scaricare il template di esempio per la struttura corretta.
               </p>
@@ -222,7 +222,7 @@ const DataExchange = () => {
                     {importResult.errors.map((err, i) => (
                       <div key={i} className="flex items-start gap-2 p-2 rounded-lg text-xs" style={{ background: 'rgba(220,38,38,0.03)' }}>
                         <X size={12} className="text-red-400 mt-0.5 shrink-0" />
-                        <span style={{ color: '#4A3B31' }}>
+                        <span style={{ color: '#334155' }}>
                           <strong>Riga {err.row}:</strong> {err.error}
                         </span>
                       </div>

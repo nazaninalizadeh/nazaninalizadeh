@@ -58,7 +58,7 @@ const Reports = () => {
             {loading ? 'Generazione...' : 'Genera Report'}
           </Button>
           {reportData && (
-            <Button onClick={downloadPDF} variant="outline" className="rounded-xl" style={{ borderColor: 'rgba(184,134,11,0.2)' }}>
+            <Button onClick={downloadPDF} variant="outline" className="rounded-xl" style={{ borderColor: 'rgba(217,42,42,0.2)' }}>
               <Download size={16} className="mr-2" /> Scarica PDF
             </Button>
           )}
@@ -79,7 +79,7 @@ const Reports = () => {
               { label: 'Pagamenti Parziali', value: s.partial_payments, color: '#D97706' },
             ].map(card => (
               <div key={card.label} className="luxury-card p-5">
-                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: '#8B7355' }}>{card.label}</p>
+                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: '#64748B' }}>{card.label}</p>
                 <p className="text-2xl font-bold" style={{ color: card.color }}>{card.value}</p>
               </div>
             ))}
@@ -87,11 +87,11 @@ const Reports = () => {
 
           {reportData.tenant_balances?.length > 0 && (
             <div className="luxury-card p-7">
-              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Saldi Inquilini</h3>
+              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#0B8A3E' }}>Saldi Inquilini</h3>
               <div className="space-y-2">
                 {reportData.tenant_balances.map((t, i) => (
-                  <div key={i} className="flex justify-between py-3 px-4 rounded-xl" style={{ background: 'rgba(250,247,240,0.5)', border: '1px solid rgba(184,134,11,0.08)' }}>
-                    <span style={{ color: '#2C1810' }}>{t.name}</span>
+                  <div key={i} className="flex justify-between py-3 px-4 rounded-xl" style={{ background: 'rgba(250,247,240,0.5)', border: '1px solid rgba(217,42,42,0.08)' }}>
+                    <span style={{ color: '#0F172A' }}>{t.name}</span>
                     <span className="font-bold" style={{ color: '#DC2626' }}>&euro;{t.balance?.toFixed(2)}</span>
                   </div>
                 ))}
@@ -103,9 +103,9 @@ const Reports = () => {
 
       {!reportData && !loading && (
         <div className="luxury-card p-14 text-center">
-          <BarChart3 className="mx-auto mb-4" size={64} style={{ color: 'rgba(184,134,11,0.3)' }} />
-          <h3 className="text-lg font-semibold mb-2" style={{ color: '#2C1810' }}>Nessun Report</h3>
-          <p style={{ color: '#8B7355' }}>Seleziona un tipo e clicca "Genera Report"</p>
+          <BarChart3 className="mx-auto mb-4" size={64} style={{ color: 'rgba(217,42,42,0.3)' }} />
+          <h3 className="text-lg font-semibold mb-2" style={{ color: '#0F172A' }}>Nessun Report</h3>
+          <p style={{ color: '#64748B' }}>Seleziona un tipo e clicca "Genera Report"</p>
         </div>
       )}
     </div>

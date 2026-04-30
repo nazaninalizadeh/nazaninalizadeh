@@ -104,7 +104,7 @@ async def generate_report_pdf(
     elems = []
 
     h1 = ParagraphStyle('H1', parent=styles['Heading1'], fontSize=20, textColor=colors.HexColor('#9F1239'), alignment=1)
-    elems.append(Paragraph(f"Consulenze immobiliari - {title}", h1))
+    elems.append(Paragraph(f"Housing in Padova - {title}", h1))
     elems.append(Paragraph(f"Periodo: {start.strftime('%d/%m/%Y')} - {now.strftime('%d/%m/%Y')}", ParagraphStyle('Sub', parent=styles['Normal'], alignment=1, textColor=colors.grey)))
     elems.append(Spacer(1, 0.4 * inch))
 

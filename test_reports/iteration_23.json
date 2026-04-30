@@ -1,0 +1,48 @@
+{
+  "summary": "Iteration 23 PASS. Branding + UI regression validated end-to-end. Backend: 17/17 pytest PASS (auth, properties normalization, tenants, landlords.authority, contracts, dashboard, hospitality records list, invoice PDF, hospitality tenant PDF, contract PDF, manual hospitality POST+PDF+delete, OCR endpoint responds <500, email_reminders.py contains 'Housing in Padova' and no old 'Consulenze immobiliari' lowercase, ricevuta_pdf.py + invoice_generator.py contain new brand). Frontend: Title='Housing in Padova | Sistema Gestione Immobiliare'. Login page renders logo (/assets/logo.jpeg, data-testid=login-logo), 'Housing in Padova' h1, green Accedi button (rgb(11,138,62) = #0B8A3E), footer 'Housing in Padova — by Consulenze Immobiliari' on light bg. Sidebar shows logo (data-testid=app-logo), 'Housing in Padova' (data-testid=app-title), 'Rent Room Service', 'BY CONSULENZE IMMOBILIARI' subtitle. All nav-* testids intact (proprietari, immobili, inquilini, ospitalità, contratti, fatture, preavviso di fatturazione, etc.). Responsive 390x844: hamburger (mobile-menu-button) visible, horizontal overflow=0px, sidebar toggles open. No leftover standalone 'Consulenze immobiliari' (lowercase) anywhere in src/. All old colors (#9F1239/#BE123C/#B8860B/#FAF7F0/#FEFDFB/#FFFBF5/#F5F1E8/#8B7355/#2C1810/#4A3B31/#5C4A3A/#A89580) absent from frontend/src. Preavviso route navigates successfully. OCR upload returns <500.",
+  "fixes_verified": {
+    "BRANDING_TITLE": {"status": "PASS", "evidence": "document.title = 'Housing in Padova | Sistema Gestione Immobiliare'"},
+    "BRANDING_LOGIN": {"status": "PASS", "evidence": "login-logo img at /assets/logo.jpeg, h1 'Housing in Padova', green submit bg rgb(11,138,62), footer 'Housing in Padova — by Consulenze Immobiliari'"},
+    "BRANDING_SIDEBAR": {"status": "PASS", "evidence": "app-logo img + app-title 'Housing in Padova' + 'Rent Room Service' + 'by Consulenze Immobiliari' subtitle"},
+    "BRANDING_NO_OLD_TEXT": {"status": "PASS", "evidence": "grep 'Consulenze immobiliari' (lowercase i) across /app/frontend/src and /app/frontend/public = 0 matches"},
+    "BRANDING_NO_OLD_COLORS": {"status": "PASS", "evidence": "grep for old hex codes in /app/frontend/src = 0 matches"},
+    "BRANDING_BACKEND_PDF_EMAIL": {"status": "PASS", "evidence": "email_reminders.py, ricevuta_pdf.py, invoice_generator.py all contain 'Housing in Padova'; no 'Consulenze immobiliari' (lowercase) leftover in those files"},
+    "RESPONSIVE_MOBILE_390": {"status": "PASS", "evidence": "Hamburger visible, horizontal overflow=0px, sidebar toggles open on click"},
+    "REGRESSION_CRUD": {"status": "PASS", "evidence": "auth/me, properties (normalized civico/comune/province), tenants, landlords.authority, contracts, dashboard/stats, hospitality records all 200"},
+    "REGRESSION_PDF": {"status": "PASS", "evidence": "Invoice PDF, hospitality tenant PDF, contract PDF, manual hospitality /pdf/record/{id} all return %PDF header"},
+    "REGRESSION_OCR": {"status": "PASS", "evidence": "/api/ocr/scan POST with small PNG returns status <500"},
+    "REGRESSION_MANUAL_HOSPITALITY": {"status": "PASS", "evidence": "POST manual mode 200, PDF valid, cleanup 204"},
+    "NAV_TESTIDS": {"status": "PASS", "evidence": "nav-proprietari, nav-immobili, nav-inquilini, nav-ospitalità, nav-contratti, nav-fatture, nav-preavviso di fatturazione all present (count=1)"}
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard mobile (390x844)", "issues": ["Dashboard H1 and welcome paragraph still appear to render in a serif/italic luxury style (likely .luxury-heading class using Playfair Display remnant); per spec h1/h2/h3 should use DM Sans. Please audit remaining .luxury-heading / page-level h1 styles for typography consistency."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration23.py",
+    "/app/test_reports/pytest/iter23.xml"
+  ],
+  "action_items": [
+    "LOW: Verify page-level H1 headings (e.g., Dashboard 'Dashboard' + welcome text) use DM Sans — some pages appear to still use .luxury-heading/Playfair italic styling in mobile screenshot. Check /app/frontend/src/index.css .luxury-heading rule and dashboard page H1 class.",
+    "LOW (prior iter): Add aria-describedby / DialogDescription on Hospitality DialogContent to silence Radix accessibility warning."
+  ],
+  "critical_code_review_comments": [
+    "Login.js: inline-style color-tokens are fine but long-term consider moving #0B8A3E/#D92A2A/#F8FAFC to CSS variables in index.css for single source of truth.",
+    "Layout.js line 85: main wrapper still uses linear-gradient(#FFFFFF → #F8FAFC) which is fine (subtle), but ensure no dark-navy gradient leftover — confirmed none.",
+    "index.css: luxury-heading / .luxury-card / .btn-luxury class names were kept for backwards compatibility; names are now semantically misleading ('luxury'). Consider renaming to .brand-* in a follow-up.",
+    "invoice_generator.py top-line comment still reads 'فاکتور ساز حرفه‌ای - Consulenze immobiliari' (non-English comment). Harmless but cosmetically out of sync with rebrand — not functional.",
+    "Login page uses raw <img src='/assets/logo.jpeg'> — fine, but adding width/height explicit attributes would help CLS on slow connections."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration23.py"],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "100% (branding, nav, responsive, navigation all PASS)"},
+  "test_credentials": "alborz.sbd@gmail.com / 1234@Admin (super_admin), captcha bypass='test-bypass'",
+  "seed_data_creation": "Created and deleted one TEST_IT23 manual hospitality record. No persistent test data left.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 23 validates the branding + UI redesign (Housing in Padova + green #0B8A3E primary + red #D92A2A accent + slate-50 neutral). No old brand text 'Consulenze immobiliari' (standalone) and no old color tokens remain in /app/frontend/src. All iter16-22 features regression-clean. Minor design note: page-level H1 on dashboard still appears italic/serif — likely .luxury-heading class — main agent should audit typography consistency. Run /app/backend/tests/test_iteration23.py before any future branding/PDF/OCR/hospitality change.",
+  "rca of the issue": "N/A — this iteration was a branding + UI redesign regression check, not a bug fix. All requested replacements (text + colors + logo integration) are present; all backend endpoints (CRUD, PDF, OCR, hospitality manual) unaffected by the sed-based color/text swap."
+}

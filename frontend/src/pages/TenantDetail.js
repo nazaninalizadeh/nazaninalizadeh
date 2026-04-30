@@ -71,7 +71,7 @@ const TenantDetail = () => {
   return (
     <div data-testid="tenant-detail-page" className="luxury-fade-in">
       <Link to="/tenants">
-        <Button variant="ghost" className="mb-6 rounded-xl" style={{ color: '#9F1239' }}>
+        <Button variant="ghost" className="mb-6 rounded-xl" style={{ color: '#0B8A3E' }}>
           <ArrowLeft size={18} className="mr-2" /> Torna agli Inquilini
         </Button>
       </Link>
@@ -80,7 +80,7 @@ const TenantDetail = () => {
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
           <div className="luxury-card p-7">
-            <h2 className="text-2xl font-semibold font-heading mb-6" style={{ color: '#9F1239' }}>{tenant.full_name}</h2>
+            <h2 className="text-2xl font-semibold font-heading mb-6" style={{ color: '#0B8A3E' }}>{tenant.full_name}</h2>
             <div className="grid grid-cols-2 gap-4 text-sm">
               {[
                 ['Codice Fiscale', tenant.codice_fiscale],
@@ -95,15 +95,15 @@ const TenantDetail = () => {
                 ['Email', tenant.email],
                 ['WhatsApp', tenant.whatsapp],
               ].map(([label, value]) => value ? (
-                <div key={label} className="py-2" style={{ borderBottom: '1px solid rgba(184,134,11,0.08)' }}>
-                  <p className="text-xs uppercase tracking-wide mb-1" style={{ color: '#8B7355' }}>{label}</p>
-                  <p className="font-medium" style={{ color: '#2C1810' }}>{value}</p>
+                <div key={label} className="py-2" style={{ borderBottom: '1px solid rgba(217,42,42,0.08)' }}>
+                  <p className="text-xs uppercase tracking-wide mb-1" style={{ color: '#64748B' }}>{label}</p>
+                  <p className="font-medium" style={{ color: '#0F172A' }}>{value}</p>
                 </div>
               ) : null)}
             </div>
             {tenant.notes && (
-              <div className="mt-4 p-3 rounded-xl notes-text" style={{ background: 'rgba(184,134,11,0.04)' }}>
-                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: '#8B7355' }}>Note</p>
+              <div className="mt-4 p-3 rounded-xl notes-text" style={{ background: 'rgba(217,42,42,0.04)' }}>
+                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: '#64748B' }}>Note</p>
                 <p>{tenant.notes}</p>
               </div>
             )}
@@ -112,7 +112,7 @@ const TenantDetail = () => {
           {/* Hospitality PDF */}
           <div className="luxury-card p-7">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold font-heading flex items-center gap-2" style={{ color: '#9F1239' }}>
+              <h3 className="text-lg font-semibold font-heading flex items-center gap-2" style={{ color: '#0B8A3E' }}>
                 <ScrollText size={20} /> Documento di Ospitalita
               </h3>
               <Button
@@ -139,14 +139,14 @@ const TenantDetail = () => {
                 <Download size={16} className="mr-2" /> Scarica PDF Ospitalita
               </Button>
             </div>
-            <p className="text-xs mt-2" style={{ color: '#8B7355' }}>
+            <p className="text-xs mt-2" style={{ color: '#64748B' }}>
               Genera la dichiarazione di ospitalita per questo inquilino con tutti i dati necessari.
             </p>
           </div>
 
           {/* Monthly Payment Calendar - Editable */}
           <div className="luxury-card p-7">
-            <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
+            <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#0B8A3E' }}>
               <Calendar size={20} /> Calendario Pagamenti {calendar?.year}
             </h3>
             {calendar?.calendar ? (
@@ -154,8 +154,8 @@ const TenantDetail = () => {
                 {calendar.calendar.map(m => {
                   if (m.status === 'none') {
                     return (
-                      <div key={m.month} className="p-3 rounded-xl text-center" style={{ background: 'rgba(184,134,11,0.04)', border: '1.5px solid rgba(184,134,11,0.1)' }}>
-                        <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: '#8B7355' }}>{m.month_name?.substring(0, 3)}</p>
+                      <div key={m.month} className="p-3 rounded-xl text-center" style={{ background: 'rgba(217,42,42,0.04)', border: '1.5px solid rgba(217,42,42,0.1)' }}>
+                        <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: '#64748B' }}>{m.month_name?.substring(0, 3)}</p>
                         <p className="text-[10px] mt-1" style={{ color: '#94A3B8' }}>—</p>
                       </div>
                     );
@@ -167,12 +167,12 @@ const TenantDetail = () => {
                         background: m.status === 'paid' ? '#ECFDF5' : m.status === 'late' ? '#FEF2F2' : '#FFF7ED',
                         border: `1.5px solid ${m.status === 'paid' ? 'rgba(5,150,105,0.3)' : m.status === 'late' ? 'rgba(220,38,38,0.3)' : 'rgba(217,119,6,0.3)'}`,
                       }} data-testid={`calendar-month-${m.month}`}>
-                      <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: '#8B7355' }}>{m.month_name?.substring(0, 3)}</p>
+                      <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: '#64748B' }}>{m.month_name?.substring(0, 3)}</p>
                       {m.status === 'paid' && (
                         <>
                           <div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto my-1" />
                           <p className="text-xs font-bold" style={{ color: '#059669' }}>&euro;{m.amount?.toFixed(0)}</p>
-                          {m.payment_method && <p className="text-[8px]" style={{ color: '#8B7355' }}>{m.payment_method}</p>}
+                          {m.payment_method && <p className="text-[8px]" style={{ color: '#64748B' }}>{m.payment_method}</p>}
                         </>
                       )}
                       {m.status === 'late' && (
@@ -181,25 +181,25 @@ const TenantDetail = () => {
                       {m.status === 'not_paid' && (
                         <><div className="w-2 h-2 rounded-full bg-amber-500 mx-auto my-1" /><p className="text-[10px] font-semibold" style={{ color: '#D97706' }}>Non Pagato</p></>
                       )}
-                      {m.manual_override && <p className="text-[7px] mt-0.5" style={{ color: '#9F1239' }}>manuale</p>}
+                      {m.manual_override && <p className="text-[7px] mt-0.5" style={{ color: '#0B8A3E' }}>manuale</p>}
                       {m.receipt_url && <p className="text-[8px] mt-0.5 font-semibold" style={{ color: '#059669' }} data-testid={`receipt-badge-${m.month}`}>📎 Ricevuta</p>}
                     </button>
                   );
                 })}
               </div>
-            ) : <p className="text-sm" style={{ color: '#8B7355' }}>Caricamento calendario...</p>}
-            <p className="text-xs mt-3" style={{ color: '#8B7355' }}>Clicca su un mese per cambiare lo stato di pagamento</p>
+            ) : <p className="text-sm" style={{ color: '#64748B' }}>Caricamento calendario...</p>}
+            <p className="text-xs mt-3" style={{ color: '#64748B' }}>Clicca su un mese per cambiare lo stato di pagamento</p>
           </div>
 
           {/* Edit Month Status Dialog */}
           {editDialog && editMonth && (
             <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(44,24,16,0.5)' }} onClick={() => setEditDialog(false)}>
-              <div className="p-6 rounded-2xl max-w-sm w-full mx-4" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.2)', boxShadow: '0 25px 50px rgba(159,18,57,0.2)' }}
+              <div className="p-6 rounded-2xl max-w-sm w-full mx-4" style={{ background: '#FFFFFF', border: '1px solid rgba(217,42,42,0.2)', boxShadow: '0 25px 50px rgba(11,138,62,0.2)' }}
                 onClick={e => e.stopPropagation()}>
-                <h4 className="font-semibold text-lg mb-4" style={{ color: '#9F1239' }}>
+                <h4 className="font-semibold text-lg mb-4" style={{ color: '#0B8A3E' }}>
                   {editMonth.month_name} {editMonth.year}
                 </h4>
-                <p className="text-xs mb-4" style={{ color: '#8B7355' }}>
+                <p className="text-xs mb-4" style={{ color: '#64748B' }}>
                   Stato attuale: <strong>{editMonth.status === 'paid' ? 'Pagato' : editMonth.status === 'late' ? 'In Ritardo' : 'Non Pagato'}</strong>
                   {editMonth.manual_override && ' (manuale)'}
                 </p>
@@ -257,21 +257,21 @@ const TenantDetail = () => {
                   </div>
 
                   {/* Receipt upload (PDF / image) */}
-                  <div className="p-3 rounded-xl" style={{ background: 'rgba(184,134,11,0.05)', border: '1.5px solid rgba(184,134,11,0.2)' }}>
-                    <p className="font-semibold text-sm mb-2" style={{ color: '#9F1239' }}>Ricevuta del mese</p>
+                  <div className="p-3 rounded-xl" style={{ background: 'rgba(217,42,42,0.05)', border: '1.5px solid rgba(217,42,42,0.2)' }}>
+                    <p className="font-semibold text-sm mb-2" style={{ color: '#0B8A3E' }}>Ricevuta del mese</p>
                     {editMonth.receipt_url ? (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-xs">
                           <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: '#ECFDF5', color: '#059669' }}>Ricevuta caricata</span>
-                          <span style={{ color: '#8B7355' }} className="truncate flex-1">{editMonth.receipt_filename || 'file'}</span>
+                          <span style={{ color: '#64748B' }} className="truncate flex-1">{editMonth.receipt_filename || 'file'}</span>
                         </div>
                         <div className="flex gap-2">
                           <a href={`${process.env.REACT_APP_BACKEND_URL}${editMonth.receipt_url}`} target="_blank" rel="noopener noreferrer"
-                            className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.3)', color: '#9F1239' }}
+                            className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ background: '#FFFFFF', border: '1px solid rgba(217,42,42,0.3)', color: '#0B8A3E' }}
                             data-testid={`view-month-receipt-${editMonth.month}`}>
                             <Download size={12} className="inline mr-1" /> Vedi
                           </a>
-                          <label className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-center cursor-pointer" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.3)', color: '#9F1239' }}>
+                          <label className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-center cursor-pointer" style={{ background: '#FFFFFF', border: '1px solid rgba(217,42,42,0.3)', color: '#0B8A3E' }}>
                             <Upload size={12} className="inline mr-1" /> Sostituisci
                             <input type="file" accept="application/pdf,image/*" className="hidden"
                               onChange={async (e) => {
@@ -301,7 +301,7 @@ const TenantDetail = () => {
                         </div>
                       </div>
                     ) : (
-                      <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer text-xs font-semibold" style={{ background: 'white', border: '1.5px dashed rgba(184,134,11,0.4)', color: '#9F1239' }}
+                      <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer text-xs font-semibold" style={{ background: 'white', border: '1.5px dashed rgba(217,42,42,0.4)', color: '#0B8A3E' }}
                         data-testid={`upload-month-receipt-${editMonth.month}`}>
                         <Upload size={14} /> Carica Ricevuta (PDF / Immagine)
                         <input type="file" accept="application/pdf,image/*" className="hidden"
@@ -326,11 +326,11 @@ const TenantDetail = () => {
                       toast.success('Override rimosso');
                       setEditDialog(false); fetchCalendar(); fetchTenant();
                     } catch { toast.error('Errore'); }
-                  }} className="w-full text-center text-xs py-2 rounded-xl hover:bg-rose-50 transition-all" style={{ color: '#9F1239', border: '1px solid rgba(159,18,57,0.2)' }}>
+                  }} className="w-full text-center text-xs py-2 rounded-xl hover:bg-rose-50 transition-all" style={{ color: '#0B8A3E', border: '1px solid rgba(11,138,62,0.2)' }}>
                     Rimuovi override manuale
                   </button>
                 )}
-                <button onClick={() => setEditDialog(false)} className="w-full text-center text-xs py-2 mt-2 font-medium" style={{ color: '#8B7355' }} data-testid="cancel-edit-month">
+                <button onClick={() => setEditDialog(false)} className="w-full text-center text-xs py-2 mt-2 font-medium" style={{ color: '#64748B' }} data-testid="cancel-edit-month">
                   Annulla
                 </button>
               </div>
@@ -340,13 +340,13 @@ const TenantDetail = () => {
           {/* Property & Room */}
           {tenant.property_info && (
             <div className="luxury-card p-7">
-              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Alloggio</h3>
+              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#0B8A3E' }}>Alloggio</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><p className="text-xs uppercase" style={{ color: '#8B7355' }}>Immobile</p><p className="font-medium">{tenant.property_info.address}</p></div>
-                <div><p className="text-xs uppercase" style={{ color: '#8B7355' }}>Codice</p><p className="font-medium">{tenant.property_info.property_code}</p></div>
+                <div><p className="text-xs uppercase" style={{ color: '#64748B' }}>Immobile</p><p className="font-medium">{tenant.property_info.address}</p></div>
+                <div><p className="text-xs uppercase" style={{ color: '#64748B' }}>Codice</p><p className="font-medium">{tenant.property_info.property_code}</p></div>
                 {tenant.room_info && <>
-                  <div><p className="text-xs uppercase" style={{ color: '#8B7355' }}>Stanza</p><p className="font-medium">{tenant.room_info.room_number}</p></div>
-                  <div><p className="text-xs uppercase" style={{ color: '#8B7355' }}>Tipo</p><p className="font-medium">{tenant.room_info.room_type === 'single' ? 'Singola' : 'Doppia'}</p></div>
+                  <div><p className="text-xs uppercase" style={{ color: '#64748B' }}>Stanza</p><p className="font-medium">{tenant.room_info.room_number}</p></div>
+                  <div><p className="text-xs uppercase" style={{ color: '#64748B' }}>Tipo</p><p className="font-medium">{tenant.room_info.room_type === 'single' ? 'Singola' : 'Doppia'}</p></div>
                 </>}
               </div>
             </div>
@@ -354,39 +354,39 @@ const TenantDetail = () => {
 
           {/* Payments History */}
           <div className="luxury-card p-7">
-            <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
+            <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#0B8A3E' }}>
               <CreditCard size={20} /> Storico Pagamenti
             </h3>
             {tenant.payments?.length > 0 ? (
               <div className="space-y-2">
                 {tenant.payments.map(p => (
-                  <div key={p.id} className="flex items-center justify-between py-3 px-4 rounded-xl" style={{ background: 'rgba(250,247,240,0.5)', border: '1px solid rgba(184,134,11,0.08)' }}>
+                  <div key={p.id} className="flex items-center justify-between py-3 px-4 rounded-xl" style={{ background: 'rgba(250,247,240,0.5)', border: '1px solid rgba(217,42,42,0.08)' }}>
                     <div>
-                      <p className="font-medium text-sm" style={{ color: '#2C1810' }}>&euro;{p.amount?.toFixed(2)}</p>
-                      <p className="text-xs" style={{ color: '#8B7355' }}>{p.payment_date} - {p.payment_method}</p>
+                      <p className="font-medium text-sm" style={{ color: '#0F172A' }}>&euro;{p.amount?.toFixed(2)}</p>
+                      <p className="text-xs" style={{ color: '#64748B' }}>{p.payment_date} - {p.payment_method}</p>
                     </div>
-                    {p.notes && <p className="text-xs notes-text" style={{ color: '#8B7355' }}>{p.notes}</p>}
+                    {p.notes && <p className="text-xs notes-text" style={{ color: '#64748B' }}>{p.notes}</p>}
                   </div>
                 ))}
               </div>
-            ) : <p style={{ color: '#8B7355' }}>Nessun pagamento registrato</p>}
+            ) : <p style={{ color: '#64748B' }}>Nessun pagamento registrato</p>}
           </div>
 
           {/* Documents */}
           <div className="luxury-card p-7">
-            <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#9F1239' }}>
+            <h3 className="text-lg font-semibold font-heading mb-4 flex items-center gap-2" style={{ color: '#0B8A3E' }}>
               <FileText size={20} /> Documenti
             </h3>
             <div className="flex gap-3 mb-4 flex-wrap">
               <label className="cursor-pointer">
                 <input type="file" className="hidden" onChange={e => handleUpload(e, 'passport')} />
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm" style={{ background: 'rgba(159,18,57,0.05)', border: '1px solid rgba(159,18,57,0.2)', color: '#9F1239' }}>
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm" style={{ background: 'rgba(11,138,62,0.05)', border: '1px solid rgba(11,138,62,0.2)', color: '#0B8A3E' }}>
                   <Upload size={16} /> Carica Passaporto
                 </span>
               </label>
               <label className="cursor-pointer">
                 <input type="file" className="hidden" onChange={e => handleUpload(e, 'id_card')} />
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm" style={{ background: 'rgba(184,134,11,0.05)', border: '1px solid rgba(184,134,11,0.2)', color: '#B8860B' }}>
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm" style={{ background: 'rgba(217,42,42,0.05)', border: '1px solid rgba(217,42,42,0.2)', color: '#D92A2A' }}>
                   <Upload size={16} /> Carica Doc. Identita
                 </span>
               </label>
@@ -400,10 +400,10 @@ const TenantDetail = () => {
             {tenant.documents?.length > 0 ? (
               <div className="space-y-2">
                 {tenant.documents.map(doc => (
-                  <div key={doc.id} className="flex items-center justify-between py-2 px-4 rounded-xl" style={{ border: '1px solid rgba(184,134,11,0.1)' }}>
+                  <div key={doc.id} className="flex items-center justify-between py-2 px-4 rounded-xl" style={{ border: '1px solid rgba(217,42,42,0.1)' }}>
                     <div>
-                      <p className="text-sm font-medium" style={{ color: '#2C1810' }}>{doc.filename}</p>
-                      <p className="text-xs" style={{ color: '#8B7355' }}>{doc.doc_type} - {doc.uploaded_at?.slice(0, 10)}</p>
+                      <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{doc.filename}</p>
+                      <p className="text-xs" style={{ color: '#64748B' }}>{doc.doc_type} - {doc.uploaded_at?.slice(0, 10)}</p>
                     </div>
                     <div className="flex gap-2">
                       <a href={`${process.env.REACT_APP_BACKEND_URL}${doc.url}`} target="_blank" rel="noreferrer">
@@ -414,7 +414,7 @@ const TenantDetail = () => {
                   </div>
                 ))}
               </div>
-            ) : <p style={{ color: '#8B7355' }}>Nessun documento caricato</p>}
+            ) : <p style={{ color: '#64748B' }}>Nessun documento caricato</p>}
           </div>
         </div>
 
@@ -422,7 +422,7 @@ const TenantDetail = () => {
         <div className="space-y-6">
           {/* Current Month Status */}
           <div className="luxury-card p-7">
-            <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Stato Mese Corrente</h3>
+            <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#0B8A3E' }}>Stato Mese Corrente</h3>
             {tenant.payment_status === 'paid' ? (
               <div className="p-4 rounded-xl" style={{ background: '#ECFDF5', border: '1px solid rgba(5,150,105,0.2)' }}>
                 <div className="flex items-center gap-2 mb-2">
@@ -431,7 +431,7 @@ const TenantDetail = () => {
                 </div>
                 <p className="text-2xl font-bold" style={{ color: '#059669' }}>&euro;{(tenant.month_paid_amount || 0).toFixed(2)}</p>
                 {tenant.month_payment_method && (
-                  <p className="text-sm mt-1" style={{ color: '#8B7355' }}>Metodo: {tenant.month_payment_method}</p>
+                  <p className="text-sm mt-1" style={{ color: '#64748B' }}>Metodo: {tenant.month_payment_method}</p>
                 )}
               </div>
             ) : (
@@ -446,20 +446,20 @@ const TenantDetail = () => {
 
           {/* Deposit (Guarantee - constant) */}
           <div className="luxury-card p-7">
-            <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Deposito Garanzia</h3>
-            <p className="text-2xl font-bold" style={{ color: '#2C1810' }}>&euro;{(tenant.deposit_amount || 0).toFixed(2)}</p>
-            <p className="text-xs mt-1" style={{ color: '#8B7355' }}>Il deposito e solo garanzia, non viene scalato</p>
+            <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#0B8A3E' }}>Deposito Garanzia</h3>
+            <p className="text-2xl font-bold" style={{ color: '#0F172A' }}>&euro;{(tenant.deposit_amount || 0).toFixed(2)}</p>
+            <p className="text-xs mt-1" style={{ color: '#64748B' }}>Il deposito e solo garanzia, non viene scalato</p>
           </div>
 
           {/* Contracts */}
           {tenant.contracts?.length > 0 && (
             <div className="luxury-card p-7">
-              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Contratti</h3>
+              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#0B8A3E' }}>Contratti</h3>
               <div className="space-y-2">
                 {tenant.contracts.map(c => (
-                  <div key={c.id} className="p-3 rounded-xl" style={{ border: '1px solid rgba(184,134,11,0.1)' }}>
-                    <p className="text-sm font-medium font-mono" style={{ color: '#2C1810' }}>{c.contract_number}</p>
-                    <p className="text-xs" style={{ color: '#8B7355' }}>{c.start_date} - {c.end_date}</p>
+                  <div key={c.id} className="p-3 rounded-xl" style={{ border: '1px solid rgba(217,42,42,0.1)' }}>
+                    <p className="text-sm font-medium font-mono" style={{ color: '#0F172A' }}>{c.contract_number}</p>
+                    <p className="text-xs" style={{ color: '#64748B' }}>{c.start_date} - {c.end_date}</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>{c.status}</span>
                   </div>
                 ))}
@@ -470,17 +470,17 @@ const TenantDetail = () => {
           {/* Invoices */}
           {tenant.invoices?.length > 0 && (
             <div className="luxury-card p-7">
-              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#9F1239' }}>Fatture</h3>
+              <h3 className="text-lg font-semibold font-heading mb-4" style={{ color: '#0B8A3E' }}>Fatture</h3>
               <div className="space-y-2">
                 {tenant.invoices.map(inv => (
-                  <div key={inv.id} className="p-3 rounded-xl" style={{ border: '1px solid rgba(184,134,11,0.1)' }}>
+                  <div key={inv.id} className="p-3 rounded-xl" style={{ border: '1px solid rgba(217,42,42,0.1)' }}>
                     <div className="flex justify-between">
-                      <p className="text-sm font-mono" style={{ color: '#2C1810' }}>{inv.invoice_number}</p>
+                      <p className="text-sm font-mono" style={{ color: '#0F172A' }}>{inv.invoice_number}</p>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${inv.payment_status === 'paid' ? 'bg-green-100 text-green-700' : inv.payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
                         {inv.payment_status === 'paid' ? 'Pagato' : inv.payment_status === 'partial' ? 'Parziale' : 'Non Pagato'}
                       </span>
                     </div>
-                    <p className="text-xs" style={{ color: '#8B7355' }}>&euro;{inv.amount?.toFixed(2)} - Scadenza: {inv.due_date}</p>
+                    <p className="text-xs" style={{ color: '#64748B' }}>&euro;{inv.amount?.toFixed(2)} - Scadenza: {inv.due_date}</p>
                   </div>
                 ))}
               </div>

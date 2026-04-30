@@ -43,7 +43,7 @@ export const Combobox = ({ options, value, onChange, placeholder, dataTestid, di
       {open && filtered.length > 0 && (
         <div
           className="absolute left-0 right-0 mt-1 rounded-xl shadow-lg z-50 max-h-56 overflow-y-auto"
-          style={{ background: 'white', border: '1px solid rgba(184,134,11,0.2)' }}
+          style={{ background: 'white', border: '1px solid rgba(217,42,42,0.2)' }}
         >
           {filtered.map((o, idx) => (
             <button
@@ -51,9 +51,9 @@ export const Combobox = ({ options, value, onChange, placeholder, dataTestid, di
               type="button"
               onClick={() => pick(o)}
               className="w-full text-left px-3 py-2 text-sm hover:bg-rose-50/50 transition-colors"
-              style={{ color: '#2C1810' }}
+              style={{ color: '#0F172A' }}
             >
-              {o.label}{Array.isArray(options[0]) && o.value !== o.label ? <span className="ml-2 text-xs" style={{ color: '#8B7355' }}>({o.value})</span> : null}
+              {o.label}{Array.isArray(options[0]) && o.value !== o.label ? <span className="ml-2 text-xs" style={{ color: '#64748B' }}>({o.value})</span> : null}
             </button>
           ))}
         </div>

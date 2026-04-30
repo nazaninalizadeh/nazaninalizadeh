@@ -120,7 +120,7 @@ def generate_luxury_invoice_pdf(invoice_data):
     # نام شرکت (فونت cursive شبیه‌ساز)
     c.setFillColor(colors.HexColor('#9F1239'))
     c.setFont('Helvetica-BoldOblique', 20)
-    company_name = "Consulenze immobiliari"
+    company_name = "Housing in Padova"
     c.drawCentredString(width / 2, logo_y - 50, company_name)
     
     # خدمات
@@ -186,7 +186,7 @@ def generate_luxury_invoice_pdf(invoice_data):
     
     c.setFont('Helvetica', 7)
     c.setFillColor(colors.HexColor('#6B7280'))
-    footer_text = "Consulenze immobiliari - Via Vigonovese 114"
+    footer_text = "Housing in Padova - by Consulenze Immobiliari"
     c.drawCentredString(width / 2, 50, footer_text)
     
     c.save()

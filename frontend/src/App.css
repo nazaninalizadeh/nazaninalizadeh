@@ -6,7 +6,7 @@
 
 body {
   font-family: 'DM Sans', -apple-system, sans-serif;
-  background: linear-gradient(135deg, #FAF7F0 0%, #F5F1E8 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -14,12 +14,12 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Playfair Display', serif;
-  color: #9F1239;
+  color: #0B8A3E;
 }
 
 .App {
   min-height: 100vh;
-  background: linear-gradient(135deg, #FAF7F0 0%, #F5F1E8 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
 }
 
 .font-heading {
@@ -49,10 +49,10 @@ h1, h2, h3, h4, h5, h6 {
 
 @keyframes goldShine {
   0%, 100% {
-    text-shadow: 0 0 10px rgba(184, 134, 11, 0.3);
+    text-shadow: 0 0 10px rgba(217, 42, 42, 0.3);
   }
   50% {
-    text-shadow: 0 0 20px rgba(184, 134, 11, 0.6);
+    text-shadow: 0 0 20px rgba(217, 42, 42, 0.6);
   }
 }
 
@@ -94,7 +94,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Playfair Display', serif;
   font-size: 3rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #9F1239 0%, #DC2626 50%, #B8860B 100%);
+  background: linear-gradient(135deg, #0B8A3E 0%, #DC2626 50%, #D92A2A 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -114,30 +114,30 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(184, 134, 11, 0.2);
+  border: 1px solid rgba(217, 42, 42, 0.2);
   box-shadow: 
-    0 8px 32px rgba(159, 18, 57, 0.12),
+    0 8px 32px rgba(11, 138, 62, 0.12),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
 .luxury-gradient-bg {
   background: linear-gradient(135deg, 
-    rgba(159, 18, 57, 0.02) 0%, 
-    rgba(184, 134, 11, 0.02) 50%, 
-    rgba(159, 18, 57, 0.02) 100%);
+    rgba(11, 138, 62, 0.02) 0%, 
+    rgba(217, 42, 42, 0.02) 50%, 
+    rgba(11, 138, 62, 0.02) 100%);
 }
 
 /* ===== Luxury Borders ===== */
 
 .border-luxury {
-  border: 1px solid rgba(184, 134, 11, 0.2);
-  border-image: linear-gradient(135deg, #9F1239, #B8860B, #9F1239) 1;
+  border: 1px solid rgba(217, 42, 42, 0.2);
+  border-image: linear-gradient(135deg, #0B8A3E, #D92A2A, #0B8A3E) 1;
 }
 
 .border-luxury-thick {
   border: 2px solid transparent;
   background: linear-gradient(white, white) padding-box,
-              linear-gradient(135deg, #9F1239, #B8860B) border-box;
+              linear-gradient(135deg, #0B8A3E, #D92A2A) border-box;
 }
 
 /* ===== Hover Effects ===== */
@@ -148,7 +148,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .hover-lift:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 16px 48px rgba(159, 18, 57, 0.2);
+  box-shadow: 0 16px 48px rgba(11, 138, 62, 0.2);
 }
 
 .hover-glow {
@@ -157,14 +157,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .hover-glow:hover {
   box-shadow: 
-    0 0 20px rgba(159, 18, 57, 0.4),
-    0 0 40px rgba(184, 134, 11, 0.2);
+    0 0 20px rgba(11, 138, 62, 0.4),
+    0 0 40px rgba(217, 42, 42, 0.2);
 }
 
 /* ===== Text Decorations ===== */
 
 .text-luxury {
-  background: linear-gradient(135deg, #9F1239 0%, #BE123C 100%);
+  background: linear-gradient(135deg, #0B8A3E 0%, #076B2D 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -172,7 +172,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .text-gold {
-  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  background: linear-gradient(135deg, #D92A2A 0%, #DAA520 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -183,20 +183,20 @@ h1, h2, h3, h4, h5, h6 {
 
 .shadow-luxury {
   box-shadow: 
-    0 4px 20px rgba(159, 18, 57, 0.1),
-    0 0 0 1px rgba(184, 134, 11, 0.05) inset;
+    0 4px 20px rgba(11, 138, 62, 0.1),
+    0 0 0 1px rgba(217, 42, 42, 0.05) inset;
 }
 
 .shadow-luxury-lg {
   box-shadow: 
-    0 12px 40px rgba(159, 18, 57, 0.15),
-    0 0 0 1px rgba(184, 134, 11, 0.1) inset;
+    0 12px 40px rgba(11, 138, 62, 0.15),
+    0 0 0 1px rgba(217, 42, 42, 0.1) inset;
 }
 
 .shadow-luxury-xl {
   box-shadow: 
-    0 24px 64px rgba(159, 18, 57, 0.2),
-    0 0 0 1px rgba(184, 134, 11, 0.15) inset;
+    0 24px 64px rgba(11, 138, 62, 0.2),
+    0 0 0 1px rgba(217, 42, 42, 0.15) inset;
 }
 
 /* ===== Icon Animations ===== */
@@ -220,9 +220,9 @@ h1, h2, h3, h4, h5, h6 {
 .skeleton-luxury {
   background: linear-gradient(
     90deg,
-    #FAF7F0 25%,
-    #F5F1E8 50%,
-    #FAF7F0 75%
+    #FFFFFF 25%,
+    #F8FAFC 50%,
+    #FFFFFF 75%
   );
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;

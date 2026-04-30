@@ -128,7 +128,7 @@ const OcrScanner = ({ onDataExtracted }) => {
         />
         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer transition-all hover:shadow-md"
           style={{
-            background: 'linear-gradient(135deg, #9F1239 0%, #BE123C 100%)',
+            background: 'linear-gradient(135deg, #0B8A3E 0%, #076B2D 100%)',
             color: 'white',
           }}>
           <ScanLine size={16} />
@@ -140,7 +140,7 @@ const OcrScanner = ({ onDataExtracted }) => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto luxury-modal">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ScanLine size={20} style={{ color: '#9F1239' }} />
+              <ScanLine size={20} style={{ color: '#0B8A3E' }} />
               Scansione OCR Documento
             </DialogTitle>
           </DialogHeader>
@@ -148,21 +148,21 @@ const OcrScanner = ({ onDataExtracted }) => {
           <div className="space-y-4">
             {/* Preview */}
             {preview && (
-              <div className="rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(184,134,11,0.15)' }}>
+              <div className="rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(217,42,42,0.15)' }}>
                 <img src={preview} alt="Document preview" className="w-full max-h-64 object-contain bg-gray-50" />
               </div>
             )}
 
             {/* Status */}
             <div className="flex items-center gap-3 p-4 rounded-xl" style={{
-              background: status === 'processing' ? 'rgba(184,134,11,0.05)' :
+              background: status === 'processing' ? 'rgba(217,42,42,0.05)' :
                 status === 'completed' ? 'rgba(5,150,105,0.05)' :
                   status === 'failed' ? 'rgba(220,38,38,0.05)' : 'transparent'
             }}>
               {status === 'processing' && (
                 <>
-                  <Loader2 size={20} className="animate-spin" style={{ color: '#B8860B' }} />
-                  <span style={{ color: '#8B7355' }}>Analisi del documento in corso...</span>
+                  <Loader2 size={20} className="animate-spin" style={{ color: '#D92A2A' }} />
+                  <span style={{ color: '#64748B' }}>Analisi del documento in corso...</span>
                 </>
               )}
               {status === 'completed' && (
@@ -182,7 +182,7 @@ const OcrScanner = ({ onDataExtracted }) => {
             {/* Extracted Data */}
             {result && (
               <div className="space-y-2">
-                <h4 className="text-sm font-semibold" style={{ color: '#4A3B31' }}>Dati Estratti:</h4>
+                <h4 className="text-sm font-semibold" style={{ color: '#334155' }}>Dati Estratti:</h4>
                 {result.confidence && result.confidence !== 'high' && (
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(217,119,6,0.08)' }}>
                     <AlertTriangle size={14} style={{ color: '#D97706' }} />
@@ -195,11 +195,11 @@ const OcrScanner = ({ onDataExtracted }) => {
                   {Object.entries(result).map(([key, value]) => {
                     if (!value || key === 'confidence') return null;
                     return (
-                      <div key={key} className="p-2 rounded-lg" style={{ background: 'rgba(250,247,240,0.5)', border: '1px solid rgba(184,134,11,0.1)' }}>
-                        <p className="text-[10px] uppercase tracking-wide" style={{ color: '#8B7355' }}>
+                      <div key={key} className="p-2 rounded-lg" style={{ background: 'rgba(250,247,240,0.5)', border: '1px solid rgba(217,42,42,0.1)' }}>
+                        <p className="text-[10px] uppercase tracking-wide" style={{ color: '#64748B' }}>
                           {fieldLabels[key] || key}
                         </p>
-                        <p className="text-sm font-medium" style={{ color: '#2C1810' }}>{value}</p>
+                        <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{value}</p>
                       </div>
                     );
                   })}
