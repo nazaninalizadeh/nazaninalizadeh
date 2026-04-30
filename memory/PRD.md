@@ -110,6 +110,20 @@ Proprietari | Immobili | Inquilini | Dashboard | Pagamenti | Ospitalità | Regis
 - P2: Make signature transparency threshold tunable (currently hard-coded RGB > 235)
 - P2: Aggregate room counts in single $facet pipeline (current: N+1 per property)
 
+## DONE (Apr 30, 2026 — Third batch): Housing in Padova Rebrand + Clean UI
+- Global text swap: "Consulenze immobiliari" → "Housing in Padova" everywhere (sidebar, login, footer, HTML title, email reminders, Ricevuta PDF, invoice_generator.py). Left "CONSIMMOBILIARI S.A.S." (legal entity on Fattura) and "Via Vigonovese 114 - Padova" (Fattura footer) intact because they are legal/invoice requirements. Allowed "by Consulenze Immobiliari" suffix retained as secondary lockup.
+- Logo integration: `/app/frontend/public/assets/logo.jpeg` shown in Sidebar (data-testid=app-logo) and Login page (data-testid=login-logo).
+- Color system (logo-derived):
+   - Primary Green `#0B8A3E` (dark emerald) — buttons, active nav, links, H3 accents.
+   - Primary Dark `#076B2D` (hover).
+   - Accent Red `#D92A2A` — subtitle "BY CONSULENZE IMMOBILIARI", alerts.
+   - Neutral `#F8FAFC` (slate-50) body bg; `#FFFFFF` cards; `#E2E8F0` borders; `#0F172A`/`#334155`/`#64748B`/`#94A3B8` text tiers.
+- Typography: Switched h1–h6 + `.luxury-title`/`.luxury-subtitle`/.font-heading from Playfair Display serif → DM Sans sans-serif. Default page H1 = 1.875rem bold slate-900.
+- Clean UI rules: flat `btn-luxury` (solid green, no gradient/shimmer), flat `luxury-card` (white + slate-200 border, no cream gradient), flat `luxury-table` head (slate-50 bg, slate-700 text), flat sidebar (white, no gradient, no translateX hover), neutral scrollbar.
+- Login page redesign: light slate-50 bg (removed dark navy gradient), centered logo above heading, flat green Accedi button.
+- Global sed-based color swap applied across 230+ inline-style references in /app/frontend/src; no leftover rose/gold/cream in the codebase (verified grep = 0).
+- Verified via /app/test_reports/iteration_23.json: Backend 17/17 PASS (CRUD, OCR, PDFs, emails, manual hospitality), Frontend 100% PASS (branding, responsive 390px, nav testids, no old brand/colors).
+
 ## DONE (Apr 30, 2026 — second batch): 5 user-requested fixes + Manual Hospitality
 - Properties structured address: split into address (Via), civico, comune, province (no combined "Indirizzo" field). GET endpoints normalize legacy docs (defaults: civico='', comune='', province='PD').
 - Payment Calendar receipt upload: per-month POST /api/payment-calendar/{tid}/{y}/{m}/receipt + DELETE; UI in TenantDetail with PDF/image preview and remove.
