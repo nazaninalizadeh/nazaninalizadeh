@@ -1,0 +1,78 @@
+{
+  "summary": "Iteration 21 verifies 5 requested features. PASS: (1) Properties structured address (Via, Civico, Comune, Provincia) with proper data-testids — POST creates and persists all fields. (4) Fattura/Preavviso PDFs generate via ReportLab canvas with absolute mm coords (no HTML/CSS PDF regression). (5) Sidebar has 'Preavviso di Fatturazione' as separate menu entry, /preavviso route renders without errors. Payment Calendar receipt upload+delete backend works (POST/DELETE /api/payment-calendar/{tid}/{y}/{m}/receipt OK; GET shows receipt_url in calendar months). Owners authority field, tenants list, dashboard, invoice PDF — all green regression. FAIL/CRITICAL: (3) Manual Hospitality creation with only landlord_id + contract_id (no tenant) is NOT implemented end-to-end. Backend HospitalityCreate schema still requires tenant_id, property_id, check_in_date (POST returns 422 on manual payload). Frontend Hospitality.js form still has 'Inquilino *' and 'Immobile *' as required selects — no 'Crea Manualmente' toggle. MEDIUM: GET /api/properties does NOT normalize legacy property docs to expose civico/comune/province (existing rows lack these keys). Newly-created rows are fine; old data displays empty in form (acceptable but worth a one-time backfill).",
+  "fixes_verified": {
+    "FEAT1_PROPERTIES_STRUCTURED_ADDRESS": {
+      "status": "PASS",
+      "evidence": "Form has data-testids: property-via, property-civico, property-comune, property-province (placeholders 'Via Magenta', '11', 'Padova', 'PD - Padova'). POST /api/properties with {address:'Via Roma', civico:'12', comune:'Padova', province:'PD'} returns 200 and GET persists all four. No combined single 'address' field in form."
+    },
+    "FEAT2_PAYMENT_CALENDAR_RECEIPT": {
+      "status": "PASS",
+      "evidence": "POST /api/payment-calendar/{tid}/2026/1/receipt with PDF -> 200 + receipt_url. GET /api/payment-calendar/{tid} returns calendar[].receipt_url for month 1. DELETE works. TenantDetail UI shows 'Calendario Pagamenti 2026' grid with monthly cards; receipt-upload button visible per month."
+    },
+    "FEAT3_HOSPITALITY_MANUAL_NO_TENANT": {
+      "status": "FAIL",
+      "evidence": "Backend: POST /api/hospitality/records with {landlord_id, contract_id, guest_name} -> 422 Unprocessable Entity. HospitalityCreate (routes/hospitality.py:17) declares tenant_id:str (required), property_id:str (required), check_in_date:str (required). Endpoint also asserts tenant exists in DB at line 45-47. Frontend (Hospitality.js): single dialog has Inquilino*, Immobile*, Proprietario*, Contratto fields — no toggle to skip Inquilino/Immobile. No data-testid for a 'manual mode' switch. Feature spec NOT met.",
+      "root_cause": "Schema and route still treat tenant_id as the primary key (idempotent upsert by tenant_id at line 60). To support manual mode the schema must allow Optional[str] for tenant_id/property_id/check_in_date, and the route must branch on whether tenant_id is supplied. UI must add a 'Crea Manualmente' toggle/segment that hides Inquilino/Immobile selects and treats landlord_id+contract_id as the primary identifiers."
+    },
+    "FEAT4_PREAVVISO_AS_SEPARATE_MENU": {
+      "status": "PASS",
+      "evidence": "Layout sidebar shows 'Preavviso di Fatturazione' link, /preavviso route renders Preavviso page (h1 'Preavviso di Fatturazione', 'Documenti' section). No errors on the page. ReportLab generation: services/invoice_pdf.py uses canvas.drawString with mm coords for both fattura & preavviso — confirmed no HTML/CSS PDF regression."
+    },
+    "FEAT5_OLD_SINGLE_ADDRESS_FIELD_REMOVED": {
+      "status": "PASS",
+      "evidence": "Properties form contains separate Via/Civico/Comune/Provincia inputs only. No combined 'Indirizzo' single field present. Backend schema PropertyCreate still has 'address' as the Via/Piazza component (intended)."
+    }
+  },
+  "regression_smoke_backend": {
+    "auth_login": "PASS",
+    "GET /api/landlords (authority field)": "PASS — authority key present",
+    "GET /api/tenants": "PASS",
+    "GET /api/dashboard/stats": "PASS",
+    "GET /api/invoices/{id}/pdf": "PASS — %PDF magic bytes",
+    "POST /api/properties (structured)": "PASS",
+    "POST + DELETE /api/payment-calendar/.../receipt": "PASS"
+  },
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/hospitality/records", "issue": "Manual mode (landlord_id + contract_id only, no tenant_id) returns 422. Schema requires tenant_id/property_id/check_in_date. Feature spec for iteration 21 not implemented.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/properties", "issue": "Legacy property documents in DB lack civico/comune fields entirely (not even empty string). Response should normalize: ensure civico='', comune='' in projection so frontend forms hydrate cleanly when editing old records.", "priority": "MEDIUM"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Hospitality.js dialog", "issue": "No 'Crea Manualmente' toggle/segment. Inquilino and Immobile selects are required (* marker). Even if backend accepted manual payload, the UI cannot submit without selecting tenant+property.", "selector": "[data-testid='hospitality-tenant-select'], [data-testid='hospitality-landlord-select']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Properties dialog", "issues": ["DialogContent missing aria-describedby (console warning) — accessibility minor"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration21.py",
+    "/app/test_reports/pytest/iter21.xml"
+  ],
+  "action_items": [
+    "HIGH: Update HospitalityCreate schema in /app/backend/routes/hospitality.py — make tenant_id, property_id, check_in_date Optional. Branch upsert key: if tenant_id present use it (current behavior); else use (landlord_id, contract_id) tuple. Skip tenant/property DB existence checks when fields are empty.",
+    "HIGH: Update /app/frontend/src/pages/Hospitality.js — add a mode toggle ('Da Inquilino' vs 'Crea Manualmente'). In manual mode hide Inquilino/Immobile selects and require Proprietario + Contratto. Add data-testid='hospitality-mode-manual' for testability.",
+    "MEDIUM: In /app/backend/routes/properties.py GET handler, project default empty strings for civico/comune/province on legacy docs (or run a one-time migration to backfill the keys).",
+    "LOW: Add aria-describedby on Properties / Hospitality DialogContent to silence Radix warning."
+  ],
+  "critical_code_review_comments": [
+    "Hospitality.py lines 60-68: idempotent upsert keyed by tenant_id will cause data loss in manual mode (multiple manual records for same landlord could collide). Use a compound natural key (tenant_id OR (landlord_id+contract_id)) once manual mode is added.",
+    "Properties: PropertyCreate.address is required while civico/comune are optional. Consider making comune required too (it is the city — important for invoices). Already shown as 'Comune *' in the UI — schema should match.",
+    "invoice_pdf.py correctly uses ReportLab canvas with absolute mm coordinates for both fattura and preavviso — no HTML/CSS regression, design preserved.",
+    "test_iteration21.py reuses BASE_URL from REACT_APP_BACKEND_URL and bypass captcha via 'test-bypass' token (login PASS — confirms backend permits this in non-prod)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration21.py (new)"
+  ],
+  "success_rate": {"backend": "86% (6/7 — manual hospitality fails)", "frontend": "80% (4/5 — manual hospitality UI missing)"},
+  "test_credentials": "alborz.sbd@gmail.com / 1234@Admin (super_admin)",
+  "seed_data_creation": "Test created and deleted one TEST_IT21_PROP property; uploaded+deleted one receipt for an existing tenant. No persistent test data left.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "After main agent implements manual hospitality (schema Optional fields + frontend mode toggle), re-run /app/backend/tests/test_iteration21.py::TestHospitalityManual::test_manual_create_landlord_contract — expect POST/PUT to return 200/201 and persist the record. Then UI smoke: open /hospitality, click 'Crea Manualmente' (or whatever data-testid is added), fill Proprietario+Contratto, submit, verify record appears in list and PDF generates. Backend smoke pytest is fast (~2s). Properties civico/comune normalization is medium priority — verify GET /api/properties returns civico:'',comune:'' on every row even legacy.",
+  "rca of the issue": "Iteration 21 spec called for a manual hospitality flow that bypasses tenant lookup, but only the Italian frontend wording was partially evolved (landlord_id + contract_id stored on the record). The schema and route in /app/backend/routes/hospitality.py were not refactored: HospitalityCreate.tenant_id/property_id/check_in_date are still required (Pydantic 'missing' on absence -> 422). Idempotency is still keyed only on tenant_id (line 60), so even a relaxed schema would create undefined behavior across multiple manual records for the same landlord+contract. Mitigation requires both backend (Optional fields, branched upsert key) and frontend (mode toggle hiding Inquilino/Immobile). Until then, the feature is non-functional in production."
+}
