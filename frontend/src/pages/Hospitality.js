@@ -21,6 +21,7 @@ const Hospitality = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [downloading, setDownloading] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);  // record id being edited (null = create mode)
 
   // OCR state
   const [ocrStatus, setOcrStatus] = useState('idle');
@@ -125,13 +126,28 @@ const Hospitality = () => {
       return;
     }
     try {
-      await axios.post(`${API}/hospitality/records`, form, { withCredentials: true });
-      toast.success('Record ospitalita creato');
+      if (editingId) {
+        await axios.put(`${API}/hospitality/records/${editingId}`, form, { withCredentials: true });
+        toast.success('Record ospitalita aggiornato');
+      } else {
+        await axios.post(`${API}/hospitality/records`, form, { withCredentials: true });
+        toast.success('Record ospitalita creato');
+      }
       setCreateOpen(false);
-      setForm({ tenant_id: '', property_id: '', room_id: '', check_in_date: '', check_out_date: '', hosting_type: 'alloggio', host_surname: '', host_name: '', host_dob: '', host_birth_place: '', host_province: '', host_residence: '', property_comune: '', property_provincia: '', property_number: '', property_interno: '', property_piano: '', notes: '' });
+      setEditingId(null);
+      setForm({ tenant_id: '', property_id: '', room_id: '', check_in_date: '', check_out_date: '', hosting_type: 'alloggio', host_surname: '', host_name: '', host_dob: '', host_birth_place: '', host_province: '', host_residence: '', property_comune: '', property_provincia: '', property_number: '', property_interno: '', property_piano: '', notes: '', signature_type: 'owner' });
       setOcrStatus('idle');
       setOcrResult(null);
       setOcrPreview(null);
+      fetchAll();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+  };
+
+  const handleDeleteRecord = async (id) => {
+    if (!window.confirm('Eliminare questo record di ospitalita?')) return;
+    try {
+      await axios.delete(`${API}/hospitality/records/${id}`, { withCredentials: true });
+      toast.success('Record eliminato');
       fetchAll();
     } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
@@ -153,14 +169,14 @@ const Hospitality = () => {
           <h1 className="luxury-title mb-2">Ospitalita</h1>
           <p className="luxury-subtitle">Comunicazione di ospitalita - Art. 7 D.Lvo 286/98</p>
         </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) setEditingId(null); }}>
           <DialogTrigger asChild>
             <Button className="btn-luxury" data-testid="create-hospitality-button">
               <Plus size={18} className="mr-2" /> Nuova Ospitalita
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto luxury-modal">
-            <DialogHeader><DialogTitle>Nuova Comunicazione di Ospitalita</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingId ? 'Modifica Comunicazione di Ospitalita' : 'Nuova Comunicazione di Ospitalita'}</DialogTitle></DialogHeader>
             <form onSubmit={handleCreateSubmit} className="space-y-5">
 
               {/* OCR Section */}
@@ -318,7 +334,7 @@ const Hospitality = () => {
 
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} className="rounded-xl">Annulla</Button>
-                <Button type="submit" className="btn-luxury">Crea e Salva</Button>
+                <Button type="submit" className="btn-luxury" data-testid="hospitality-submit">{editingId ? 'Aggiorna Record' : 'Crea e Salva'}</Button>
               </div>
             </form>
           </DialogContent>
@@ -339,6 +355,7 @@ const Hospitality = () => {
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => {
                     // Re-open the create dialog with this record's data so the user can edit & re-save
+                    setEditingId(r.id);
                     setForm({
                       tenant_id: r.tenant_id || '',
                       property_id: r.property_id || '',
@@ -356,6 +373,7 @@ const Hospitality = () => {
                     });
                     setCreateOpen(true);
                   }} data-testid={`edit-hospitality-${r.id}`}>Modifica</Button>
+                  <Button size="sm" variant="outline" className="text-xs" style={{ color: '#9F1239', borderColor: '#9F1239' }} onClick={() => handleDeleteRecord(r.id)} data-testid={`delete-hospitality-${r.id}`}>Elimina</Button>
                   <Button size="sm" className="btn-luxury text-xs" onClick={() => handleDownloadPdf(r.tenant_id, r.tenant_name)}>
                     <Download size={14} className="mr-1" /> PDF
                   </Button>

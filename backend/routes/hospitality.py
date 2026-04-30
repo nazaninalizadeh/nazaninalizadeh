@@ -68,6 +68,42 @@ async def create_hospitality_record(record: HospitalityCreate, user: dict = Depe
     return d
 
 
+@router.put("/records/{record_id}")
+async def update_hospitality_record(record_id: str, record: HospitalityCreate, user: dict = Depends(get_current_user)):
+    """Explicit PUT endpoint for editing a hospitality record by its id."""
+    existing = await db.hospitality_records.find_one({"id": record_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Record ospitalita non trovato")
+
+    tenant = await db.tenants.find_one({"id": record.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Inquilino non trovato")
+    prop = await db.properties.find_one({"id": record.property_id}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Immobile non trovato")
+
+    d = record.model_dump()
+    d["id"] = record_id
+    d["tenant_name"] = tenant.get("full_name", "")
+    d["property_address"] = prop.get("address", "")
+    d["status"] = existing.get("status", "active")
+    d["created_at"] = existing.get("created_at")
+    d["created_by"] = existing.get("created_by")
+    d["updated_at"] = datetime.now(timezone.utc).isoformat()
+    d["updated_by"] = user.get("email", "")
+    await db.hospitality_records.update_one({"id": record_id}, {"$set": d})
+    return d
+
+
+@router.delete("/records/{record_id}")
+async def delete_hospitality_record(record_id: str, user: dict = Depends(get_current_user)):
+    """Delete a hospitality record."""
+    res = await db.hospitality_records.delete_one({"id": record_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Record ospitalita non trovato")
+    return {"message": "Record eliminato"}
+
+
 @router.get("/records")
 async def get_hospitality_records(user: dict = Depends(get_current_user)):
     """List all hospitality records."""

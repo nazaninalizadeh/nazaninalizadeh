@@ -117,7 +117,7 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     LEFT = 18 * mm
     RIGHT = W - 18 * mm
 
-    # ---------- 1) Top-right header (issuer) ----------
+    # ---------- 1) Top-right header (issuer, 3 lines) ----------
     y = H - 18 * mm
     c.setFont("Helvetica-Bold", 9.5)
     c.drawRightString(RIGHT, y, ISSUER_NAME)
@@ -127,26 +127,19 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     y -= 11
     c.drawRightString(RIGHT, y, f"P.iva {ISSUER_PIVA} - C.F. {ISSUER_CF}")
 
-    # ---------- 2) "FATTURA nr. X/YYYY del DD/MM/YYYY" (right-aligned, own row) ----------
+    # ---------- 2) "FATTURA nr. X/YYYY del DD/MM/YYYY" (right-aligned) ----------
     inv_date_str = _fmt_date_it(data.get("invoice_date") or datetime.now().strftime("%Y-%m-%d"))
     try:
         year = int(inv_date_str.split("/")[-1])
     except (ValueError, IndexError):
         year = datetime.now().year
     inv_no = _short_invoice_no(data.get("invoice_number"), year)
-
     y -= 22
     c.setFont("Helvetica-Bold", 12)
     c.drawRightString(RIGHT, y, f"FATTURA  nr. {inv_no}  del  {inv_date_str}")
 
-    # ---------- 3) Horizontal separator ----------
-    sep_y = y - 18
-    c.setLineWidth(0.4)
-    c.line(LEFT, sep_y, RIGHT, sep_y)
-
-    # ---------- 4) Recipient block ----------
-    # Left: small CF/PIVA of recipient (matches reference)
-    rec_y = sep_y - 16
+    # ---------- 3) Recipient block (NO horizontal line above it) ----------
+    rec_y = y - 28
     c.setFont("Helvetica-Bold", 9)
     if data.get("recipient_piva"):
         c.drawString(LEFT, rec_y, "P.IVA")
@@ -158,7 +151,6 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
         c.setFont("Helvetica", 9)
         c.drawString(LEFT + 35, rec_y - 12, str(data["recipient_cf"]))
 
-    # Right: DESTINATARIO block
     rcol_x = LEFT + 95 * mm
     c.setFont("Helvetica", 7.5)
     c.drawString(rcol_x, rec_y, "DESTINATARIO")
@@ -172,8 +164,8 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     if rec_city:
         c.drawString(rcol_x, rec_y - 36, rec_city)
 
-    # ---------- 5) Item table ----------
-    table_top = sep_y - 70
+    # ---------- 4) Item table (top horizontal line + DESCRIZIONE/IMPORTO row) ----------
+    table_top = rec_y - 60
     c.setLineWidth(0.4)
     c.line(LEFT, table_top, RIGHT, table_top)
     c.setFont("Helvetica", 7.5)
@@ -181,14 +173,12 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     c.drawRightString(RIGHT - 4, table_top - 11, "IMPORTO")
     c.line(LEFT, table_top - 16, RIGHT, table_top - 16)
 
-    # Item row (single line)
+    # Item row
     line_amount = float(data.get("line_amount", 0) or 0)
     desc_lines = _wrap(data.get("line_description", ""), 95)
     row_h = 14 + (len(desc_lines) - 1) * 11
     row_top = table_top - 16
     row_bot = row_top - row_h
-    # very light shading (mimic reference's faint row tint via thin dotted-ish look = single bg line)
-    # but rules say "no colors" — so we keep it crisp lines only.
     c.setFont("Helvetica-Bold", 9)
     for i, ln in enumerate(desc_lines):
         c.drawString(LEFT + 4, row_top - 11 - i * 11, ln)
@@ -196,8 +186,8 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     c.drawRightString(RIGHT - 4, row_top - 11, _fmt_eur(line_amount))
     c.line(LEFT, row_bot, RIGHT, row_bot)
 
-    # ---------- 6) NOTE / legal disclaimer ----------
-    note_y = row_bot - 16
+    # ---------- 5) NOTE / legal disclaimer (just below table, no separator) ----------
+    note_y = row_bot - 14
     c.setFont("Helvetica", 7.5)
     c.drawString(LEFT, note_y, "NOTE")
     c.setFont("Helvetica", 9)
@@ -207,14 +197,15 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     c.drawString(LEFT, note_y - 23,
                  "oppure nella Sua area riservata dell'Agenzia delle Entrate.")
 
-    # ---------- 7) Bottom block: MODALITÀ DI PAGAMENTO + SCADENZE ----------
-    pay_top = 105 * mm
+    # ---------- 6) MODALITÀ DI PAGAMENTO + SCADENZE (anchored toward bottom) ----------
+    pay_top = 78 * mm
+    c.setLineWidth(0.4)
     c.line(LEFT, pay_top, RIGHT, pay_top)
     c.setFont("Helvetica", 7.5)
     c.drawString(LEFT, pay_top - 11, "MODALITA' DI PAGAMENTO")
     c.setFont("Helvetica-Bold", 9)
     c.drawString(LEFT, pay_top - 24, "BONIFICO BANCARIO")
-    c.setFont("Helvetica", 9)
+    c.setFont("Helvetica-Bold", 9)
     c.drawString(LEFT, pay_top - 36, f"IBAN: {BANK_IBAN}")
 
     sc_x = LEFT + 95 * mm
@@ -228,18 +219,15 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     totale = round(imponibile + imposte, 2)
     c.drawString(sc_x, pay_top - 24, f"{due}: {_fmt_eur(totale)}")
 
-    # ---------- 8) Separator above RIEPILOGO IVA ----------
-    riep_top = pay_top - 50
+    # ---------- 7) Horizontal separator above RIEPILOGO IVA ----------
+    riep_top = 50 * mm
     c.line(LEFT, riep_top, RIGHT, riep_top)
-
-    # ---------- 9) RIEPILOGO IVA (left side, aligned columns) ----------
     c.setFont("Helvetica", 7.5)
     c.drawString(LEFT, riep_top - 11, "RIEPILOGO IVA")
+    # column captions and values
     col_alq = LEFT
-    col_imp = LEFT + 60 * mm
-    col_imposte = LEFT + 78 * mm
-    c.drawString(col_alq, riep_top - 22, "")  # spacer
-    c.setFont("Helvetica", 7.5)
+    col_imp = LEFT + 50 * mm
+    col_imposte = LEFT + 75 * mm
     c.drawRightString(col_imp + 22, riep_top - 22, "IMPONIBILE")
     c.drawRightString(col_imposte + 22, riep_top - 22, "IMPOSTE")
     c.setFont("Helvetica", 9.5)
@@ -247,20 +235,20 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     c.drawRightString(col_imp + 22, riep_top - 35, _fmt_eur(imponibile, with_symbol=False))
     c.drawRightString(col_imposte + 22, riep_top - 35, _fmt_eur(imposte))
 
-    # ---------- 10) TOTAL block (right side, no border) ----------
+    # ---------- 8) Right side: Imponibile / Totale IVA / GRAND TOTAL ----------
     tx_right = RIGHT
-    ty = riep_top - 18
+    ty = riep_top - 14
     c.setFont("Helvetica", 9)
     c.drawRightString(tx_right - 70, ty, "Imponibile")
     c.drawRightString(tx_right, ty, _fmt_eur(imponibile))
     ty -= 12
     c.drawRightString(tx_right - 70, ty, "Totale IVA")
     c.drawRightString(tx_right, ty, _fmt_eur(imposte))
-    ty -= 26
+    ty -= 24
     c.setFont("Helvetica-Bold", 18)
     c.drawRightString(tx_right, ty, _fmt_eur(totale))
 
-    # ---------- 11) Footer line + tiny captions ----------
+    # ---------- 9) Bottom footer line + tiny captions ----------
     foot_y = 12 * mm
     c.setLineWidth(0.3)
     c.line(LEFT, foot_y + 12, RIGHT, foot_y + 12)
