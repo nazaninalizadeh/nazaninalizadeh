@@ -110,8 +110,13 @@ async def assign_tenant_to_room(room_id: str, tenant_id: str = Form(...), user: 
     tenant = await db.tenants.find_one({"id": tenant_id})
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    if tenant.get("room_id"):
+    # Free previous room of this tenant (if different from target)
+    if tenant.get("room_id") and tenant["room_id"] != room_id:
         await db.rooms.update_one({"id": tenant["room_id"]}, {"$set": {"status": "available", "tenant_id": ""}})
+    # Free previous occupant of the target room (if different from this tenant)
+    existing_occupant = room.get("tenant_id")
+    if existing_occupant and existing_occupant != tenant_id:
+        await db.tenants.update_one({"id": existing_occupant}, {"$set": {"room_id": "", "property_id": ""}})
     await db.rooms.update_one({"id": room_id}, {"$set": {"status": "occupied", "tenant_id": tenant_id}})
     await db.tenants.update_one({"id": tenant_id}, {"$set": {"room_id": room_id, "property_id": room["property_id"]}})
     return {"message": "Tenant assigned to room"}

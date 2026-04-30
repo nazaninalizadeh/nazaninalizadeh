@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Home, DoorOpen, Users, ChevronDown, ChevronUp, Upload, UserPlus, UserMinus, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Home, DoorOpen, Users, ChevronDown, ChevronUp, Upload, UserPlus, UserMinus, Image as ImageIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
@@ -33,6 +33,8 @@ const Properties = () => {
   const [assignRoom, setAssignRoom] = useState(null);
   const [assignSearch, setAssignSearch] = useState('');
   const [assignTenantId, setAssignTenantId] = useState('');
+  // Photo gallery lightbox
+  const [gallery, setGallery] = useState(null); // { propertyId, images, index }
 
   const [formData, setFormData] = useState({
     property_code: '', address: '', property_type: 'Appartamento', number_of_rooms: 1,
@@ -166,6 +168,30 @@ const Properties = () => {
     }
   };
 
+  const openGallery = (propId, images, index = 0) => {
+    if (!images?.length) return;
+    setGallery({ propertyId: propId, images, index });
+  };
+  const closeGallery = () => setGallery(null);
+  const nextPhoto = () => setGallery(g => g ? { ...g, index: (g.index + 1) % g.images.length } : g);
+  const prevPhoto = () => setGallery(g => g ? { ...g, index: (g.index - 1 + g.images.length) % g.images.length } : g);
+  const deleteCurrentPhoto = async () => {
+    if (!gallery) return;
+    const url = gallery.images[gallery.index];
+    if (!window.confirm('Eliminare questa foto?')) return;
+    try {
+      await axios.delete(`${API}/properties/${gallery.propertyId}/images`, { params: { url }, withCredentials: true });
+      toast.success('Foto eliminata');
+      const { data } = await axios.get(`${API}/properties/${gallery.propertyId}`, { withCredentials: true });
+      setPropertyDetails(prev => ({ ...prev, [gallery.propertyId]: data }));
+      const remaining = data.images || [];
+      if (remaining.length === 0) { setGallery(null); }
+      else { setGallery(g => ({ propertyId: g.propertyId, images: remaining, index: Math.min(g.index, remaining.length - 1) })); }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore eliminazione');
+    }
+  };
+
   const filtered = properties.filter(p =>
     (p.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
      p.property_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -296,9 +322,23 @@ const Properties = () => {
                   <div style={{ borderTop: '1px solid rgba(184,134,11,0.1)' }}>
                     {/* Property images */}
                     {detail?.images?.length > 0 && (
-                      <div className="px-6 py-3 flex gap-2 overflow-x-auto" style={{ background: 'rgba(184,134,11,0.02)' }}>
+                      <div className="px-6 py-3 flex gap-2 overflow-x-auto" style={{ background: 'rgba(184,134,11,0.02)' }} data-testid={`property-gallery-${property.id}`}>
                         {detail.images.map((img, i) => (
-                          <img key={i} src={`${process.env.REACT_APP_BACKEND_URL}${img}`} alt="" className="h-16 w-24 rounded-lg object-cover" />
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => openGallery(property.id, detail.images, i)}
+                            className="relative group shrink-0 rounded-lg overflow-hidden hover:ring-2 hover:ring-amber-500 transition-all"
+                            data-testid={`property-photo-thumb-${property.id}-${i}`}
+                            title="Clicca per aprire la galleria"
+                          >
+                            <img src={`${process.env.REACT_APP_BACKEND_URL}${img}`} alt="" className="h-16 w-24 object-cover" />
+                            {i === 0 && detail.images.length > 1 && (
+                              <span className="absolute bottom-1 right-1 text-[10px] px-1.5 py-0.5 rounded-full text-white font-semibold" style={{ background: 'rgba(0,0,0,0.6)' }}>
+                                +{detail.images.length - 1}
+                              </span>
+                            )}
+                          </button>
                         ))}
                       </div>
                     )}
@@ -433,6 +473,95 @@ const Properties = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Photo Gallery Lightbox */}
+      {gallery && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{ background: 'rgba(12,10,9,0.92)' }}
+          onClick={closeGallery}
+          data-testid="property-gallery-lightbox"
+        >
+          {/* Close */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); closeGallery(); }}
+            className="absolute top-5 right-5 h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 transition"
+            data-testid="gallery-close"
+            aria-label="Chiudi"
+          >
+            <X size={22} />
+          </button>
+
+          {/* Counter */}
+          <div className="absolute top-6 left-6 text-white/80 text-sm font-medium" data-testid="gallery-counter">
+            {gallery.index + 1} / {gallery.images.length}
+          </div>
+
+          {/* Delete */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); deleteCurrentPhoto(); }}
+            className="absolute top-5 right-20 h-10 px-3 flex items-center gap-1.5 rounded-full text-white text-xs font-medium hover:bg-red-500/90 transition"
+            style={{ background: 'rgba(220,38,38,0.7)' }}
+            data-testid="gallery-delete"
+          >
+            <Trash2 size={14} /> Elimina
+          </button>
+
+          {/* Prev */}
+          {gallery.images.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); prevPhoto(); }}
+              className="absolute left-5 md:left-10 h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-white/15 transition"
+              data-testid="gallery-prev"
+              aria-label="Precedente"
+            >
+              <ChevronLeft size={28} />
+            </button>
+          )}
+
+          {/* Image */}
+          <img
+            src={`${process.env.REACT_APP_BACKEND_URL}${gallery.images[gallery.index]}`}
+            alt=""
+            className="max-h-[88vh] max-w-[88vw] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            data-testid="gallery-main-image"
+          />
+
+          {/* Next */}
+          {gallery.images.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); nextPhoto(); }}
+              className="absolute right-5 md:right-10 h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-white/15 transition"
+              data-testid="gallery-next"
+              aria-label="Successiva"
+            >
+              <ChevronRight size={28} />
+            </button>
+          )}
+
+          {/* Thumbnail strip */}
+          {gallery.images.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 px-3 py-2 rounded-xl max-w-[92vw] overflow-x-auto" style={{ background: 'rgba(0,0,0,0.5)' }}>
+              {gallery.images.map((img, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setGallery(g => ({ ...g, index: i })); }}
+                  className={`shrink-0 rounded-md overflow-hidden transition ${i === gallery.index ? 'ring-2 ring-amber-400' : 'opacity-60 hover:opacity-100'}`}
+                  data-testid={`gallery-thumb-${i}`}
+                >
+                  <img src={`${process.env.REACT_APP_BACKEND_URL}${img}`} alt="" className="h-12 w-16 object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

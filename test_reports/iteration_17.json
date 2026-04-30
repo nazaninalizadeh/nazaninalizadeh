@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 17 testing completed for PropertyOps. Verified room reassignment bug fix, property photo gallery lightbox, Fattura PDF, Preavviso PDF, invoices dialog tab switching + live total. All 7 pytest backend tests passed. Frontend UI tests (Invoices dialog + Properties gallery lightbox) passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Invoice dialog", "issues": ["Console warning: Missing `Description` or `aria-describedby={undefined}` for DialogContent — a11y improvement (non-blocking)"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration17.py",
+    "/app/test_reports/pytest/iteration_17.xml"
+  ],
+  "action_items": [
+    "(Optional a11y) Add DialogDescription or aria-describedby to Invoices/Properties Dialog components to silence Radix warnings."
+  ],
+  "critical_code_review_comments": [
+    "/app/backend/routes/rooms.py line 117-119: fix is correct — previous occupant's tenant.room_id and property_id are cleared on reassignment.",
+    "/app/backend/routes/invoices.py: fattura totals derive imponibile from invoice.imponibile or amount; consistent with schema.",
+    "/app/backend/services/invoice_pdf.py: _fmt_eur uses Euro sign via unicode literal; formatting is correct. PDF byte size ~2KB+ as expected.",
+    "Preavviso accepts empty tenant_id/property_id thanks to Optional defaults in InvoiceCreate schema — works end-to-end.",
+    "Frontend live total math in Invoices.js matches backend preavviso total: imponibile*(1+vat/100)+rimborso (verified 1300*1.22+186 = 1772.00)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration17.py (new)"
+  ],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% (2/2 flows)"},
+  "test_credentials": "nazaninalizade890@gmail.com / 1234@Admin",
+  "seed_data_creation": "Created 1 TEST_IT17 property + 1 room + 2 tenants during test run; all cleaned up via module-teardown. Note: one property image upload was done on existing property ddce11b1-05a5-4a28-9cff-d58761bacb4e during frontend gallery test — tiny 1x1 PNG remains; safe to ignore or delete via UI.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend regression suite at /app/backend/tests/test_iteration17.py covers room reassignment fix, property image upload/delete, Fattura + Preavviso PDF generation. Reuse for future regressions. Frontend test IDs present and working: doc-type-fattura / doc-type-preavviso / preavviso-* / invoice-rent / property-photo-thumb-{pid}-{i} / gallery-prev/next/close/delete/main-image.",
+  "rca of the issue": "Bug A (room reassignment leak) RCA: previously POST /rooms/{id}/assign only set room.tenant_id=new but never cleared the previous occupant tenant's room_id/property_id pointers — producing 'orphan' tenants still pointing at a room they no longer occupy. Fix adds two guards at rooms.py:114-119: (1) free requesting tenant's OLD room (status->available, tenant_id=''); (2) free TARGET room's prior occupant (tenant.room_id='', property_id=''). Verified via test_reassign_room_frees_previous_occupant: after reassigning room from t1 to t2, t1.room_id becomes '' and t2.room_id = room_id."
+}

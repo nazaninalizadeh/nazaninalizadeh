@@ -85,13 +85,33 @@ class ContractCreate(BaseModel):
 
 
 class InvoiceCreate(BaseModel):
-    tenant_id: str
-    property_id: str
-    contract_id: str
+    tenant_id: Optional[str] = ""
+    property_id: Optional[str] = ""
+    contract_id: Optional[str] = ""
     invoice_type: str
     amount: float
     due_date: str
     description: str
+    document_type: Optional[str] = "fattura"  # "fattura" or "preavviso"
+    # breakdown + recipient overrides (optional — if not set, tenant data is used)
+    rent: Optional[float] = 0.0
+    deposit: Optional[float] = 0.0
+    agency_fee: Optional[float] = 0.0
+    registration: Optional[float] = 0.0
+    discount: Optional[float] = 0.0
+    vat_rate: Optional[float] = 22.0
+    # preavviso-specific
+    imponibile: Optional[float] = 0.0
+    rimborso_label: Optional[str] = ""
+    rimborso_amount: Optional[float] = 0.0
+    rimborso_note: Optional[str] = ""
+    rimborso_tax_note: Optional[str] = ""
+    body_text: Optional[str] = ""
+    # recipient overrides (for commercial clients — e.g. ELEISON)
+    recipient_name: Optional[str] = ""
+    recipient_address: Optional[str] = ""
+    recipient_cf_piva: Optional[str] = ""
+    recipient_city: Optional[str] = ""
 
 
 class PaymentCreate(BaseModel):
