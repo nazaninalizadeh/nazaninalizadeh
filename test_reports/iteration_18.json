@@ -1,0 +1,55 @@
+{
+  "summary": "Iteration 18 Phase-1 REPORT-ONLY deep regression for PropertyOps. 19 PASSED + 1 SKIPPED (route missing) in /app/backend/tests/test_iteration18.py. Covered: OCR (PNG/JPG/PDF + unsupported + >10MB), Italian cities+countries dictionaries, Hospitality records + PDF (Luogo+data DD/MM/YYYY, 'alloggio' label present, no 'None' leaks), Owner transparent signature upload (alpha channel verified via PIL), Registration ZIP bundle, Payment receipt upload (PNG+PDF+rejection+persistence). Frontend code inspection confirms owner OCR handler (handleOwnerOcr) is wired to POST /api/ocr/scan via [data-testid='owner-ocr-button'] label (Landlords.js:34-66, 176-181). Surname/name mapping in OCR callback is correct: `surname = d.surname || ...`, `name = d.name || ...` — NOT swapped. full_name built as `${surname} ${name}` on submit (Landlords.js:135, Tenants.js builds similarly).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/registration/zip/{tenant_id}", "issue": "ENDPOINT MISSING — review request item 6A references this route but it is not registered anywhere in /app/backend/routes/registration.py. The actual working route is /api/documents/bundle/{tenant_id} (returns application/zip). Either alias registration/zip -> documents/bundle or update spec.", "priority": "HIGH", "category": "ZIP"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/hospitality/records", "issue": "Returned records can reference orphaned tenant_ids (tenants that have been deleted). Subsequent GET /api/hospitality/pdf/{tenant_id} then returns 404 'Inquilino non trovato'. Recommend cascade-delete hospitality_records when tenant is deleted, OR filter orphans on list endpoint.", "priority": "MEDIUM", "category": "Hospitality"},
+      {"endpoint": "POST /api/ocr/scan", "issue": "When uploaded image is blank or unreadable, endpoint returns 200 with status='failed' and an Italian error message. This matches the 'does not silently swallow errors' contract — OK. However backing gpt-4o-mini call is real (costs credit on every stub test). Consider short-circuiting when image dimensions < 100x100 or size < 1KB before calling OpenAI.", "priority": "LOW", "category": "OCR"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Landlords OCR button", "issue": "[data-testid='owner-ocr-button'] is a <label> wrapping a hidden <input type=file>. Clicking the label DOES trigger the file picker AND onChange → handleOwnerOcr → POST /api/ocr/scan. Functionally correct. However, the user reports 'OCR does NOT work for Owners'. Likely root cause is NOT the button wiring but one of: (a) OCR returning status=failed silently (toast appears only if data.error is set), (b) extracted_data fields not matching Landlord formData keys (e.g. OCR returns 'issuing_authority' but Landlords.js has no 'authority' field to populate — authority is DISCARDED on owner form). Recommend adding an 'authority' field to Landlord formData OR explicitly logging/toasting partial-OCR success.", "selector": "[data-testid='owner-ocr-button']", "priority": "HIGH", "category": "OCR"},
+      {"component": "Tenant/Landlord OCR integration", "issue": "OCR returns 'issuing_authority' (from gpt-4o-mini schema) but neither Tenants.js nor Landlords.js applies this field back to formData. Review-request 1A explicitly asked for 'authority' field. Backend schema has it; frontend drops it.", "selector": "handleOwnerOcr / handleTenantOcr callbacks", "priority": "MEDIUM", "category": "OCR"},
+      {"component": "OCR address field", "issue": "OCR returns 'residence' (full address from document) which IS applied on Landlords.js:58 but Tenants.js should verify it populates 'address'. Review request 1A lists 'address' as expected — verify mapping in Tenants.js OCR handler.", "selector": "OcrScanner.js handleApply", "priority": "MEDIUM", "category": "OCR"}
+    ],
+    "integration_issues": [
+      {"flow": "Registration ZIP download (UI button)", "issue": "If any UI button calls /api/registration/zip/{tenant_id} it will 404. Must use /api/documents/bundle/{tenant_id} instead.", "affected_selectors": ["[data-testid*='registration-zip']", "[data-testid*='download-bundle']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration18.py",
+    "/app/test_reports/pytest/iteration_18.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Add alias route GET /api/registration/zip/{tenant_id} in /app/backend/routes/registration.py pointing to the same logic as /api/documents/bundle/{tenant_id} — OR update the UI/docs to only use documents/bundle.",
+    "HIGH: Add 'authority' field to Landlord (and confirm on Tenant) formData + map d.issuing_authority -> formData.authority in handleOwnerOcr / OCR scanner onDataExtracted callback.",
+    "MEDIUM: Clean up orphaned hospitality_records (delete records whose tenant_id no longer exists in tenants collection) OR add cascade-delete on DELETE /api/tenants/{id}.",
+    "MEDIUM: Verify tenant OCR result's 'residence' is populated into Tenant.address (spot-check needed in /app/frontend/src/components/OcrScanner.js applyHandler).",
+    "LOW: Re-surface an explicit inline error under OCR button when status='failed' (toast may have been missed by user reporting OCR doesn't work).",
+    "LOW: PIL Image.getdata deprecation warning in test file (non-blocking until Pillow 14)."
+  ],
+  "critical_code_review_comments": [
+    "routes/registration.py has no /registration/zip route despite spec. The working equivalent is /api/documents/bundle/{tenant_id} (line 114) — contract drift.",
+    "routes/hospitality.py: POST /records is a true upsert by tenant_id — meaning only ONE hospitality row can ever exist per tenant. If product needs multiple stays per tenant, this is a hard cap bug (re-flagged from iteration 16).",
+    "routes/ocr.py:80: the 'profile photo' extraction uses a fixed geometric crop (0.3-0.7w, 0.05-0.45h). This is NOT face detection — on passports the face is usually at LEFT (~0.1-0.3w). Produces wrong profile photos. Replace with OpenCV Haar or a dedicated face detector, or remove this auto-crop entirely.",
+    "services/hospitality_pdf.py:283-289: 'Luogo e data' uses property_comune.title() + datetime.now(UTC). If property_comune is empty AND host_residence is empty, 'Luogo e data: , DD/MM/YYYY' will be rendered (empty city). Add a fallback default like 'Padova' or the user's tenant city to avoid the leading comma.",
+    "services/ocr_service.py:_extract_json falls back to a regex search if the model returns surrounding prose. Reasonable, but the nested-brace regex breaks for deeply nested JSON. Consider json.loads with lenient pre-processing instead.",
+    "frontend/src/pages/Landlords.js:34-66 handleOwnerOcr DOES NOT pick up d.issuing_authority — owner form has no 'authority' field, unlike tenant which has passport_authority (verify).",
+    "frontend/src/pages/Payments.js:147 the receipt uploader accepts 'image/*,application/pdf' in <Input accept> — matches backend ALLOWED_RECEIPT_EXTS. Good."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration18.py (new)",
+    "/app/test_reports/pytest/iteration_18.xml (new)"
+  ],
+  "success_rate": {"backend": "100% (19/19 passed, 1 skipped — route missing is a reported bug)", "frontend": "Code-review only; no Playwright run this iteration due to token budget"},
+  "test_credentials": "nazaninalizade890@gmail.com / 1234@Admin",
+  "seed_data_creation": "No new seed data. Tests reuse the first existing tenant and first existing payment. One transparent signature PNG and a few small OCR/receipt files remain under /app/backend/uploads/ — cleanup safe to skip.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run: python -m pytest /app/backend/tests/test_iteration18.py -v --junitxml=/app/test_reports/pytest/iteration_18.xml. pdfplumber is installed for PDF text extraction (pdftotext NOT available). /api/registration/zip/{tenant_id} DOES NOT EXIST — use /api/documents/bundle/{tenant_id}. Hospitality record upsert means only one record per tenant. OCR stub-image calls DO cost LLM credit. Frontend Playwright was not run this iteration — main agent should verify owner-ocr-button workflow end-to-end after fixing the 'authority' field mapping bug.",
+  "rca_of_the_issue": "User reports: (1) 'OCR does not work for Owners' — RCA: button IS wired correctly (label + hidden file input + handleOwnerOcr → POST /api/ocr/scan). Real issue is either OCR returning status=failed silently, OR dropping the 'issuing_authority' field (owner form has no such field). Mitigation: add 'authority' field to Landlord formData and map d.issuing_authority; also always toast the OCR error so user can see why. (2) 'Registration ZIP download fails' — RCA: Spec says /api/registration/zip/{tenant_id} but only /api/documents/bundle/{tenant_id} exists. Mitigation: add route alias OR change frontend to call documents/bundle. (3) Hospitality PDF 404 for some tenants — RCA: hospitality_records collection has stale tenant_ids after tenant deletion. Mitigation: cascade delete or filter orphans in GET /records."
+}
