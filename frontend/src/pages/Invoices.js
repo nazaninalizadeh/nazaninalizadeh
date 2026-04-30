@@ -274,7 +274,7 @@ const Invoices = () => {
 
   return (
     <div data-testid="invoices-page" className="luxury-fade-in">
-      <div className="mb-10 flex items-center justify-between">
+      <div className="mb-10 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="luxury-title mb-2" data-testid="invoices-title">
             Fatture
@@ -288,7 +288,7 @@ const Invoices = () => {
               Crea Fattura
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl luxury-modal">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto luxury-modal w-[95vw] sm:w-auto">
             <DialogHeader>
               <DialogTitle data-testid="invoice-dialog-title">Crea Nuova Fattura</DialogTitle>
             </DialogHeader>
@@ -314,8 +314,8 @@ const Invoices = () => {
               {formData.document_type === 'preavviso' ? (
                 /* ========== PREAVVISO FIELDS ========== */
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="col-span-1 sm:col-span-2">
                       <Label>Destinatario (Spett.le) *</Label>
                       <Input value={formData.recipient_name} onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })} required className="luxury-input" placeholder="ELEISON Societa' Cooperativa Sociale" data-testid="preavviso-recipient-name" />
                     </div>
@@ -327,7 +327,7 @@ const Invoices = () => {
                       <Label>C.F. / P.IVA</Label>
                       <Input value={formData.recipient_cf_piva} onChange={(e) => setFormData({ ...formData, recipient_cf_piva: e.target.value })} className="luxury-input" placeholder="05028740289" data-testid="preavviso-recipient-cf" />
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1 sm:col-span-2">
                       <Label>Causale / Descrizione *</Label>
                       <Input value={formData.body_text} onChange={(e) => setFormData({ ...formData, body_text: e.target.value })} required className="luxury-input" placeholder="Ricerca appartamento in locazione situato a Padova Via Mozart" data-testid="preavviso-body" />
                     </div>
@@ -340,7 +340,7 @@ const Invoices = () => {
 
                   <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(184,134,11,0.04)', border: '1px solid rgba(184,134,11,0.15)' }}>
                     <h4 className="text-sm font-semibold" style={{ color: '#9F1239' }}>Importi</h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <Label>Imponibile (€)</Label>
                         <Input type="number" step="0.01" value={formData.imponibile} onChange={(e) => setFormData({ ...formData, imponibile: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="preavviso-imponibile" />
@@ -349,7 +349,7 @@ const Invoices = () => {
                         <Label>IVA (%)</Label>
                         <Input type="number" step="1" value={formData.vat_rate} onChange={(e) => setFormData({ ...formData, vat_rate: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="preavviso-vat" />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1 sm:col-span-2">
                         <Label>Voce Rimborso (opzionale)</Label>
                         <Input value={formData.rimborso_label} onChange={(e) => setFormData({ ...formData, rimborso_label: e.target.value })} className="luxury-input" placeholder="Rimborso spese vostra quota registrazione contratto" data-testid="preavviso-rimborso-label" />
                       </div>
@@ -361,7 +361,7 @@ const Invoices = () => {
                         <Label>Nota IVA Rimborso</Label>
                         <Input value={formData.rimborso_tax_note} onChange={(e) => setFormData({ ...formData, rimborso_tax_note: e.target.value })} className="luxury-input" placeholder="(esente iva art 15)" data-testid="preavviso-rimborso-tax-note" />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1 sm:col-span-2">
                         <Label>Nota aggiuntiva (opzionale)</Label>
                         <Input value={formData.rimborso_note} onChange={(e) => setFormData({ ...formData, rimborso_note: e.target.value })} className="luxury-input" placeholder="(Imposta di bollo non presente in quanto cooperativa onlus)" data-testid="preavviso-rimborso-note" />
                       </div>
@@ -377,7 +377,7 @@ const Invoices = () => {
               ) : (
                 /* ========== FATTURA FIELDS (existing) ========== */
                 <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="tenant_id">Inquilino *</Label>
                   <Select
@@ -448,7 +448,7 @@ const Invoices = () => {
               {/* Dynamic invoice composition panel */}
               <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(184,134,11,0.04)', border: '1px solid rgba(184,134,11,0.15)' }}>
                 <h4 className="text-sm font-semibold" style={{ color: '#9F1239' }}>Voci della fattura</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label>Affitto (1 mese)</Label>
                     <Input type="number" step="0.01" value={formData.rent} onChange={(e) => setFormData({ ...formData, rent: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="invoice-rent" />
@@ -465,7 +465,7 @@ const Invoices = () => {
                     <Label>Registrazione</Label>
                     <Input type="number" step="0.01" value={formData.registration} onChange={(e) => setFormData({ ...formData, registration: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="invoice-registration" />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <Label>Sconto</Label>
                     <Input type="number" step="0.01" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="invoice-discount" />
                   </div>

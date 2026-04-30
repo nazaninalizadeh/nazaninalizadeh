@@ -172,7 +172,7 @@ const Layout = () => {
 
       {/* Main content */}
       <main className="flex-1 lg:ml-0 overflow-auto">
-        <div className="p-6 lg:p-10">
+        <div className="p-4 pt-16 sm:p-6 lg:p-10 lg:pt-10">
           <Outlet />
         </div>
       </main>

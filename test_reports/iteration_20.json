@@ -1,0 +1,87 @@
+{
+  "summary": "Iteration 20 responsive + OCR owner visibility verification. FIX-A (OCR banner visible desktop & mobile): PASS. FIX-A3 (owner-authority input): PASS. FIX-B1 (6 mobile pages no horizontal overflow, hamburger visible, main_top=0): PASS. FIX-B3 Tablet 768: PASS. FIX-B4 Desktop 1920: PASS. Backend regression (zip alias, auth, lists, dashboard): PASS. FAIL: FIX-B2 — on mobile 390x844, Landlord and Tenant dialog form fields (Cognome/Nome, Codice Fiscale/Numero, etc.) render SIDE-BY-SIDE instead of stacked in single column due to col-span-2 children forcing implicit 2nd grid track.",
+  "fixes_verified": {
+    "FIX-A_OCR_OWNER_VISIBLE": {
+      "status": "PASS",
+      "evidence": "Desktop 1920x1080: [data-testid='owner-ocr-button'] visible=true, box.y=138 (within 20-300). Mobile 390x844: visible=true, box.y=168. Banner shows icon+title 'Scansione OCR Documento'+subtitle with JPG/PNG/PDF note+'Carica' button. DialogContent className includes 'max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto' (Landlords.js:191)."
+    },
+    "FIX-A3_owner-authority": {
+      "status": "PASS",
+      "evidence": "[data-testid='owner-authority'] input present, is_visible()=true, placeholder 'Es: Comune di Padova / Questura'. Persistence verified in iter19."
+    },
+    "FIX-B1_MOBILE_LAYOUT": {
+      "status": "PASS",
+      "evidence": "On all 6 pages (/landlords, /tenants, /properties, /payments, /invoices, /hospitality) at 390x844: document.body.scrollWidth == window.innerWidth == 390 (no overflow). Hamburger menu count=1 on each page. main.getBoundingClientRect().top = 0 (content not hidden)."
+    },
+    "FIX-B3_TABLET_768": {
+      "status": "PASS",
+      "evidence": "768x1024: bodyW=768=vw, hamburger visible (sidebar hidden below lg:1024). Tables display with horizontal scroll where needed (luxury-card has overflow-x:auto)."
+    },
+    "FIX-B4_DESKTOP_1920": {
+      "status": "PASS",
+      "evidence": "1920x1080: bodyW=1920=vw. Full sidebar rendered (Dashboard/Proprietari/Immobili/Inquilini/Pagamenti/...). Hamburger element in DOM but hidden via lg:hidden CSS class (visually absent in screenshot)."
+    },
+    "FIX-B2_MOBILE_DIALOG_STACKING": {
+      "status": "FAIL",
+      "evidence": "Mobile 390x844 Landlord dialog: DialogContent width=370.5 (~95vw) OK. BUT inner .grid.grid-cols-1.sm:grid-cols-2.gap-4 has computed gridTemplateColumns='90.5px 214px' at 390px viewport — TWO columns active. Cognome input bbox x=35,y=311,w=91 and Nome x=141,y=311,w=214 → same Y (side-by-side) rather than stacked. Same issue in Tenant dialog: tenant-surname-input x=35,y=230,w=91 and tenant-name-input x=141,y=230,w=214 (side-by-side).",
+      "root_cause": "Landlords.js / Tenants.js / Properties.js / Invoices.js wrap fields in <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'> but full-width children (e.g. Indirizzo di Residenza, Dati Bancari, Firma, Note) use <div className='col-span-2'>. When a child specifies col-span-2 inside a grid-cols-1 container, CSS Grid auto-creates an implicit 2nd column to honor the span, making the entire grid effectively 2-column at all viewports. The 90.5px / 214px asymmetry is content-sized auto tracks rather than equal 1fr 1fr.",
+      "fix_suggestion": "Change col-span-2 → 'col-span-1 sm:col-span-2' on children (Indirizzo, Dati Bancari, Firma, Note, etc.). Verify Landlords.js lines 239-240, 246+, Tenants.js similar lines, Properties.js, Invoices.js. This ensures mobile truly collapses to 1 column."
+    }
+  },
+  "regression_smoke_backend": {
+    "auth_login_captcha": "200 PASS",
+    "GET /api/tenants": "200 PASS",
+    "GET /api/landlords": "200 PASS",
+    "GET /api/dashboard/stats": "200 PASS",
+    "GET /api/registration/zip/{id} (alias)": "200 PASS — returns valid ZIP (PK magic), 60433 bytes",
+    "GET /api/documents/bundle/{id}": "200 PASS — identical ZIP (60433 bytes)"
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Landlords.js / Tenants.js / Properties.js / Invoices.js — form dialog grid",
+        "issue": "On mobile 390x844 (and tablet below sm:640), Cognome/Nome and other paired fields render side-by-side instead of stacked. Root cause: col-span-2 children force CSS Grid to auto-create a 2nd implicit column even when container is grid-cols-1.",
+        "selector": "[role='dialog'] .grid.grid-cols-1.sm\\:grid-cols-2",
+        "priority": "HIGH",
+        "category": "responsive"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All mobile form dialogs", "issues": ["Asymmetric 90.5px/214px column widths result in cramped first field (surname only 91px wide, hard to read multi-char last names)"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration19.py (reused baseline)"
+  ],
+  "action_items": [
+    "HIGH (responsive/dialog): In Landlords.js, Tenants.js, Properties.js, Invoices.js — change every <div className='col-span-2'> inside the outer grid-cols-1 sm:grid-cols-2 container to <div className='col-span-1 sm:col-span-2'>. This will prevent implicit 2nd-column creation at <640px viewports and force true single-column stacking on mobile.",
+    "After fix, retest on 390x844: verify grid.gridTemplateColumns computed = single value (e.g. '338.5px') and Cognome.y < Nome.y (stacked)."
+  ],
+  "critical_code_review_comments": [
+    "grid-cols-1 sm:grid-cols-2 combined with col-span-2 children is a common Tailwind pitfall — always pair col-span-2 with a col-span-1 base class (or use the 'col-span-full' utility with an appropriate breakpoint prefix).",
+    "Consider extracting the form-grid pattern into a shared component (<ResponsiveFormGrid>) to avoid repeating the same grid/col-span combo across 4 files.",
+    "Layout.js mobile pt-16 sm:p-6 works — main_top=0 observed. No regression.",
+    "Landlords.js DialogContent max-h-[90vh] overflow-y-auto and w-[95vw] sm:w-auto correctly applied — FIX-A confirmed working.",
+    "Backend /api/registration/zip/{id} alias (iter19 FIX1) still returns identical bytes as /api/documents/bundle/{id} — regression confirmed."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (5/5 smoke)", "frontend": "5/6 fixes pass (FIX-B2 fails)"},
+  "test_credentials": "nazaninalizade890@gmail.com / 1234@Admin",
+  "seed_data_creation": "None — read-only verification + existing test data.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Only FIX-B2 needs refix + retest. After main agent patches col-span-2 → col-span-1 sm:col-span-2 across 4 files, run mobile 390x844 playwright: open Landlord & Tenant 'Aggiungi' dialog, evaluate window.getComputedStyle(grid).gridTemplateColumns — expect a single-value string (one column). Also verify surname.bbox.y < name.bbox.y (vertical stacking). No need to re-run backend regression; that is green. iter19 backend tests still the canonical regression suite.",
+  "mocked_apis_acknowledged": ["WhatsApp toast", "Resend email fallback"],
+  "screenshots": [
+    "/tmp/iter20/landlords_desktop.png",
+    "/tmp/iter20/landlords_dialog_desktop.png",
+    "/tmp/iter20/landlords_dialog_mobile.png (shows side-by-side Cognome/Nome — BUG)",
+    "/tmp/iter20/tenant_dialog_mobile.png (same bug)",
+    "/tmp/iter20/mobile_landlords.png, mobile_tenants.png, mobile_properties.png, mobile_payments.png, mobile_invoices.png, mobile_hospitality.png (no horizontal overflow confirmed)",
+    "/tmp/iter20/tablet_landlords.png",
+    "/tmp/iter20/desktop_landlords.png"
+  ],
+  "rca of the issue": "FIX-B2 RCA — <div className='col-span-2'> on full-width inputs (Indirizzo di Residenza, Dati Bancari, Firma, Note) inside a grid-cols-1 sm:grid-cols-2 container causes CSS Grid's implicit track creation: when a child declares grid-column: span 2 in a 1-col grid, the browser auto-creates an extra column track to honor the span. This cascades down: all siblings then share 2 auto-sized columns (observed 90.5px / 214px based on content), making Cognome/Nome appear side-by-side at mobile viewports below the sm:640 breakpoint. Fix: either remove col-span-2 on mobile (use 'col-span-1 sm:col-span-2') or restructure the grid with explicit col-start/col-end."
+}

@@ -467,6 +467,27 @@ p {
     padding: 2rem 1rem;
     border-radius: 16px;
   }
+
+  /* Make all shadcn tables horizontally scrollable on mobile */
+  .luxury-card > table,
+  .luxury-card table {
+    min-width: 640px;
+  }
+  .luxury-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Make title row stack on mobile */
+  .luxury-title {
+    font-size: 1.75rem !important;
+    line-height: 1.2;
+  }
+
+  /* Dialog body top padding so close button doesn't overlap */
+  [role="dialog"] {
+    max-width: 95vw !important;
+  }
 }
 
 /* ===== Notes font ===== */

@@ -225,10 +225,10 @@ const Properties = () => {
           <DialogTrigger asChild>
             <Button className="btn-luxury" data-testid="add-property-button"><Plus size={18} className="mr-2" />Aggiungi Immobile</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl luxury-modal" style={{ background: '#FFFBF5' }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto luxury-modal w-[95vw] sm:w-auto" style={{ background: '#FFFBF5' }}>
             <DialogHeader><DialogTitle>{editingProperty ? 'Modifica' : 'Nuovo'} Immobile</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {editingProperty && <div><Label>Codice</Label><Input value={formData.property_code} disabled className="luxury-input bg-gray-50" /></div>}
                 <div>
                   <Label>Tipo *</Label>

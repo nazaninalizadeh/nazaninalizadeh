@@ -181,27 +181,33 @@ const Landlords = () => {
 
   return (
     <div data-testid="landlords-page" className="luxury-fade-in">
-      <div className="mb-10 flex items-center justify-between">
+      <div className="mb-10 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="luxury-title mb-2">Proprietari</h1>
           <p className="luxury-subtitle">Gestisci proprietari, immobili e occupazione</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm(); }}>
           <DialogTrigger asChild><Button className="btn-luxury"><Plus size={18} className="mr-2" />Aggiungi Proprietario</Button></DialogTrigger>
-          <DialogContent className="max-w-2xl luxury-modal">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto luxury-modal w-[95vw] sm:w-auto">
             <DialogHeader><DialogTitle>{editingLandlord ? 'Modifica' : 'Nuovo'} Proprietario</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* OCR for owner */}
-              <div className="pb-3 mb-2" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
-                <label data-testid="owner-ocr-button">
+              {/* OCR for owner — prominent banner, same pattern as Tenants */}
+              <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, rgba(159,18,57,0.08), rgba(184,134,11,0.05))', border: '1px solid rgba(159,18,57,0.2)' }}>
+                <div className="p-3 rounded-xl shrink-0" style={{ background: 'linear-gradient(135deg, #9F1239, #BE123C)' }}>
+                  <ScanLine size={22} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: '#2C1810' }}>Scansione OCR Documento</p>
+                  <p className="text-xs" style={{ color: '#8B7355' }}>Carta d'identità, passaporto o patente (JPG/PNG/PDF) — compilazione automatica</p>
+                </div>
+                <label data-testid="owner-ocr-button" className="shrink-0">
                   <input type="file" ref={ocrRef} className="hidden" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={handleOwnerOcr} />
-                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer hover:shadow-md" style={{ background: '#9F1239', color: 'white' }}>
-                    <ScanLine size={16} /> Scansiona Documento (OCR)
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer hover:shadow-lg transition-all font-semibold" style={{ background: '#9F1239', color: 'white' }}>
+                    <Upload size={15} /> Carica
                   </span>
                 </label>
-                <p className="text-xs mt-2" style={{ color: '#8B7355' }}>Scansiona documento del proprietario per compilare automaticamente</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><Label>Cognome *</Label><Input value={formData.surname} onChange={e => setFormData({ ...formData, surname: e.target.value })} required className="luxury-input" data-testid="owner-surname-input" /></div>
                 <div><Label>Nome *</Label><Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="luxury-input" data-testid="owner-name-input" /></div>
                 <div><Label>Codice Fiscale</Label><Input value={formData.codice_fiscale} onChange={e => setFormData({ ...formData, codice_fiscale: e.target.value })} className="luxury-input" /></div>

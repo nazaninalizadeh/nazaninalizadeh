@@ -190,7 +190,7 @@ const Tenants = () => {
 
   return (
     <div data-testid="tenants-page" className="luxury-fade-in">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="luxury-title mb-2" data-testid="tenants-title">Inquilini</h1>
           <p className="luxury-subtitle">Gestisci inquilini e stato pagamenti</p>
@@ -199,14 +199,14 @@ const Tenants = () => {
           <DialogTrigger asChild>
             <Button className="btn-luxury" data-testid="add-tenant-button"><Plus size={18} className="mr-2" />Aggiungi Inquilino</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto luxury-modal">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto luxury-modal w-[95vw] sm:w-auto">
             <DialogHeader><DialogTitle>{editingTenant ? 'Modifica Inquilino' : 'Nuovo Inquilino'}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="pb-3 mb-3" style={{ borderBottom: '1px solid rgba(184,134,11,0.12)' }}>
                 <OcrScanner onDataExtracted={(data) => { setFormData(prev => ({ ...prev, ...Object.fromEntries(Object.entries(data).filter(([_, v]) => v)) })); }} />
                 <p className="text-xs mt-2" style={{ color: '#8B7355' }}>Scansiona un passaporto o documento per compilare automaticamente</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><Label>Cognome *</Label><Input value={formData.surname} onChange={e => setFormData({ ...formData, surname: e.target.value })} required className="luxury-input" data-testid="tenant-surname-input" /></div>
                 <div><Label>Nome *</Label><Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="luxury-input" data-testid="tenant-name-input" /></div>
                 <div><Label>Codice Fiscale</Label><Input value={formData.codice_fiscale} onChange={e => setFormData({ ...formData, codice_fiscale: e.target.value })} className="luxury-input" /></div>
@@ -232,7 +232,7 @@ const Tenants = () => {
                 <div><Label>Deposito (Garanzia)</Label><Input type="number" step="0.01" value={formData.deposit_amount} onChange={e => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) || 0 })} className="luxury-input" /></div>
                 <div><Label>Giorno Scadenza Pagamento</Label><Input type="number" min="1" max="28" value={formData.payment_due_day} onChange={e => setFormData({ ...formData, payment_due_day: parseInt(e.target.value) || 5 })} className="luxury-input" /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Immobile</Label>
                   <Select value={formData.property_id || 'none'} onValueChange={v => setFormData({ ...formData, property_id: v === 'none' ? '' : v, room_id: '' })}>

@@ -138,7 +138,7 @@ const Contracts = () => {
 
   return (
     <div data-testid="contracts-page" className="luxury-fade-in">
-      <div className="mb-10 flex items-center justify-between">
+      <div className="mb-10 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="luxury-title mb-2" data-testid="contracts-title">
             Contratti
