@@ -73,6 +73,19 @@ Proprietari | Immobili | Inquilini | Dashboard | Pagamenti | Ospitalità | Regis
    - Invoice dynamic panel: Affitto + Deposito + Spese agenzia + Registrazione (default 98) + Sconto + auto-computed TOTALE
    - Invoice auto-fill on tenant select (property + contract + rent + deposit)
 
+## DONE (Apr 30, 2026): OCR Owner visibility + Responsive layout overhaul
+- BUG FIX: Landlord dialog had no `max-h`/`overflow-y-auto` → tall forms pushed OCR banner above viewport. User could not see OCR for Proprietari.
+   - Added `max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto` to all dialogs (Landlords, Tenants, Properties, Invoices, AddRoom).
+   - Redesigned OCR banner: prominent gradient card with icon + title "Scansione OCR Documento" + subtitle + "Carica" button. Impossible to miss.
+   - Added Autorità Emittente input `[data-testid='owner-authority']` wired to OCR `issuing_authority` field.
+   - Improved OCR error UX: file-type/size validation client-side with clear toast messages (not silent).
+- RESPONSIVE:
+   - Layout.js: mobile top padding `pt-16 sm:p-6` so content doesn't hide under hamburger menu.
+   - All Dialog form grids: `grid-cols-1 sm:grid-cols-2` + children `col-span-1 sm:col-span-2` (fixes CSS Grid implicit 2nd-column bug on mobile).
+   - Page headers: `flex-wrap gap-4` for mobile stacking.
+   - Global CSS `@media (max-width:768px)`: table overflow-x on .luxury-card, dialog max-w 95vw, title font sizes reduced.
+- Tested via /app/test_reports/iteration_19.json (backend 12/12) + iteration_20.json (frontend 5/6 → final retest OK).
+
 ## DONE (Apr 30, 2026): Room reassignment orphan-fix + Property Photo Gallery + Invoice PDFs
 - BUG FIX: `POST /api/rooms/{id}/assign` now clears orphan `tenant.room_id` when assigning to an already-occupied room (rooms.py:113-121)
 - FEATURE — Property Photo Gallery Lightbox:

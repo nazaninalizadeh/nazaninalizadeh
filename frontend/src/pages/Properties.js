@@ -241,7 +241,7 @@ const Properties = () => {
                   </Select>
                 </div>
                 {!editingProperty && <div />}
-                <div className="col-span-2"><Label>Indirizzo *</Label><Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} required className="luxury-input" /></div>
+                <div className="col-span-1 sm:col-span-2"><Label>Indirizzo *</Label><Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} required className="luxury-input" /></div>
                 <div>
                   <Label>Provincia</Label>
                   <Combobox options={PROVINCES} value={formData.province} onChange={v => setFormData({ ...formData, province: v })} placeholder="PD - Padova" dataTestid="property-province" />
@@ -416,10 +416,10 @@ const Properties = () => {
 
       {/* Add Room Dialog */}
       <Dialog open={addRoomOpen} onOpenChange={setAddRoomOpen}>
-        <DialogContent className="luxury-modal" style={{ background: '#FFFBF5' }}>
+        <DialogContent className="luxury-modal max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto" style={{ background: '#FFFBF5' }}>
           <DialogHeader><DialogTitle>Nuova Stanza</DialogTitle></DialogHeader>
           <form onSubmit={handleAddRoom} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label>Numero Stanza *</Label><Input value={roomForm.room_number} onChange={e => setRoomForm({ ...roomForm, room_number: e.target.value })} required className="luxury-input" /></div>
               <div>
                 <Label>Tipo</Label>
@@ -428,7 +428,7 @@ const Properties = () => {
                   <SelectContent><SelectItem value="single">Singola</SelectItem><SelectItem value="double">Doppia</SelectItem></SelectContent>
                 </Select>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <Label>Affitto Totale (€)</Label>
                 <Input type="number" step="0.01" value={roomForm.monthly_rent} onChange={e => setRoomForm({ ...roomForm, monthly_rent: parseFloat(e.target.value) || 0 })} className="luxury-input" />
                 {roomForm.room_type === 'double' && roomForm.monthly_rent > 0 && (

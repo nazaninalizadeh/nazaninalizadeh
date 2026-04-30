@@ -236,8 +236,8 @@ const Landlords = () => {
                 </div>
                 <div><Label>Telefono *</Label><Input value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required className="luxury-input" data-testid="owner-phone-input" /></div>
                 <div><Label>Email *</Label><Input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="luxury-input" /></div>
-                <div className="col-span-2"><Label>Indirizzo di Residenza</Label><Input value={formData.residence} onChange={e => setFormData({ ...formData, residence: e.target.value })} className="luxury-input" placeholder="Via, civico, città, provincia, CAP" /></div>
-                <div className="col-span-2"><Label>Dati Bancari *</Label><Input value={formData.bank_details} onChange={e => setFormData({ ...formData, bank_details: e.target.value })} required className="luxury-input" /></div>
+                <div className="col-span-1 sm:col-span-2"><Label>Indirizzo di Residenza</Label><Input value={formData.residence} onChange={e => setFormData({ ...formData, residence: e.target.value })} className="luxury-input" placeholder="Via, civico, città, provincia, CAP" /></div>
+                <div className="col-span-1 sm:col-span-2"><Label>Dati Bancari *</Label><Input value={formData.bank_details} onChange={e => setFormData({ ...formData, bank_details: e.target.value })} required className="luxury-input" /></div>
               </div>
 
               {/* Signature upload */}
