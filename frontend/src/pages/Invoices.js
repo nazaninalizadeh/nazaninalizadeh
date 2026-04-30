@@ -84,7 +84,7 @@ const Invoices = () => {
         axios.get(`${API_URL}/properties`, { withCredentials: true }),
         axios.get(`${API_URL}/contracts`, { withCredentials: true }),
       ]);
-      setInvoices(invoicesRes.data);
+      setInvoices((invoicesRes.data || []).filter(i => i.document_type !== 'preavviso'));
       setTenants(tenantsRes.data);
       setProperties(propertiesRes.data);
       setContracts(contractsRes.data);
@@ -98,67 +98,35 @@ const Invoices = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      let payload;
-      if (formData.document_type === 'preavviso') {
-        const imp = parseFloat(formData.imponibile) || 0;
-        const vat = parseFloat(formData.vat_rate) || 0;
-        const rimb = parseFloat(formData.rimborso_amount) || 0;
-        const total = imp + (imp * vat / 100) + rimb;
-        payload = {
-          tenant_id: formData.tenant_id || '',
-          property_id: formData.property_id || '',
-          contract_id: formData.contract_id || '',
-          invoice_type: formData.invoice_type,
-          document_type: 'preavviso',
-          amount: total,
-          due_date: formData.due_date,
-          description: formData.body_text || formData.description || '',
-          body_text: formData.body_text,
-          imponibile: imp,
-          vat_rate: vat,
-          rimborso_label: formData.rimborso_label,
-          rimborso_amount: rimb,
-          rimborso_note: formData.rimborso_note,
-          rimborso_tax_note: formData.rimborso_tax_note,
-          recipient_name: formData.recipient_name,
-          recipient_address: formData.recipient_address,
-          recipient_cf_piva: formData.recipient_cf_piva,
-        };
-      } else {
-        const rent = parseFloat(formData.rent) || 0;
-        const dep = parseFloat(formData.deposit) || 0;
-        const ag = parseFloat(formData.agency_fee) || 0;
-        const reg = parseFloat(formData.registration) || 0;
-        const disc = parseFloat(formData.discount) || 0;
-        const total = rent + dep + ag + reg - disc;
-        const desc = [
-          rent ? `Affitto: €${rent}` : null,
-          dep ? `Deposito: €${dep}` : null,
-          ag ? `Spese agenzia: €${ag}` : null,
-          reg ? `Registrazione: €${reg}` : null,
-          disc ? `Sconto: -€${disc}` : null,
-          formData.description,
-        ].filter(Boolean).join(' | ');
-        payload = {
-          tenant_id: formData.tenant_id,
-          property_id: formData.property_id,
-          contract_id: formData.contract_id,
-          invoice_type: formData.invoice_type,
-          document_type: 'fattura',
-          amount: total,
-          due_date: formData.due_date,
-          description: desc || `Fattura del ${formData.due_date}`,
-          rent,
-          deposit: dep,
-          agency_fee: ag,
-          registration: reg,
-          discount: disc,
-          vat_rate: parseFloat(formData.vat_rate) || 22,
-          imponibile: total,
-        };
-      }
+      const rent = parseFloat(formData.rent) || 0;
+      const dep = parseFloat(formData.deposit) || 0;
+      const ag = parseFloat(formData.agency_fee) || 0;
+      const reg = parseFloat(formData.registration) || 0;
+      const disc = parseFloat(formData.discount) || 0;
+      const total = rent + dep + ag + reg - disc;
+      const desc = [
+        rent ? `Affitto: €${rent}` : null,
+        dep ? `Deposito: €${dep}` : null,
+        ag ? `Spese agenzia: €${ag}` : null,
+        reg ? `Registrazione: €${reg}` : null,
+        disc ? `Sconto: -€${disc}` : null,
+        formData.description,
+      ].filter(Boolean).join(' | ');
+      const payload = {
+        tenant_id: formData.tenant_id,
+        property_id: formData.property_id,
+        contract_id: formData.contract_id,
+        invoice_type: formData.invoice_type,
+        document_type: 'fattura',
+        amount: total,
+        due_date: formData.due_date,
+        description: desc || `Fattura del ${formData.due_date}`,
+        rent, deposit: dep, agency_fee: ag, registration: reg, discount: disc,
+        vat_rate: parseFloat(formData.vat_rate) || 22,
+        imponibile: total,
+      };
       await axios.post(`${API_URL}/invoices`, payload, { withCredentials: true });
-      toast.success(formData.document_type === 'preavviso' ? 'Preavviso creato' : 'Fattura creata');
+      toast.success('Fattura creata');
       setDialogOpen(false);
       resetForm();
       fetchData();
@@ -293,90 +261,6 @@ const Invoices = () => {
               <DialogTitle data-testid="invoice-dialog-title">Crea Nuova Fattura</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="invoice-form">
-              {/* Document type toggle */}
-              <div className="flex gap-2 p-1 rounded-xl" style={{ background: 'rgba(184,134,11,0.08)', border: '1px solid rgba(184,134,11,0.15)' }}>
-                <button type="button"
-                  onClick={() => setFormData({ ...formData, document_type: 'fattura' })}
-                  className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{ background: formData.document_type === 'fattura' ? '#9F1239' : 'transparent', color: formData.document_type === 'fattura' ? 'white' : '#8B7355' }}
-                  data-testid="doc-type-fattura">
-                  Fattura
-                </button>
-                <button type="button"
-                  onClick={() => setFormData({ ...formData, document_type: 'preavviso' })}
-                  className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{ background: formData.document_type === 'preavviso' ? '#9F1239' : 'transparent', color: formData.document_type === 'preavviso' ? 'white' : '#8B7355' }}
-                  data-testid="doc-type-preavviso">
-                  Preavviso di Fatturazione
-                </button>
-              </div>
-
-              {formData.document_type === 'preavviso' ? (
-                /* ========== PREAVVISO FIELDS ========== */
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="col-span-1 sm:col-span-2">
-                      <Label>Destinatario (Spett.le) *</Label>
-                      <Input value={formData.recipient_name} onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })} required className="luxury-input" placeholder="ELEISON Societa' Cooperativa Sociale" data-testid="preavviso-recipient-name" />
-                    </div>
-                    <div>
-                      <Label>Indirizzo Destinatario</Label>
-                      <Input value={formData.recipient_address} onChange={(e) => setFormData({ ...formData, recipient_address: e.target.value })} className="luxury-input" placeholder="Via Giorgio Pulle' 15/17 Padova" data-testid="preavviso-recipient-address" />
-                    </div>
-                    <div>
-                      <Label>C.F. / P.IVA</Label>
-                      <Input value={formData.recipient_cf_piva} onChange={(e) => setFormData({ ...formData, recipient_cf_piva: e.target.value })} className="luxury-input" placeholder="05028740289" data-testid="preavviso-recipient-cf" />
-                    </div>
-                    <div className="col-span-1 sm:col-span-2">
-                      <Label>Causale / Descrizione *</Label>
-                      <Input value={formData.body_text} onChange={(e) => setFormData({ ...formData, body_text: e.target.value })} required className="luxury-input" placeholder="Ricerca appartamento in locazione situato a Padova Via Mozart" data-testid="preavviso-body" />
-                    </div>
-                    <div>
-                      <Label>Data Preavviso *</Label>
-                      <Input type="date" value={formData.due_date} onChange={(e) => setFormData({ ...formData, due_date: e.target.value })} required className="luxury-input" data-testid="preavviso-date" />
-                    </div>
-                    <div />
-                  </div>
-
-                  <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(184,134,11,0.04)', border: '1px solid rgba(184,134,11,0.15)' }}>
-                    <h4 className="text-sm font-semibold" style={{ color: '#9F1239' }}>Importi</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <Label>Imponibile (€)</Label>
-                        <Input type="number" step="0.01" value={formData.imponibile} onChange={(e) => setFormData({ ...formData, imponibile: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="preavviso-imponibile" />
-                      </div>
-                      <div>
-                        <Label>IVA (%)</Label>
-                        <Input type="number" step="1" value={formData.vat_rate} onChange={(e) => setFormData({ ...formData, vat_rate: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="preavviso-vat" />
-                      </div>
-                      <div className="col-span-1 sm:col-span-2">
-                        <Label>Voce Rimborso (opzionale)</Label>
-                        <Input value={formData.rimborso_label} onChange={(e) => setFormData({ ...formData, rimborso_label: e.target.value })} className="luxury-input" placeholder="Rimborso spese vostra quota registrazione contratto" data-testid="preavviso-rimborso-label" />
-                      </div>
-                      <div>
-                        <Label>Importo Rimborso (€)</Label>
-                        <Input type="number" step="0.01" value={formData.rimborso_amount} onChange={(e) => setFormData({ ...formData, rimborso_amount: parseFloat(e.target.value) || 0 })} className="luxury-input" data-testid="preavviso-rimborso-amount" />
-                      </div>
-                      <div>
-                        <Label>Nota IVA Rimborso</Label>
-                        <Input value={formData.rimborso_tax_note} onChange={(e) => setFormData({ ...formData, rimborso_tax_note: e.target.value })} className="luxury-input" placeholder="(esente iva art 15)" data-testid="preavviso-rimborso-tax-note" />
-                      </div>
-                      <div className="col-span-1 sm:col-span-2">
-                        <Label>Nota aggiuntiva (opzionale)</Label>
-                        <Input value={formData.rimborso_note} onChange={(e) => setFormData({ ...formData, rimborso_note: e.target.value })} className="luxury-input" placeholder="(Imposta di bollo non presente in quanto cooperativa onlus)" data-testid="preavviso-rimborso-note" />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'rgba(184,134,11,0.15)' }}>
-                      <span className="text-sm font-semibold" style={{ color: '#2C1810' }}>TOTALE FATTURA</span>
-                      <span className="text-lg font-bold" style={{ color: '#9F1239' }} data-testid="preavviso-total">
-                        €{(((parseFloat(formData.imponibile) || 0) * (1 + (parseFloat(formData.vat_rate) || 0) / 100)) + (parseFloat(formData.rimborso_amount) || 0)).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* ========== FATTURA FIELDS (existing) ========== */
-                <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="tenant_id">Inquilino *</Label>
@@ -486,8 +370,6 @@ const Invoices = () => {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
-                </>
-              )}
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
                   Annulla

@@ -37,7 +37,8 @@ const Properties = () => {
   const [gallery, setGallery] = useState(null); // { propertyId, images, index }
 
   const [formData, setFormData] = useState({
-    property_code: '', address: '', property_type: 'Appartamento', number_of_rooms: 1,
+    property_code: '', address: '', civico: '', comune: 'Padova',
+    property_type: 'Appartamento', number_of_rooms: 1,
     capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '',
     province: 'PD', phone: '',
   });
@@ -86,11 +87,11 @@ const Properties = () => {
     try { await axios.delete(`${API}/properties/${id}`, { withCredentials: true }); toast.success('Eliminato'); fetchAll(); } catch { toast.error('Errore'); }
   };
 
-  const resetForm = () => { setFormData({ property_code: '', address: '', property_type: 'Appartamento', number_of_rooms: 1, capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '', province: 'PD', phone: '' }); setEditingProperty(null); };
+  const resetForm = () => { setFormData({ property_code: '', address: '', civico: '', comune: 'Padova', property_type: 'Appartamento', number_of_rooms: 1, capacity: 1, landlord_id: '', rental_amount: 0, additional_charges: '', province: 'PD', phone: '' }); setEditingProperty(null); };
 
   const openEdit = (p) => {
     setEditingProperty(p);
-    setFormData({ property_code: p.property_code, address: p.address, property_type: p.property_type || 'Appartamento', number_of_rooms: p.number_of_rooms, capacity: p.capacity, landlord_id: p.landlord_id, rental_amount: p.rental_amount, additional_charges: p.additional_charges || '', province: p.province || 'PD', phone: p.phone || '' });
+    setFormData({ property_code: p.property_code, address: p.address, civico: p.civico || '', comune: p.comune || 'Padova', property_type: p.property_type || 'Appartamento', number_of_rooms: p.number_of_rooms, capacity: p.capacity, landlord_id: p.landlord_id, rental_amount: p.rental_amount, additional_charges: p.additional_charges || '', province: p.province || 'PD', phone: p.phone || '' });
     setDialogOpen(true);
   };
 
@@ -241,7 +242,11 @@ const Properties = () => {
                   </Select>
                 </div>
                 {!editingProperty && <div />}
-                <div className="col-span-1 sm:col-span-2"><Label>Indirizzo *</Label><Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} required className="luxury-input" /></div>
+                <div className="col-span-1 sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2"><Label>Via / Piazza *</Label><Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} required className="luxury-input" placeholder="Via Magenta" data-testid="property-via" /></div>
+                  <div><Label>Numero civico *</Label><Input value={formData.civico} onChange={e => setFormData({ ...formData, civico: e.target.value })} required className="luxury-input" placeholder="11" data-testid="property-civico" /></div>
+                </div>
+                <div><Label>Comune *</Label><Input value={formData.comune} onChange={e => setFormData({ ...formData, comune: e.target.value })} required className="luxury-input" placeholder="Padova" data-testid="property-comune" /></div>
                 <div>
                   <Label>Provincia</Label>
                   <Combobox options={PROVINCES} value={formData.province} onChange={v => setFormData({ ...formData, province: v })} placeholder="PD - Padova" dataTestid="property-province" />

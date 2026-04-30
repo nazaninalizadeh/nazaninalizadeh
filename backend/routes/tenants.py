@@ -36,7 +36,7 @@ async def _enrich_tenant(t: dict) -> dict:
         {"tenant_id": t["id"], "month": current_month, "year": current_year},
         {"_id": 0}
     )
-    if override:
+    if override and override.get("status"):
         method_map = {"contanti": "Contanti", "cash": "Contanti", "bonifico": "Bonifico", "bank_transfer": "Bonifico", "carta": "Carta"}
         raw = override.get("payment_method", "")
         t["payment_status"] = override["status"]

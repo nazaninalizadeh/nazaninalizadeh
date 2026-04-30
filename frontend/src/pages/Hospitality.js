@@ -17,6 +17,7 @@ const Hospitality = () => {
   const [properties, setProperties] = useState([]);
   const [landlords, setLandlords] = useState([]);
   const [records, setRecords] = useState([]);
+  const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [downloading, setDownloading] = useState(null);
@@ -31,7 +32,7 @@ const Hospitality = () => {
 
   // Create form
   const [form, setForm] = useState({
-    tenant_id: '', property_id: '', room_id: '',
+    tenant_id: '', property_id: '', room_id: '', landlord_id: '', contract_id: '',
     check_in_date: '', check_out_date: '',
     hosting_type: 'alloggio',
     host_surname: '', host_name: '', host_dob: '', host_birth_place: '',
@@ -41,20 +42,44 @@ const Hospitality = () => {
     signature_type: 'owner',
   });
 
+  // Auto-fill landlord, property, contract & dates when tenant changes
+  const handleTenantChange = (tid) => {
+    const t = tenants.find((x) => x.id === tid);
+    if (!t) { setForm((f) => ({ ...f, tenant_id: tid })); return; }
+    const property = properties.find((p) => p.id === t.property_id);
+    const ll = property ? landlords.find((l) => l.id === property.landlord_id) : null;
+    const ctr = contracts.find((c) => c.tenant_id === tid && c.status === 'active') ||
+                contracts.find((c) => c.tenant_id === tid);
+    setForm((f) => ({
+      ...f,
+      tenant_id: tid,
+      property_id: t.property_id || f.property_id,
+      room_id: t.room_id || f.room_id,
+      landlord_id: ll?.id || f.landlord_id,
+      contract_id: ctr?.id || f.contract_id,
+      check_in_date: ctr?.start_date || f.check_in_date,
+      check_out_date: ctr?.end_date || f.check_out_date,
+      property_comune: property?.comune || property?.city || f.property_comune,
+      property_provincia: property?.province || f.property_provincia,
+    }));
+  };
+
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
     try {
-      const [t, p, r, l] = await Promise.all([
+      const [t, p, r, l, ct] = await Promise.all([
         axios.get(`${API}/tenants`, { withCredentials: true }),
         axios.get(`${API}/properties`, { withCredentials: true }),
         axios.get(`${API}/hospitality/records`, { withCredentials: true }).catch(() => ({ data: [] })),
         axios.get(`${API}/landlords`, { withCredentials: true }).catch(() => ({ data: [] })),
+        axios.get(`${API}/contracts`, { withCredentials: true }).catch(() => ({ data: [] })),
       ]);
       setTenants(t.data);
       setProperties(p.data);
       setRecords(r.data);
       setLandlords(l.data);
+      setContracts(ct.data);
     } catch { toast.error('Errore nel caricamento'); }
     setLoading(false);
   };
@@ -135,7 +160,7 @@ const Hospitality = () => {
       }
       setCreateOpen(false);
       setEditingId(null);
-      setForm({ tenant_id: '', property_id: '', room_id: '', check_in_date: '', check_out_date: '', hosting_type: 'alloggio', host_surname: '', host_name: '', host_dob: '', host_birth_place: '', host_province: '', host_residence: '', property_comune: '', property_provincia: '', property_number: '', property_interno: '', property_piano: '', notes: '', signature_type: 'owner' });
+      setForm({ tenant_id: '', property_id: '', room_id: '', landlord_id: '', contract_id: '', check_in_date: '', check_out_date: '', hosting_type: 'alloggio', host_surname: '', host_name: '', host_dob: '', host_birth_place: '', host_province: '', host_residence: '', property_comune: '', property_provincia: '', property_number: '', property_interno: '', property_piano: '', notes: '', signature_type: 'owner' });
       setOcrStatus('idle');
       setOcrResult(null);
       setOcrPreview(null);
@@ -212,7 +237,7 @@ const Hospitality = () => {
               </div>
 
               {/* Tenant + Property Selection */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Inquilino (Ospitato) *</Label>
                   <Select value={form.tenant_id} onValueChange={async v => {
@@ -274,6 +299,48 @@ const Hospitality = () => {
                     <SelectContent>
                       {properties.map(p => (
                         <SelectItem key={p.id} value={p.id}>{p.property_code} — {p.address}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Proprietario (Dichiarante) *</Label>
+                  <Select value={form.landlord_id} onValueChange={(v) => {
+                    const ll = landlords.find((l) => l.id === v);
+                    const llName = ll?.full_name || '';
+                    const parts = llName.split(' ');
+                    setForm((prev) => ({
+                      ...prev, landlord_id: v,
+                      host_surname: ll?.surname || (parts.length >= 2 ? parts[parts.length - 1] : llName) || prev.host_surname,
+                      host_name: ll?.name || (parts.length >= 2 ? parts.slice(0, -1).join(' ') : '') || prev.host_name,
+                      host_dob: ll?.date_of_birth || prev.host_dob,
+                      host_birth_place: ll?.place_of_birth || prev.host_birth_place,
+                      host_province: ll?.province_of_birth || prev.host_province,
+                      host_residence: ll?.residence || prev.host_residence,
+                    }));
+                  }}>
+                    <SelectTrigger data-testid="hospitality-landlord-select"><SelectValue placeholder="Seleziona proprietario" /></SelectTrigger>
+                    <SelectContent>
+                      {landlords.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>{l.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Contratto (auto)</Label>
+                  <Select value={form.contract_id} onValueChange={(v) => {
+                    const ctr = contracts.find((c) => c.id === v);
+                    setForm((prev) => ({
+                      ...prev, contract_id: v,
+                      check_in_date: ctr?.start_date || prev.check_in_date,
+                      check_out_date: ctr?.end_date || prev.check_out_date,
+                    }));
+                  }}>
+                    <SelectTrigger data-testid="hospitality-contract-select"><SelectValue placeholder="Seleziona contratto" /></SelectTrigger>
+                    <SelectContent>
+                      {contracts.filter((c) => !form.tenant_id || c.tenant_id === form.tenant_id).map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.contract_number} ({c.start_date} → {c.end_date})</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -360,6 +427,8 @@ const Hospitality = () => {
                       tenant_id: r.tenant_id || '',
                       property_id: r.property_id || '',
                       room_id: r.room_id || '',
+                      landlord_id: r.landlord_id || '',
+                      contract_id: r.contract_id || '',
                       check_in_date: r.check_in_date || '',
                       check_out_date: r.check_out_date || '',
                       hosting_type: r.hosting_type || 'alloggio',

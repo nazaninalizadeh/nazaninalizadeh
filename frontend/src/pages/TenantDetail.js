@@ -182,6 +182,7 @@ const TenantDetail = () => {
                         <><div className="w-2 h-2 rounded-full bg-amber-500 mx-auto my-1" /><p className="text-[10px] font-semibold" style={{ color: '#D97706' }}>Non Pagato</p></>
                       )}
                       {m.manual_override && <p className="text-[7px] mt-0.5" style={{ color: '#9F1239' }}>manuale</p>}
+                      {m.receipt_url && <p className="text-[8px] mt-0.5 font-semibold" style={{ color: '#059669' }} data-testid={`receipt-badge-${m.month}`}>📎 Ricevuta</p>}
                     </button>
                   );
                 })}
@@ -253,6 +254,69 @@ const TenantDetail = () => {
                     }} className="w-full p-2 rounded-lg text-xs font-semibold text-white" style={{ background: '#059669' }} data-testid="set-month-paid">
                       Conferma Pagamento
                     </button>
+                  </div>
+
+                  {/* Receipt upload (PDF / image) */}
+                  <div className="p-3 rounded-xl" style={{ background: 'rgba(184,134,11,0.05)', border: '1.5px solid rgba(184,134,11,0.2)' }}>
+                    <p className="font-semibold text-sm mb-2" style={{ color: '#9F1239' }}>Ricevuta del mese</p>
+                    {editMonth.receipt_url ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: '#ECFDF5', color: '#059669' }}>Ricevuta caricata</span>
+                          <span style={{ color: '#8B7355' }} className="truncate flex-1">{editMonth.receipt_filename || 'file'}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <a href={`${process.env.REACT_APP_BACKEND_URL}${editMonth.receipt_url}`} target="_blank" rel="noopener noreferrer"
+                            className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-center" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.3)', color: '#9F1239' }}
+                            data-testid={`view-month-receipt-${editMonth.month}`}>
+                            <Download size={12} className="inline mr-1" /> Vedi
+                          </a>
+                          <label className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-center cursor-pointer" style={{ background: '#FFFBF5', border: '1px solid rgba(184,134,11,0.3)', color: '#9F1239' }}>
+                            <Upload size={12} className="inline mr-1" /> Sostituisci
+                            <input type="file" accept="application/pdf,image/*" className="hidden"
+                              onChange={async (e) => {
+                                const f = e.target.files[0]; if (!f) return;
+                                const fd = new FormData(); fd.append('file', f);
+                                try {
+                                  const { data } = await axios.post(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}/receipt`, fd, { withCredentials: true });
+                                  toast.success('Ricevuta sostituita');
+                                  setEditMonth({ ...editMonth, receipt_url: data.receipt_url, receipt_filename: f.name });
+                                  fetchCalendar();
+                                } catch (err) { toast.error(err.response?.data?.detail || 'Errore upload'); }
+                              }}
+                              data-testid={`replace-month-receipt-${editMonth.month}`} />
+                          </label>
+                          <button onClick={async () => {
+                            if (!window.confirm('Eliminare la ricevuta?')) return;
+                            try {
+                              await axios.delete(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}/receipt`, { withCredentials: true });
+                              toast.success('Ricevuta eliminata');
+                              setEditMonth({ ...editMonth, receipt_url: '', receipt_filename: '' });
+                              fetchCalendar();
+                            } catch { toast.error('Errore'); }
+                          }} className="px-2 py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#FEF2F2', border: '1px solid rgba(220,38,38,0.3)', color: '#DC2626' }}
+                            data-testid={`delete-month-receipt-${editMonth.month}`}>
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer text-xs font-semibold" style={{ background: 'white', border: '1.5px dashed rgba(184,134,11,0.4)', color: '#9F1239' }}
+                        data-testid={`upload-month-receipt-${editMonth.month}`}>
+                        <Upload size={14} /> Carica Ricevuta (PDF / Immagine)
+                        <input type="file" accept="application/pdf,image/*" className="hidden"
+                          onChange={async (e) => {
+                            const f = e.target.files[0]; if (!f) return;
+                            const fd = new FormData(); fd.append('file', f);
+                            try {
+                              const { data } = await axios.post(`${API_URL}/payment-calendar/${id}/${editMonth.year}/${editMonth.month}/receipt`, fd, { withCredentials: true });
+                              toast.success('Ricevuta caricata');
+                              setEditMonth({ ...editMonth, receipt_url: data.receipt_url, receipt_filename: f.name });
+                              fetchCalendar();
+                            } catch (err) { toast.error(err.response?.data?.detail || 'Errore upload'); }
+                          }} />
+                      </label>
+                    )}
                   </div>
                 </div>
                 {editMonth.manual_override && (

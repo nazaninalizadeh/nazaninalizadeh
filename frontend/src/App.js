@@ -12,6 +12,7 @@ import LandlordDetail from './pages/LandlordDetail';
 import Properties from './pages/Properties';
 import Contracts from './pages/Contracts';
 import Invoices from './pages/Invoices';
+import Preavviso from './pages/Preavviso';
 import Rooms from './pages/Rooms';
 import Payments from './pages/Payments';
 import Notifications from './pages/Notifications';
@@ -50,6 +51,7 @@ function App() {
               <Route path="registration" element={<Registration />} />
               <Route path="contracts" element={<Contracts />} />
               <Route path="invoices" element={<Invoices />} />
+              <Route path="preavviso" element={<Preavviso />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="reports" element={<Reports />} />
               <Route path="data-exchange" element={<DataExchange />} />

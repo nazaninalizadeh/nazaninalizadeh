@@ -56,6 +56,8 @@ class LandlordCreate(BaseModel):
 class PropertyCreate(BaseModel):
     property_code: Optional[str] = ""
     address: str
+    civico: Optional[str] = ""           # numero civico (street number)
+    comune: Optional[str] = ""           # comune (city)
     property_type: str = "Appartamento"
     number_of_rooms: int
     capacity: int

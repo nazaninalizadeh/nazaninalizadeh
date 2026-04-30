@@ -75,6 +75,7 @@ const Layout = () => {
     { path: '/registration', label: 'Registrazione', icon: ClipboardList },
     { path: '/contracts', label: 'Contratti', icon: FileText },
     { path: '/invoices', label: 'Fatture', icon: Receipt },
+    { path: '/preavviso', label: 'Preavviso di Fatturazione', icon: Receipt },
     { path: '/notifications', label: 'Notifiche', icon: Bell },
     { path: '/reports', label: 'Report', icon: BarChart3 },
     { path: '/data-exchange', label: 'Gestione Dati', icon: Sheet },

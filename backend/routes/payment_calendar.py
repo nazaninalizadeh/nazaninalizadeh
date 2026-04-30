@@ -35,7 +35,7 @@ async def _compute_month_status(tenant_id: str, month: int, year: int, due_day: 
         {"tenant_id": tenant_id, "month": month, "year": year},
         {"_id": 0}
     )
-    if override:
+    if override and override.get("status"):
         return {
             "month": month,
             "month_name": MONTH_NAMES[month],
@@ -47,6 +47,9 @@ async def _compute_month_status(tenant_id: str, month: int, year: int, due_day: 
             "notes": override.get("notes", ""),
             "manual_override": True,
             "updated_at": override.get("updated_at", ""),
+            "receipt_url": override.get("receipt_url", ""),
+            "receipt_filename": override.get("receipt_filename", ""),
+            "contract_id": override.get("contract_id", ""),
         }
 
     # 2. Check actual payment records
@@ -57,6 +60,13 @@ async def _compute_month_status(tenant_id: str, month: int, year: int, due_day: 
         {"tenant_id": tenant_id, "payment_date": {"$gte": month_start, "$lt": month_end}},
         {"_id": 0}
     ).to_list(10)
+
+    # Receipt info (if uploaded but no manual status set)
+    extra_receipt = {
+        "receipt_url": (override or {}).get("receipt_url", ""),
+        "receipt_filename": (override or {}).get("receipt_filename", ""),
+        "contract_id": (override or {}).get("contract_id", ""),
+    }
 
     if payments:
         total = sum(p.get("amount", 0) for p in payments)
@@ -69,6 +79,7 @@ async def _compute_month_status(tenant_id: str, month: int, year: int, due_day: 
             "payment_method": method_map.get(raw, raw.capitalize() if raw else ""),
             "payment_date": payments[0].get("payment_date", ""),
             "notes": "", "manual_override": False, "updated_at": "",
+            **extra_receipt,
         }
 
     # 3. Check if month is before tenant creation → "none"
@@ -80,17 +91,16 @@ async def _compute_month_status(tenant_id: str, month: int, year: int, due_day: 
                     "month": month, "month_name": MONTH_NAMES[month], "year": year,
                     "status": "none", "amount": 0, "payment_method": "", "payment_date": "",
                     "notes": "", "manual_override": False, "updated_at": "",
+                    **extra_receipt,
                 }
         except Exception:
             pass
 
-    # 4. Auto-determine: In Ritardo if 1 day past due_day (from contract or tenant setting)
-    # "After due date + 1 day" means: if today > due_day, it's late
+    # 4. Auto-determine: In Ritardo if 1 day past due_day
     if year < now.year or (year == now.year and month < now.month):
         status = "late"
     elif year == now.year and month == now.month:
         today_day = int(now.strftime("%d"))
-        # Late = 1 day after due date (due_day + 1)
         status = "late" if today_day > due_day else "not_paid"
     else:
         status = "not_paid"
@@ -99,6 +109,7 @@ async def _compute_month_status(tenant_id: str, month: int, year: int, due_day: 
         "month": month, "month_name": MONTH_NAMES[month], "year": year,
         "status": status, "amount": 0, "payment_method": "", "payment_date": "",
         "notes": "", "manual_override": False, "updated_at": "",
+        **extra_receipt,
     }
 
 
@@ -185,6 +196,88 @@ async def reset_month_status(
         {"tenant_id": tenant_id, "month": month, "year": year}
     )
     return {"message": "Override rimosso, stato calcolato automaticamente"}
+
+
+# ---- Receipt upload per month ---------------------------------------------
+import os
+import shutil
+from fastapi import UploadFile, File
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "receipts")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+ALLOWED_EXT = {".pdf", ".png", ".jpg", ".jpeg", ".webp"}
+
+
+@router.post("/payment-calendar/{tenant_id}/{year}/{month}/receipt")
+async def upload_month_receipt(
+    tenant_id: str, year: int, month: int,
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
+    """Upload a payment receipt (PDF/image) for a specific month/year."""
+    if month < 1 or month > 12:
+        raise HTTPException(status_code=400, detail="Mese non valido")
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_EXT:
+        raise HTTPException(status_code=400, detail="Formato non supportato. Usa PDF/PNG/JPG/WEBP.")
+
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Inquilino non trovato")
+
+    # Find linked active contract (if any)
+    contract = await db.contracts.find_one(
+        {"tenant_id": tenant_id, "status": "active"}, {"_id": 0, "id": 1}
+    )
+    contract_id = contract.get("id") if contract else ""
+
+    # Persist file with unique name
+    filename = f"{tenant_id}_{year}_{month:02d}_{uuid.uuid4().hex[:8]}{ext}"
+    abs_path = os.path.join(UPLOAD_DIR, filename)
+    with open(abs_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    receipt_url = f"/uploads/receipts/{filename}"
+
+    now = datetime.now(timezone.utc).isoformat()
+    await db.monthly_status.update_one(
+        {"tenant_id": tenant_id, "month": month, "year": year},
+        {"$set": {
+            "tenant_id": tenant_id, "month": month, "year": year,
+            "contract_id": contract_id,
+            "receipt_url": receipt_url,
+            "receipt_filename": file.filename,
+            "receipt_uploaded_at": now,
+            "receipt_uploaded_by": user.get("email", ""),
+            "updated_at": now,
+        }},
+        upsert=True,
+    )
+    return {"message": "Ricevuta caricata", "receipt_url": receipt_url, "contract_id": contract_id}
+
+
+@router.delete("/payment-calendar/{tenant_id}/{year}/{month}/receipt")
+async def delete_month_receipt(
+    tenant_id: str, year: int, month: int,
+    user: dict = Depends(get_current_user),
+):
+    """Delete an uploaded receipt for a month."""
+    rec = await db.monthly_status.find_one(
+        {"tenant_id": tenant_id, "month": month, "year": year}, {"_id": 0}
+    )
+    if rec and rec.get("receipt_url"):
+        # remove physical file (best effort)
+        rel = rec["receipt_url"].lstrip("/")
+        abs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), rel)
+        try:
+            if os.path.exists(abs_path):
+                os.remove(abs_path)
+        except OSError:
+            pass
+    await db.monthly_status.update_one(
+        {"tenant_id": tenant_id, "month": month, "year": year},
+        {"$unset": {"receipt_url": "", "receipt_filename": "", "receipt_uploaded_at": "", "receipt_uploaded_by": ""}},
+    )
+    return {"message": "Ricevuta eliminata"}
 
 
 @router.get("/late-tenants")

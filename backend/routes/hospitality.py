@@ -18,6 +18,8 @@ class HospitalityCreate(BaseModel):
     tenant_id: str
     property_id: str
     room_id: Optional[str] = ""
+    landlord_id: Optional[str] = ""
+    contract_id: Optional[str] = ""
     check_in_date: str
     check_out_date: Optional[str] = ""
     hosting_type: Optional[str] = "alloggio"
