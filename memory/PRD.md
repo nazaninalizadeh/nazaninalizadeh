@@ -73,6 +73,22 @@ Proprietari | Immobili | Inquilini | Dashboard | Pagamenti | Ospitalità | Regis
    - Invoice dynamic panel: Affitto + Deposito + Spese agenzia + Registrazione (default 98) + Sconto + auto-computed TOTALE
    - Invoice auto-fill on tenant select (property + contract + rent + deposit)
 
+## DONE (Apr 30, 2026): Room reassignment orphan-fix + Property Photo Gallery + Invoice PDFs
+- BUG FIX: `POST /api/rooms/{id}/assign` now clears orphan `tenant.room_id` when assigning to an already-occupied room (rooms.py:113-121)
+- FEATURE — Property Photo Gallery Lightbox:
+   - Click any property thumbnail in expanded Immobili card → full-screen lightbox
+   - Navigation: prev/next arrows, thumbnail strip, counter (1/N)
+   - Delete button removes photo via DELETE /api/properties/{id}/images?url=...
+   - data-testids: property-photo-thumb-{pid}-{i}, property-gallery-lightbox, gallery-close/prev/next/delete/main-image, gallery-thumb-{i}
+- FEATURE — Invoice PDFs (2 types, pixel-drawn via ReportLab):
+   - `/app/backend/services/invoice_pdf.py` with generate_fattura_pdf() + generate_preavviso_pdf()
+   - Fattura: replica of COEB example (DESCRIZIONE/IMPORTO + RIEPILOGO IVA box + MODALITA'/SCADENZE footer)
+   - Preavviso: replica of ELEISON example (Spett.le + CAUSALE line + TOTALE FATTURA + BONIFICO BANCARIO PRESSO)
+   - Preavviso accepts commercial recipients without a tenant (empty tenant_id/property_id allowed)
+   - Frontend: toggle tab [doc-type-fattura | doc-type-preavviso] switches input forms
+   - Live TOTAL = imponibile*(1+vat%) + rimborso (preavviso) or rent+dep+ag+reg-disc (fattura)
+- Tested via /app/test_reports/iteration_17.json (100% backend 7/7, 100% frontend 2/2)
+
 ## Backlog
 - P1: WhatsApp Business API for ZIP sharing (currently UI-toast)
 - P2: Replace test RECAPTCHA_SECRET with production key (or remove)
