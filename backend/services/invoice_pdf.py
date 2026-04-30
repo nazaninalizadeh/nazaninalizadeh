@@ -96,19 +96,16 @@ def _wrap(text: str, max_chars: int):
 # ============================================================================
 def generate_fattura_pdf(data: dict) -> BytesIO:
     """
-    Required keys (all optional with defaults):
-      invoice_number    : "20/2026"  (or any string — sanitised to N/YYYY)
-      invoice_date      : "17/04/2026" or ISO
-      recipient_name    : "COEB COSTRUZIONI S.R.L"
-      recipient_address : "VIA ANTONIANA 218/A"
-      recipient_city    : "35011 CAMPODARSEGO (PD)"
-      recipient_piva    : "04301600286"
-      recipient_cf      : "04301600286"
-      line_description  : "Ricerca inquilino per vostro appartamento ..."
-      line_amount       : 1100.00     (imponibile)
-      vat_rate          : 22
-      due_date          : "17/04/2026"
-      page_index        : "1 / 1"
+    Drawn replica of the COEB Fattura reference. All elements use absolute
+    (x, y) coordinates with no flow / no auto layout.
+
+    Layout (top-down):
+      - top: issuer 3 lines (right) + FATTURA nr. line (right)
+      - upper third: P.IVA/CF (left) + DESTINATARIO (right)
+      - upper-mid: table (DESCRIZIONE/IMPORTO + 1 row)
+      - mid: NOTE block
+      - empty middle space
+      - bottom third: MODALITA' + SCADENZE / RIEPILOGO IVA + GRAND TOTAL / footer
     """
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -117,145 +114,143 @@ def generate_fattura_pdf(data: dict) -> BytesIO:
     LEFT = 18 * mm
     RIGHT = W - 18 * mm
 
-    # ---------- 1) Top-right header (issuer, 3 lines) ----------
-    y = H - 18 * mm
-    c.setFont("Helvetica-Bold", 9.5)
+    # ===== TOP HEADER (issuer) — right-aligned ============================
+    y = H - 20 * mm
+    c.setFont("Helvetica", 9)
     c.drawRightString(RIGHT, y, ISSUER_NAME)
     y -= 11
-    c.setFont("Helvetica", 8.5)
+    c.setFont("Helvetica", 8)
     c.drawRightString(RIGHT, y, ISSUER_ADDR_FULL)
     y -= 11
     c.drawRightString(RIGHT, y, f"P.iva {ISSUER_PIVA} - C.F. {ISSUER_CF}")
 
-    # ---------- 2) "FATTURA nr. X/YYYY del DD/MM/YYYY" (right-aligned) ----------
+    # ===== "FATTURA nr. X/YYYY del DD/MM/YYYY" =============================
     inv_date_str = _fmt_date_it(data.get("invoice_date") or datetime.now().strftime("%Y-%m-%d"))
     try:
         year = int(inv_date_str.split("/")[-1])
     except (ValueError, IndexError):
         year = datetime.now().year
     inv_no = _short_invoice_no(data.get("invoice_number"), year)
-    y -= 22
-    c.setFont("Helvetica-Bold", 12)
+    y -= 26
+    c.setFont("Helvetica", 11)
     c.drawRightString(RIGHT, y, f"FATTURA  nr. {inv_no}  del  {inv_date_str}")
 
-    # ---------- 3) Recipient block (NO horizontal line above it) ----------
-    rec_y = y - 28
-    c.setFont("Helvetica-Bold", 9)
+    # ===== Recipient block =================================================
+    y -= 38
+    c.setFont("Helvetica", 10)
     if data.get("recipient_piva"):
-        c.drawString(LEFT, rec_y, "P.IVA")
-        c.setFont("Helvetica", 9)
-        c.drawString(LEFT + 35, rec_y, str(data["recipient_piva"]))
+        c.drawString(LEFT, y, "P.IVA")
+        c.drawString(LEFT + 22 * mm, y, str(data["recipient_piva"]))
     if data.get("recipient_cf"):
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(LEFT, rec_y - 12, "CF")
-        c.setFont("Helvetica", 9)
-        c.drawString(LEFT + 35, rec_y - 12, str(data["recipient_cf"]))
+        c.drawString(LEFT, y - 14, "CF")
+        c.drawString(LEFT + 22 * mm, y - 14, str(data["recipient_cf"]))
 
     rcol_x = LEFT + 95 * mm
-    c.setFont("Helvetica", 7.5)
-    c.drawString(rcol_x, rec_y, "DESTINATARIO")
-    c.setFont("Helvetica-Bold", 10.5)
-    c.drawString(rcol_x, rec_y - 13, str(data.get("recipient_name", "") or "").upper())
-    c.setFont("Helvetica", 9)
+    c.setFont("Helvetica", 8)
+    c.drawString(rcol_x, y + 2, "DESTINATARIO")
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(rcol_x, y - 12, str(data.get("recipient_name", "") or "").upper())
+    c.setFont("Helvetica", 9.5)
     rec_addr = str(data.get("recipient_address", "") or "").upper()
     rec_city = str(data.get("recipient_city", "") or "").upper()
     if rec_addr:
-        c.drawString(rcol_x, rec_y - 25, rec_addr)
+        c.drawString(rcol_x, y - 24, rec_addr)
     if rec_city:
-        c.drawString(rcol_x, rec_y - 36, rec_city)
+        c.drawString(rcol_x, y - 36, rec_city)
 
-    # ---------- 4) Item table (top horizontal line + DESCRIZIONE/IMPORTO row) ----------
-    table_top = rec_y - 60
+    # ===== Table: top line, header, row, bottom line =======================
+    table_top = y - 60
     c.setLineWidth(0.4)
     c.line(LEFT, table_top, RIGHT, table_top)
-    c.setFont("Helvetica", 7.5)
-    c.drawString(LEFT + 4, table_top - 11, "DESCRIZIONE")
-    c.drawRightString(RIGHT - 4, table_top - 11, "IMPORTO")
-    c.line(LEFT, table_top - 16, RIGHT, table_top - 16)
+    c.setFont("Helvetica", 8.5)
+    c.drawString(LEFT + 4, table_top - 12, "DESCRIZIONE")
+    c.drawRightString(RIGHT - 4, table_top - 12, "IMPORTO")
+    c.line(LEFT, table_top - 18, RIGHT, table_top - 18)
 
-    # Item row
     line_amount = float(data.get("line_amount", 0) or 0)
     desc_lines = _wrap(data.get("line_description", ""), 95)
-    row_h = 14 + (len(desc_lines) - 1) * 11
-    row_top = table_top - 16
-    row_bot = row_top - row_h
-    c.setFont("Helvetica-Bold", 9)
+    row_top = table_top - 18
+    c.setFont("Helvetica-Bold", 10)
     for i, ln in enumerate(desc_lines):
-        c.drawString(LEFT + 4, row_top - 11 - i * 11, ln)
-    c.setFont("Helvetica", 9.5)
-    c.drawRightString(RIGHT - 4, row_top - 11, _fmt_eur(line_amount))
+        c.drawString(LEFT + 4, row_top - 14 - i * 12, ln)
+    c.setFont("Helvetica", 11)
+    c.drawRightString(RIGHT - 4, row_top - 14, _fmt_eur(line_amount))
+    row_bot = row_top - (14 + len(desc_lines) * 12)
     c.line(LEFT, row_bot, RIGHT, row_bot)
 
-    # ---------- 5) NOTE / legal disclaimer (just below table, no separator) ----------
-    note_y = row_bot - 14
-    c.setFont("Helvetica", 7.5)
+    # ===== NOTE block ======================================================
+    note_y = row_bot - 16
+    c.setFont("Helvetica", 8.5)
     c.drawString(LEFT, note_y, "NOTE")
     c.setFont("Helvetica", 9)
-    c.drawString(LEFT, note_y - 12,
+    c.drawString(LEFT, note_y - 14,
                  "Documento privo di valenza fiscale ai sensi dell'art. 21 Dpr 633/72. "
                  "L'originale e' disponibile all'indirizzo telematico da Lei fornito")
-    c.drawString(LEFT, note_y - 23,
+    c.drawString(LEFT, note_y - 26,
                  "oppure nella Sua area riservata dell'Agenzia delle Entrate.")
 
-    # ---------- 6) MODALITÀ DI PAGAMENTO + SCADENZE (anchored toward bottom) ----------
-    pay_top = 78 * mm
+    # ===== BOTTOM SECTION (anchored to bottom of page) =====================
+    # Geometry from bottom (reference shows these in the lower third):
+    #   foot_y  = 12 mm (footer line)
+    #   bot_line= 18 mm (line above footer)
+    #   tot_y   = 35 mm (GRAND TOTAL)
+    #   sum_y   = 50 mm (Imponibile/Totale IVA stack)
+    #   riep_y  = 60 mm (RIEPILOGO IVA values + line)
+    #   pay_y   = 90 mm (MODALITA' + SCADENZE block top)
+    pay_top = 105 * mm
     c.setLineWidth(0.4)
     c.line(LEFT, pay_top, RIGHT, pay_top)
-    c.setFont("Helvetica", 7.5)
-    c.drawString(LEFT, pay_top - 11, "MODALITA' DI PAGAMENTO")
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(LEFT, pay_top - 24, "BONIFICO BANCARIO")
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(LEFT, pay_top - 36, f"IBAN: {BANK_IBAN}")
+
+    c.setFont("Helvetica", 8.5)
+    c.drawString(LEFT, pay_top - 12, "MODALITA' DI PAGAMENTO")
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(LEFT, pay_top - 28, "BONIFICO BANCARIO")
+    c.setFont("Helvetica", 10)
+    c.drawString(LEFT, pay_top - 42, f"IBAN: {BANK_IBAN}")
 
     sc_x = LEFT + 95 * mm
-    c.setFont("Helvetica", 7.5)
-    c.drawString(sc_x, pay_top - 11, "SCADENZE")
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont("Helvetica", 8.5)
+    c.drawString(sc_x, pay_top - 12, "SCADENZE")
+    c.setFont("Helvetica-Bold", 10)
     due = _fmt_date_it(data.get("due_date") or data.get("invoice_date") or "")
     vat_rate = float(data.get("vat_rate", 22) or 0)
     imponibile = line_amount
     imposte = round(imponibile * vat_rate / 100.0, 2)
     totale = round(imponibile + imposte, 2)
-    c.drawString(sc_x, pay_top - 24, f"{due}: {_fmt_eur(totale)}")
+    c.drawString(sc_x, pay_top - 28, f"{due}: {_fmt_eur(totale)}")
 
-    # ---------- 7) Horizontal separator above RIEPILOGO IVA ----------
-    riep_top = 50 * mm
+    # RIEPILOGO IVA — separator at 65mm, content at 60mm-50mm
+    riep_top = 65 * mm
     c.line(LEFT, riep_top, RIGHT, riep_top)
-    c.setFont("Helvetica", 7.5)
-    c.drawString(LEFT, riep_top - 11, "RIEPILOGO IVA")
-    # column captions and values
-    col_alq = LEFT
-    col_imp = LEFT + 50 * mm
-    col_imposte = LEFT + 75 * mm
-    c.drawRightString(col_imp + 22, riep_top - 22, "IMPONIBILE")
-    c.drawRightString(col_imposte + 22, riep_top - 22, "IMPOSTE")
-    c.setFont("Helvetica", 9.5)
-    c.drawString(col_alq, riep_top - 35, f"{int(vat_rate)}%")
-    c.drawRightString(col_imp + 22, riep_top - 35, _fmt_eur(imponibile, with_symbol=False))
-    c.drawRightString(col_imposte + 22, riep_top - 35, _fmt_eur(imposte))
+    c.setFont("Helvetica", 8.5)
+    c.drawString(LEFT, riep_top - 12, "RIEPILOGO IVA")
+    c.drawString(LEFT + 50 * mm, riep_top - 12, "IMPONIBILE")
+    c.drawString(LEFT + 75 * mm, riep_top - 12, "IMPOSTE")
+    c.setFont("Helvetica", 10)
+    c.drawString(LEFT, riep_top - 28, f"{int(vat_rate)}%")
+    c.drawString(LEFT + 50 * mm, riep_top - 28, _fmt_eur(imponibile, with_symbol=False))
+    c.drawString(LEFT + 75 * mm, riep_top - 28, _fmt_eur(imposte))
 
-    # ---------- 8) Right side: Imponibile / Totale IVA / GRAND TOTAL ----------
-    tx_right = RIGHT
-    ty = riep_top - 14
-    c.setFont("Helvetica", 9)
-    c.drawRightString(tx_right - 70, ty, "Imponibile")
-    c.drawRightString(tx_right, ty, _fmt_eur(imponibile))
-    ty -= 12
-    c.drawRightString(tx_right - 70, ty, "Totale IVA")
-    c.drawRightString(tx_right, ty, _fmt_eur(imposte))
-    ty -= 24
-    c.setFont("Helvetica-Bold", 18)
-    c.drawRightString(tx_right, ty, _fmt_eur(totale))
+    # Right-side stack: Imponibile / Totale IVA / GRAND TOTAL
+    sum_y = riep_top - 8
+    c.setFont("Helvetica", 10)
+    c.drawString(RIGHT - 38 * mm, sum_y, "Imponibile")
+    c.drawRightString(RIGHT, sum_y, _fmt_eur(imponibile))
+    c.drawString(RIGHT - 38 * mm, sum_y - 14, "Totale IVA")
+    c.drawRightString(RIGHT, sum_y - 14, _fmt_eur(imposte))
+    # GRAND TOTAL — large bold, ~25mm above bottom line
+    c.setFont("Helvetica-Bold", 22)
+    c.drawRightString(RIGHT, 35 * mm, _fmt_eur(totale))
 
-    # ---------- 9) Bottom footer line + tiny captions ----------
-    foot_y = 12 * mm
+    # Bottom footer line + caption
     c.setLineWidth(0.3)
-    c.line(LEFT, foot_y + 12, RIGHT, foot_y + 12)
-    c.setFont("Helvetica", 7)
+    c.line(LEFT, 18 * mm, RIGHT, 18 * mm)
+    c.setFont("Helvetica", 7.5)
     page_idx = data.get("page_index", "1 / 1")
-    c.drawString(LEFT, foot_y, f"Fattura nr. {inv_no} del {inv_date_str} - {page_idx}")
-    c.drawRightString(RIGHT, foot_y, f"{ISSUER_NAME}  {ISSUER_EMAIL}")
+    c.drawString(LEFT, 13 * mm,
+                 f"Fattura nr. {inv_no} del {inv_date_str} - {page_idx}")
+    c.drawRightString(RIGHT, 13 * mm,
+                      f"{ISSUER_NAME}  {ISSUER_EMAIL}")
 
     c.showPage()
     c.save()
