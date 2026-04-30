@@ -1,0 +1,65 @@
+{
+  "summary": "Iteration 19 regression: ALL 5 FIXES VERIFIED. Backend pytest 12/12 passed (100%). Frontend Playwright confirmed owner-authority input visible/writable. System stable and safe to proceed to Phase 2.",
+  "fixes_verified": {
+    "FIX1_CRITICAL_registration_zip_alias": {
+      "status": "PASS",
+      "evidence": "Both /api/documents/bundle/{tenant_id} and /api/registration/zip/{tenant_id} return 200 with application/zip. ZIP contents identical (same namelist). Contains 02_Registrazione/registrazione.txt and 05_Ospitalita/comunicazione_ospitalita.pdf folders. 404 returned for missing tenant_id."
+    },
+    "FIX2_HIGH_landlord_authority": {
+      "status": "PASS",
+      "evidence": "POST /api/landlords with authority='Comune di Padova' persists field; GET returns it. PUT updates authority to 'Questura di Padova' successfully. Field is optional (omitting it works). Frontend: Login → Proprietari → Aggiungi → [data-testid='owner-authority'] is visible, editable, accepts 'Comune di Padova' (label 'Autorità Emittente')."
+    },
+    "FIX3_MEDIUM_tenant_ocr_address_mapping": {
+      "status": "PASS",
+      "evidence": "OcrScanner.js line 83-84 confirmed: onDataExtracted payload includes both residence AND address=result.residence. Backend issuing_authority field accepted on TenantCreate; persisted via POST and retrievable via GET."
+    },
+    "FIX4_MEDIUM_cascade_delete": {
+      "status": "PASS",
+      "evidence": "DELETE /api/tenants/{id} cascade-deletes hospitality_records and monthly_status (verified via tenants.py line 158-159: db.hospitality_records.delete_many + db.monthly_status.delete_many). After deletion, GET /api/hospitality/records no longer contains tenant_id, and GET /api/hospitality/pdf/{tenant_id} returns 404."
+    },
+    "FIX5_MEDIUM_hospitality_pdf_padova_fallback": {
+      "status": "PASS",
+      "evidence": "With empty property_comune AND empty host_residence, generated PDF text (extracted via pypdf) contains 'Luogo e data: Padova, DD/MM/YYYY'. The malformed pattern 'Luogo e data: ,' is NOT present. hospitality_pdf.py line 288: `luogo = (luogo_raw.strip().title() if luogo_raw else '') or 'Padova'`."
+    }
+  },
+  "regression_smoke": {
+    "tenant_crud": "PASS",
+    "dashboard_stats": "PASS",
+    "list_endpoints (tenants/landlords/properties/rooms)": "PASS"
+  },
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Landlord New modal (Nuovo Proprietario)", "issues": ["Console warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent} — accessibility a11y warning, non-blocking"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration19.py",
+    "/app/test_reports/pytest/iteration_19.xml"
+  ],
+  "action_items": [
+    "(LOW PRIORITY) Add aria-describedby or Description to Landlord New/Edit DialogContent to silence Radix-UI a11y console warning."
+  ],
+  "critical_code_review_comments": [
+    "registration.py: stacked decorator pattern (@router.get with two paths) is correctly used for the alias — clean.",
+    "tenants.py delete_tenant cascade: only deletes hospitality_records and monthly_status. Consider also cascading orphaned payments, invoices, contracts, and documents owned by tenant_id (currently they linger in DB after tenant deletion). Not blocking iter19, but worth tracking.",
+    "schemas.py LandlordCreate: only stores 'full_name' (no surname/name fields server-side); frontend Landlords.js uses surname+name composite. This is fine as long as the form composes full_name correctly before POST.",
+    "hospitality_pdf.py luogo fallback to 'Padova' is hard-coded — acceptable for current Padova-focused tenancy but should be made configurable if scaling to other cities."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration19.py (created)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100% (single check)"},
+  "test_credentials": "nazaninalizade890@gmail.com / 1234@Admin (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Tests create transient TEST_-prefixed landlords/properties/tenants and clean them up via DELETE in finally blocks. No persistent seed data left behind.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 5 iter18 fixes (FIX1 zip alias, FIX2 landlord authority, FIX3 OCR address mapping, FIX4 cascade delete, FIX5 Padova PDF fallback) are verified working. Phase 2 features can now be safely added. Reusable helpers in test_iteration19.py: _create_landlord/_create_property/_create_tenant — note property requires number_of_rooms+capacity+rental_amount; tenant requires passport_issue_date+passport_expiry_date.",
+  "mocked_apis_acknowledged": ["WhatsApp share", "Resend email fallback"],
+  "rca of the issue": "N/A — no failing tests."
+}

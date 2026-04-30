@@ -112,10 +112,12 @@ async def upload_owner_document(
 
 
 @router.get("/documents/bundle/{tenant_id}")
+@router.get("/registration/zip/{tenant_id}")
 async def generate_document_bundle(tenant_id: str, user: dict = Depends(get_current_user)):
     """Generate a ZIP bundle for a tenant. Always includes the auto-generated
     Hospitality PDF + a Registration summary, plus any uploaded tenant + landlord
     documents and the active contract PDF when present.
+    Exposed at both /api/documents/bundle/{id} and /api/registration/zip/{id}.
     """
     from services.hospitality_pdf import generate_hospitality_pdf
     from datetime import datetime as _dt

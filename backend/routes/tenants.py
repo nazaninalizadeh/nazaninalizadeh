@@ -154,5 +154,8 @@ async def delete_tenant(tenant_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Tenant not found")
     if tenant.get("room_id"):
         await db.rooms.update_one({"id": tenant["room_id"]}, {"$set": {"status": "available", "tenant_id": ""}})
+    # Cascade delete related records so orphans don't linger
+    await db.hospitality_records.delete_many({"tenant_id": tenant_id})
+    await db.monthly_status.delete_many({"tenant_id": tenant_id})
     await db.tenants.delete_one({"id": tenant_id})
     return {"message": "Tenant deleted"}

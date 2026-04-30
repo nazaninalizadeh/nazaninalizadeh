@@ -284,7 +284,8 @@ def generate_hospitality_pdf(data: dict) -> BytesIO:
     luogo_raw = (data.get("property_comune", "") or
                  (data.get("host_residence", "").split(",")[0] if data.get("host_residence") else ""))
     # Title-case the city (e.g. "PADOVA" -> "Padova") for the signature line.
-    luogo = luogo_raw.strip().title() if luogo_raw else ""
+    # Fallback to "Padova" when nothing is available to avoid an ugly leading comma.
+    luogo = (luogo_raw.strip().title() if luogo_raw else "") or "Padova"
     c.setFont("Helvetica", 8.5)
     c.drawString(LEFT, y_cursor, f"Luogo e data: {luogo}, {today}")
     # Signature line

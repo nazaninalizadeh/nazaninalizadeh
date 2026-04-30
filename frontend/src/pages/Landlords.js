@@ -23,7 +23,7 @@ const Landlords = () => {
   const [editingLandlord, setEditingLandlord] = useState(null);
   const [formData, setFormData] = useState({
     surname: '', name: '', codice_fiscale: '', phone: '', email: '',
-    id_type: '', id_number: '', bank_details: '', notes: '',
+    id_type: '', id_number: '', authority: '', bank_details: '', notes: '',
     date_of_birth: '', place_of_birth: '', province_of_birth: '', country_of_birth: 'Italia',
     residence: '', signature_url: '',
   });
@@ -34,11 +34,24 @@ const Landlords = () => {
   const handleOwnerOcr = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    // Client-side validation
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg', 'application/pdf'];
+    if (!allowed.includes(file.type)) {
+      toast.error('Formato non supportato. Usa JPEG/PNG/WebP/PDF.');
+      if (ocrRef.current) ocrRef.current.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File troppo grande. Max 10MB.');
+      if (ocrRef.current) ocrRef.current.value = '';
+      return;
+    }
     const fd = new FormData();
     fd.append('file', file);
+    const loadingId = toast.loading('Scansione documento proprietario...');
     try {
-      toast.info('Scansione documento proprietario...');
       const { data } = await axios.post(`${API_URL}/ocr/scan`, fd, { withCredentials: true });
+      toast.dismiss(loadingId);
       if (data.status === 'completed' && data.extracted_data) {
         const d = data.extracted_data;
         // Use OCR's explicit surname / name when present, never swap.
@@ -51,17 +64,23 @@ const Landlords = () => {
           codice_fiscale: d.codice_fiscale || prev.codice_fiscale,
           id_number: d.passport_number || prev.id_number,
           id_type: d.document_type === 'passport' ? 'Passaporto' : d.document_type === 'id_card' ? "Carta d'identita" : prev.id_type,
+          authority: d.issuing_authority || prev.authority,
           date_of_birth: d.date_of_birth || prev.date_of_birth,
           place_of_birth: d.place_of_birth || prev.place_of_birth,
           province_of_birth: d.province_of_birth || prev.province_of_birth,
           country_of_birth: d.country_of_birth || prev.country_of_birth || 'Italia',
           residence: d.residence || prev.residence,
         }));
-        toast.success('Dati estratti dal documento!');
+        // Count how many fields actually populated for a useful user feedback
+        const extractedCount = Object.values(d).filter(v => v && v !== 'high' && v !== 'medium' && v !== 'low').length;
+        toast.success(`Dati estratti (${extractedCount} campi). Verifica prima di salvare.`);
       } else {
-        toast.error(data.error || 'Scansione fallita');
+        toast.error(`OCR fallito: ${data.error || 'Immagine non leggibile'}`);
       }
-    } catch (err) { toast.error('Errore OCR: ' + (err.response?.data?.detail || err.message)); }
+    } catch (err) {
+      toast.dismiss(loadingId);
+      toast.error('Errore OCR: ' + (err.response?.data?.detail || err.message || 'rete non disponibile'));
+    }
     if (ocrRef.current) ocrRef.current.value = '';
   };
 
@@ -106,7 +125,7 @@ const Landlords = () => {
   };
 
   const resetForm = () => {
-    setFormData({ surname: '', name: '', codice_fiscale: '', phone: '', email: '', id_type: '', id_number: '', bank_details: '', notes: '', date_of_birth: '', place_of_birth: '', province_of_birth: '', country_of_birth: 'Italia', residence: '', signature_url: '' });
+    setFormData({ surname: '', name: '', codice_fiscale: '', phone: '', email: '', id_type: '', id_number: '', authority: '', bank_details: '', notes: '', date_of_birth: '', place_of_birth: '', province_of_birth: '', country_of_birth: 'Italia', residence: '', signature_url: '' });
     setEditingLandlord(null);
   };
 
@@ -118,6 +137,7 @@ const Landlords = () => {
       codice_fiscale: ll.codice_fiscale || '',
       phone: ll.phone || '', email: ll.email || '',
       id_type: ll.id_type || '', id_number: ll.id_number || '',
+      authority: ll.authority || '',
       bank_details: ll.bank_details || '', notes: ll.notes || '',
       date_of_birth: ll.date_of_birth || '',
       place_of_birth: ll.place_of_birth || '',
@@ -186,7 +206,8 @@ const Landlords = () => {
                 <div><Label>Nome *</Label><Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="luxury-input" data-testid="owner-name-input" /></div>
                 <div><Label>Codice Fiscale</Label><Input value={formData.codice_fiscale} onChange={e => setFormData({ ...formData, codice_fiscale: e.target.value })} className="luxury-input" /></div>
                 <div><Label>Tipo Doc. ID</Label><Input value={formData.id_type} onChange={e => setFormData({ ...formData, id_type: e.target.value })} className="luxury-input" placeholder="Carta d'identita..." /></div>
-                <div><Label>Numero Documento *</Label><Input value={formData.id_number} onChange={e => setFormData({ ...formData, id_number: e.target.value })} required className="luxury-input" /></div>
+                <div><Label>Numero Documento *</Label><Input value={formData.id_number} onChange={e => setFormData({ ...formData, id_number: e.target.value })} required className="luxury-input" data-testid="owner-id-number" /></div>
+                <div><Label>Autorità Emittente</Label><Input value={formData.authority} onChange={e => setFormData({ ...formData, authority: e.target.value })} className="luxury-input" placeholder="Es: Comune di Padova / Questura" data-testid="owner-authority" /></div>
                 <div><Label>Data di Nascita</Label><Input type="date" value={formData.date_of_birth} onChange={e => setFormData({ ...formData, date_of_birth: e.target.value })} className="luxury-input" /></div>
                 <div>
                   <Label>Luogo di Nascita</Label>

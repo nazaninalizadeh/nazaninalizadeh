@@ -81,6 +81,7 @@ const OcrScanner = ({ onDataExtracted }) => {
         passport_expiry_date: result.expiry_date || '',
         issuing_authority: result.issuing_authority || '',
         residence: result.residence || '',
+        address: result.residence || '',  // tenants form uses "address" field
         codice_fiscale: result.codice_fiscale || '',
         id_type: result.document_type === 'id_card' ? "Carta d'identita" : result.document_type === 'passport' ? 'Passaporto' : '',
         id_number: result.document_type !== 'passport' ? result.passport_number || '' : '',

@@ -22,6 +22,7 @@ class TenantCreate(BaseModel):
     passport_expiry_date: str
     id_type: Optional[str] = ""
     id_number: Optional[str] = ""
+    issuing_authority: Optional[str] = ""  # from OCR: document authority
     phone: Optional[str] = ""
     email: EmailStr
     whatsapp: Optional[str] = ""  # legacy: kept optional for back-compat
@@ -41,6 +42,7 @@ class LandlordCreate(BaseModel):
     whatsapp: Optional[str] = ""  # legacy: kept optional for back-compat
     id_type: Optional[str] = ""
     id_number: str
+    authority: Optional[str] = ""  # issuing authority (from OCR)
     bank_details: str
     notes: Optional[str] = ""
     date_of_birth: Optional[str] = ""
