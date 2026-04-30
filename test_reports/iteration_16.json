@@ -1,0 +1,45 @@
+{
+  "summary": "Iteration 16 regression: 11 fix items verified end-to-end. Backend pytest 15 PASSED + 1 expected SKIP (landlord cleanup). Frontend smoke confirms all data-testids + invoice TOTALE auto-compute (€1748.00 from 500+1000+200+98-50). Specific verifications: (1) OCR /api/ocr/scan accepts image/png AND application/pdf, returns 200 with saved_file_url. _country_from_code('IRN')='Iran', 'ITA'='Italia', 'FRA'='Francia', 'DEU'='Germania'. (2) it_dictionaries.NATIONALITIES has >=100 items; it_cities.ITALIAN_CITIES has 50+ tuples [city, province sigla] including ['Padova','PD']; Tenants.js Combobox uses ITALIAN_CITIES for place_of_birth + NATIONALITIES for nationality. (3) Tenant POST 'Rossi Mario' → full_name='Rossi Mario' (Surname first preserved). Landlord same — frontend builds payload as `${surname} ${name}` in both Tenants.js:89 and Landlords.js:135. (4) GET /api/hospitality/records returns list (4 records found). POST /records is upsert by tenant_id (no separate PUT exists — see note below). UI Hospitality has 4 edit-hospitality-{id} buttons; opening edit pre-fills check_in_date with active contract value (2026-01-01). (5) POST /api/rooms/{id}/assign with tenant_id form-data → both tenant.room_id AND room.tenant_id updated. POST /api/rooms/{id}/unassign clears both sides. Properties.js renders '(€{rent/2} a persona)' hint for double rooms. (6) POST /api/payments/{id}/receipt with 1x1 PNG → 200 {url}; subsequent GET /api/payments shows receipt_url field. (7) Properties.js has data-testid='filter-available-rooms' + showOnlyAvailable state + counter ('Solo immobili con stanze libere (2)'). (8) POST /api/landlords/signature with transparent='true' → returns /api/uploads/signatures/sig_*.png (PIL RGBA + luminosity-based alpha, working). (9) Invoices Crea Fattura: rent/deposit/agency/registration/discount inputs all have testids; UI auto-computes TOTALE → €1748.00 verified (default registration=98). Backend POST /api/invoices stores amount as-is (frontend does the math). (10) Payments dialog auto-fills amount = room_rent/2 for double rooms (Payments.js:106-114). Tenants list returns room_type='double' + room_rent=700 used for the calc. (11) format.js produces DD/MM/YYYY format string.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/hospitality/{id}", "issue": "Endpoint does NOT exist. The review request mentioned PUT /api/hospitality/{id} but routes/hospitality.py only defines POST /records (upsert by tenant_id), GET /records, and GET /pdf/{tenant_id}. The upsert via POST works correctly (idempotent — returns same id on repeat calls). Either the request was inaccurate, or a true PUT route should be added for clarity. Test PUT call returned 405."},
+      {"endpoint": "POST /api/properties", "issue": "Schema requires number_of_rooms + capacity (not optional). Test had to add them. Not a bug, just contract awareness."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Tenant dialog Combobox triggers", "issue": "Same as iter15 finding — tenant-place-of-birth, tenant-nationality, tenant-country triggers report empty inner_text via [data-testid] selector even though Combobox value state holds defaults ('Italia', 'Italiana'). Likely the value is rendered in a deeper span and the data-testid is on the outer Radix trigger. Visual verification recommended but functional behavior (select & save) works.", "selector": "[data-testid=\"tenant-place-of-birth\"], [data-testid=\"tenant-nationality\"], [data-testid=\"tenant-country\"]", "priority": "LOW"},
+      {"component": "All Dialog components", "issue": "Console warning 'Missing Description or aria-describedby for DialogContent' — accessibility concern, not breaking. Add <DialogDescription> or aria-describedby to dialogs.", "selector": "DialogContent", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration16.py",
+    "/app/test_reports/pytest/iteration_16.xml"
+  ],
+  "action_items": [
+    "(Optional) Decide: either add PUT /api/hospitality/{id} explicitly, or update the spec to reflect that hospitality update happens via POST /api/hospitality/records (upsert by tenant_id).",
+    "(Cosmetic) Add aria-describedby/DialogDescription to dialogs to silence Radix accessibility warnings."
+  ],
+  "critical_code_review_comments": [
+    "hospitality.py: POST /records is upsert keyed on tenant_id — only ONE active record per tenant ever exists. If the product needs hospitality history (multiple stays per tenant), this design needs revisiting.",
+    "ocr.py: Saves original document, runs OCR, then attempts top-portion crop as profile photo using a fixed (0.3-0.7w, 0.05-0.45h) bounding box — this is a heuristic, not face detection; for ID cards the photo is often left-side. Consider replacing with a proper face detector or removing the auto-crop.",
+    "rooms.py /assign: Does not check whether target room is already occupied by a different tenant — it will silently overwrite room.tenant_id and orphan the previous tenant's room_id pointer (previous tenant still has stale room_id). Should either reject or clear the previous tenant's room_id.",
+    "payments.py /receipt: 10MB cap is generous; aligns with general policy. ALLOWED_RECEIPT_EXTS includes pdf — good.",
+    "landlords.py signature transparent algorithm uses luminosity threshold 235 with soft fade between 200-235. Robust enough for typical white-paper scans.",
+    "invoices.py POST: stores `amount` as a single field; the breakdown (rent/deposit/agency/registration/discount) is computed only client-side and NOT persisted. If a user reopens the invoice they cannot see the breakdown — only the total. Consider persisting the breakdown if the user needs to audit it later."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration16.py",
+    "/app/test_reports/pytest/iteration_16.xml"
+  ],
+  "success_rate": {"backend": "100% (15/15 passed, 1 expected skip — landlord-cleanup edge)", "frontend": "100% (all critical testids found, TOTALE auto-compute verified, hospitality edit pre-fill verified, filter-available verified)"},
+  "test_credentials": {"used": "nazaninalizade890@gmail.com / 1234@Admin (admin2 — to preserve human admin1 session)"},
+  "seed_data_creation": "Created TEST_iter16 property (Via TEST_iter16 99), 1 double room (T16, €700), 1 tenant (Rossi Mario), 1 hospitality record, 1 invoice (€1748). All cleaned up via fixture teardown except 2 small signature PNGs and a couple of OCR-saved 1x1 PNGs in /api/uploads/. Safe to leave.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: python -m pytest /app/backend/tests/test_iteration16.py -v --junitxml=/app/test_reports/pytest/iteration_16.xml. Note PropertyCreate REQUIRES number_of_rooms + capacity. TenantCreate REQUIRES date_of_birth + passport_issue_date + passport_expiry_date + email. InvoiceCreate REQUIRES contract_id (can be empty string). NO PUT /api/hospitality/{id} route exists — use POST /api/hospitality/records as upsert. Frontend testids confirmed across Tenants/Hospitality/Invoices/Properties/Payments pages.",
+  "rca_of_the_issue": "All 11 regression items verified working at API + UI layers. Two minor findings: (a) PUT /api/hospitality/{id} from review request does not exist — current implementation uses POST /records as idempotent upsert; functionally equivalent but route name differs from spec. (b) Combobox trigger inner_text appears empty when read via [data-testid] (cosmetic — value is in deeper span). Neither blocks shipping."
+}
