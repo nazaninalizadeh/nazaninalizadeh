@@ -109,3 +109,14 @@ Proprietari | Immobili | Inquilini | Dashboard | Pagamenti | Ospitalità | Regis
 - P2: Fmt remaining table date columns app-wide (Tenants list passport_expiry, Dashboard activity, Reports)
 - P2: Make signature transparency threshold tunable (currently hard-coded RGB > 235)
 - P2: Aggregate room counts in single $facet pipeline (current: N+1 per property)
+
+## DONE (Apr 30, 2026 — second batch): 5 user-requested fixes + Manual Hospitality
+- Properties structured address: split into address (Via), civico, comune, province (no combined "Indirizzo" field). GET endpoints normalize legacy docs (defaults: civico='', comune='', province='PD').
+- Payment Calendar receipt upload: per-month POST /api/payment-calendar/{tid}/{y}/{m}/receipt + DELETE; UI in TenantDetail with PDF/image preview and remove.
+- Preavviso separated into its own page (`/preavviso`) and dedicated sidebar item; original Invoices page now only handles Fatture.
+- Hospitality manual creation (iter22):
+   - Backend HospitalityCreate now has Optional tenant_id/property_id/check_in_date + `mode` field; idempotent upsert keyed by (landlord_id, contract_id) when manual; tenant_id otherwise.
+   - New endpoint GET /api/hospitality/pdf/record/{id} renders PDF from any record (manual or tenant).
+   - GET /records synthesizes tenant_name/passport from guest_* fields when manual.
+   - Frontend Hospitality.js: tab toggle (data-testid hospitality-mode-tenant / hospitality-mode-manual). Manual mode hides Inquilino/Immobile selects, reveals "OSPITATO (MANUALE)" guest fields panel; Proprietario+Contratto remain. Edit/PDF buttons branch on mode.
+- Verified end-to-end via /app/test_reports/iteration_22.json (backend 13/13 PASS, frontend toggle/regression PASS).
