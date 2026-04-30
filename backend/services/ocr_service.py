@@ -31,7 +31,17 @@ For "place_of_birth": ONLY the city name (e.g., "Milano", "Tehran", "Cairo").
 For "country_of_birth": ALWAYS return the FULL country name in Italian (e.g., "Italia" not "ITA", "Iran" not "IRN", "Marocco" not "MA"). Use ISO/MRZ codes ONLY as a fallback if the full country name is unreadable.
 
 JSON schema:
-{"full_name":"string|null","passport_number":"string|null","nationality":"string|null","date_of_birth":"YYYY-MM-DD|null","gender":"M/F|null","place_of_birth":"string|null","country_of_birth":"string|null","issue_date":"YYYY-MM-DD|null","expiry_date":"YYYY-MM-DD|null","document_type":"passport|id_card|other","issuing_authority":"string|null","codice_fiscale":"string|null","confidence":"high|medium|low"}"""
+{"surname":"string|null","name":"string|null","full_name":"string|null","passport_number":"string|null","nationality":"string|null","date_of_birth":"YYYY-MM-DD|null","gender":"M/F|null","place_of_birth":"string|null","province_of_birth":"string|null","country_of_birth":"string|null","issue_date":"YYYY-MM-DD|null","expiry_date":"YYYY-MM-DD|null","document_type":"passport|id_card|other","issuing_authority":"string|null","residence":"string|null","codice_fiscale":"string|null","confidence":"high|medium|low"}
+
+Critical extraction rules:
+- "surname" = family name / cognome ONLY
+- "name" = given name(s) / nome ONLY
+- "full_name" = "Surname Name" (Italian convention — Surname first)
+- "place_of_birth" = city only (Milano, Tehran, Cairo)
+- "province_of_birth" = 2-letter sigla if visible (PD, MI, RM) or empty
+- "country_of_birth" = full Italian country name (Italia, Iran, Marocco)
+- "issuing_authority" = the agency name verbatim (e.g., "MOTORIZZAZIONE DI PADOVA", "MINISTRY OF INTERIOR")
+- "residence" = full address from the document if shown (Via X 12, Padova, PD 35100)"""
 
 
 def _country_from_code(code: str) -> str:

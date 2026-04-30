@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import OcrScanner from '../components/OcrScanner';
 import { Combobox } from '../components/Combobox';
 import { NATIONALITIES, COUNTRIES } from '../lib/it_dictionaries';
+import { ITALIAN_CITIES } from '../lib/it_cities';
 import { fmtDate } from '../lib/format';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
@@ -215,7 +216,10 @@ const Tenants = () => {
                   <Combobox options={NATIONALITIES} value={formData.nationality} onChange={v => setFormData({ ...formData, nationality: v })} placeholder="Es: Italiana, Iraniana..." dataTestid="tenant-nationality" />
                 </div>
                 <div><Label>Data di Nascita *</Label><Input type="date" value={formData.date_of_birth} onChange={e => setFormData({ ...formData, date_of_birth: e.target.value })} required className="luxury-input" /></div>
-                <div><Label>Luogo di Nascita</Label><Input value={formData.place_of_birth} onChange={e => setFormData({ ...formData, place_of_birth: e.target.value })} className="luxury-input" placeholder="Città" /></div>
+                <div>
+                  <Label>Luogo di Nascita</Label>
+                  <Combobox options={ITALIAN_CITIES} value={formData.place_of_birth} onChange={v => setFormData({ ...formData, place_of_birth: v })} placeholder="Es: Padova, Roma..." dataTestid="tenant-place-of-birth" />
+                </div>
                 <div>
                   <Label>Paese di Nascita</Label>
                   <Combobox options={COUNTRIES} value={formData.country_of_birth} onChange={v => setFormData({ ...formData, country_of_birth: v })} placeholder="Es: Italia, Iran..." dataTestid="tenant-country" />

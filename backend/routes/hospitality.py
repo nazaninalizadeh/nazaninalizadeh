@@ -33,11 +33,13 @@ class HospitalityCreate(BaseModel):
     property_interno: Optional[str] = ""
     property_piano: Optional[str] = ""
     notes: Optional[str] = ""
+    signature_type: Optional[str] = "owner"
+    guest_doc_authority: Optional[str] = ""
 
 
 @router.post("/records")
 async def create_hospitality_record(record: HospitalityCreate, user: dict = Depends(get_current_user)):
-    """Create a new hospitality record."""
+    """Create or UPDATE a hospitality record for a tenant. Idempotent by tenant_id."""
     tenant = await db.tenants.find_one({"id": record.tenant_id}, {"_id": 0})
     if not tenant:
         raise HTTPException(status_code=404, detail="Inquilino non trovato")
@@ -47,13 +49,21 @@ async def create_hospitality_record(record: HospitalityCreate, user: dict = Depe
         raise HTTPException(status_code=404, detail="Immobile non trovato")
 
     d = record.model_dump()
-    d["id"] = str(uuid.uuid4())
     d["tenant_name"] = tenant.get("full_name", "")
     d["property_address"] = prop.get("address", "")
     d["status"] = "active"
-    d["created_at"] = datetime.now(timezone.utc).isoformat()
-    d["created_by"] = user.get("email", "")
-    await db.hospitality_records.insert_one(d)
+    d["updated_at"] = datetime.now(timezone.utc).isoformat()
+    d["updated_by"] = user.get("email", "")
+
+    existing = await db.hospitality_records.find_one({"tenant_id": record.tenant_id}, {"_id": 0})
+    if existing:
+        d["id"] = existing.get("id") or str(uuid.uuid4())
+        await db.hospitality_records.update_one({"tenant_id": record.tenant_id}, {"$set": d})
+    else:
+        d["id"] = str(uuid.uuid4())
+        d["created_at"] = d["updated_at"]
+        d["created_by"] = user.get("email", "")
+        await db.hospitality_records.insert_one(d)
     d.pop("_id", None)
     return d
 

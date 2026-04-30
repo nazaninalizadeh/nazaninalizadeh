@@ -19,6 +19,7 @@ const Properties = () => {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState(null);
   const [expandedIds, setExpandedIds] = useState(new Set());
@@ -166,10 +167,24 @@ const Properties = () => {
   };
 
   const filtered = properties.filter(p =>
-    p.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.property_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.landlord_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     p.property_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     p.landlord_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    && (!showOnlyAvailable || (p.vacant_rooms_count || 0) > 0)
   );
+
+  // Build a flat list of empty rooms across all properties for the "Stanze Libere" view
+  const emptyRooms = (() => {
+    const list = [];
+    Object.values(propertyDetails).forEach(p => {
+      (p.rooms || []).forEach(r => {
+        if (!r.tenant_id && !r.tenant_name) {
+          list.push({ ...r, property_address: p.address, property_code: p.property_code, property_id: p.id });
+        }
+      });
+    });
+    return list;
+  })();
 
   if (loading) return <div className="flex items-center justify-center p-12"><div className="luxury-spinner h-10 w-10" /></div>;
 
@@ -227,11 +242,17 @@ const Properties = () => {
       </div>
 
       {/* Search */}
-      <div className="luxury-card p-4 mb-6">
-        <div className="relative">
+      <div className="luxury-card p-4 mb-6 flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[260px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} style={{ color: '#B8860B' }} />
           <Input placeholder="Cerca per indirizzo, codice o proprietario..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-11 luxury-input" />
         </div>
+        <button type="button" onClick={() => setShowOnlyAvailable(v => !v)}
+          className="px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap"
+          style={{ background: showOnlyAvailable ? '#9F1239' : 'rgba(184,134,11,0.08)', color: showOnlyAvailable ? 'white' : '#8B7355' }}
+          data-testid="filter-available-rooms">
+          {showOnlyAvailable ? '✓ ' : ''}Solo immobili con stanze libere ({properties.reduce((s, p) => s + (p.vacant_rooms_count || 0), 0)})
+        </button>
       </div>
 
       {/* Property Cards */}
@@ -387,16 +408,21 @@ const Properties = () => {
         <DialogContent className="luxury-modal" style={{ background: '#FFFBF5' }}>
           <DialogHeader><DialogTitle>Assegna Inquilino a Stanza {assignRoom?.room_number}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <Input placeholder="Cerca inquilino..." value={assignSearch} onChange={e => setAssignSearch(e.target.value)} className="luxury-input" autoFocus data-testid="assign-tenant-search" />
-            <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(184,134,11,0.15)' }} data-testid="assign-tenant-list">
-              {tenants.filter(t => !t.room_id).filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).length === 0 && (
-                <p className="text-xs text-center py-3" style={{ color: '#8B7355' }}>Nessun inquilino disponibile</p>
+            <Input placeholder="Cerca inquilino per nome..." value={assignSearch} onChange={e => setAssignSearch(e.target.value)} className="luxury-input" autoFocus data-testid="assign-tenant-search" />
+            <div className="max-h-60 overflow-y-auto space-y-1 rounded-xl p-2" style={{ background: 'white', border: '1px solid rgba(184,134,11,0.15)' }} data-testid="assign-tenant-list">
+              {tenants.filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).length === 0 && (
+                <p className="text-xs text-center py-4" style={{ color: '#8B7355' }}>Nessun inquilino trovato. Crea un inquilino prima.</p>
               )}
-              {tenants.filter(t => !t.room_id).filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase())).map(t => (
-                <button key={t.id} onClick={() => setAssignTenantId(t.id)} className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${assignTenantId === t.id ? 'font-bold' : ''}`}
+              {tenants
+                .filter(t => !assignSearch || t.full_name?.toLowerCase().includes(assignSearch.toLowerCase()))
+                .sort((a, b) => (a.room_id ? 1 : 0) - (b.room_id ? 1 : 0))
+                .map(t => (
+                <button key={t.id} type="button" onClick={() => setAssignTenantId(t.id)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between gap-2 ${assignTenantId === t.id ? 'font-bold' : ''}`}
                   style={{ background: assignTenantId === t.id ? 'rgba(159,18,57,0.08)' : 'transparent', color: assignTenantId === t.id ? '#9F1239' : '#4A3B31' }}
                   data-testid={`assign-tenant-option-${t.id}`}>
-                  {t.full_name} {t.nationality ? `(${t.nationality})` : ''}
+                  <span>{t.full_name} {t.nationality ? <span className="text-xs" style={{ color: '#8B7355' }}>({t.nationality})</span> : null}</span>
+                  {t.room_id && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.12)', color: '#D97706' }}>Già assegnato</span>}
                 </button>
               ))}
             </div>

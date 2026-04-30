@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 import { Combobox } from '../components/Combobox';
 import { COUNTRIES } from '../lib/it_dictionaries';
+import { ITALIAN_CITIES } from '../lib/it_cities';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -40,23 +41,27 @@ const Landlords = () => {
       const { data } = await axios.post(`${API_URL}/ocr/scan`, fd, { withCredentials: true });
       if (data.status === 'completed' && data.extracted_data) {
         const d = data.extracted_data;
-        const [surname = '', ...nameRest] = (d.full_name || '').split(' ');
+        // Use OCR's explicit surname / name when present, never swap.
+        const surname = d.surname || (d.full_name ? d.full_name.split(' ')[0] : '');
+        const name = d.name || (d.full_name ? d.full_name.split(' ').slice(1).join(' ') : '');
         setFormData(prev => ({
           ...prev,
-          surname: prev.surname || surname,
-          name: prev.name || nameRest.join(' '),
+          surname: surname || prev.surname,
+          name: name || prev.name,
           codice_fiscale: d.codice_fiscale || prev.codice_fiscale,
           id_number: d.passport_number || prev.id_number,
           id_type: d.document_type === 'passport' ? 'Passaporto' : d.document_type === 'id_card' ? "Carta d'identita" : prev.id_type,
           date_of_birth: d.date_of_birth || prev.date_of_birth,
           place_of_birth: d.place_of_birth || prev.place_of_birth,
+          province_of_birth: d.province_of_birth || prev.province_of_birth,
           country_of_birth: d.country_of_birth || prev.country_of_birth || 'Italia',
+          residence: d.residence || prev.residence,
         }));
         toast.success('Dati estratti dal documento!');
       } else {
         toast.error(data.error || 'Scansione fallita');
       }
-    } catch { toast.error('Errore OCR'); }
+    } catch (err) { toast.error('Errore OCR: ' + (err.response?.data?.detail || err.message)); }
     if (ocrRef.current) ocrRef.current.value = '';
   };
 
@@ -183,8 +188,21 @@ const Landlords = () => {
                 <div><Label>Tipo Doc. ID</Label><Input value={formData.id_type} onChange={e => setFormData({ ...formData, id_type: e.target.value })} className="luxury-input" placeholder="Carta d'identita..." /></div>
                 <div><Label>Numero Documento *</Label><Input value={formData.id_number} onChange={e => setFormData({ ...formData, id_number: e.target.value })} required className="luxury-input" /></div>
                 <div><Label>Data di Nascita</Label><Input type="date" value={formData.date_of_birth} onChange={e => setFormData({ ...formData, date_of_birth: e.target.value })} className="luxury-input" /></div>
-                <div><Label>Luogo di Nascita</Label><Input value={formData.place_of_birth} onChange={e => setFormData({ ...formData, place_of_birth: e.target.value })} className="luxury-input" placeholder="Città" /></div>
-                <div><Label>Provincia di Nascita</Label><Input value={formData.province_of_birth} onChange={e => setFormData({ ...formData, province_of_birth: e.target.value })} className="luxury-input" placeholder="PD" maxLength={2} /></div>
+                <div>
+                  <Label>Luogo di Nascita</Label>
+                  <Combobox
+                    options={ITALIAN_CITIES}
+                    value={formData.place_of_birth}
+                    onChange={v => {
+                      // When a city from the IT list is picked, auto-fill the province sigla.
+                      const match = ITALIAN_CITIES.find(([c]) => c.toLowerCase() === v.toLowerCase());
+                      setFormData({ ...formData, place_of_birth: v, province_of_birth: match ? match[1] : formData.province_of_birth });
+                    }}
+                    placeholder="Es: Padova, Roma..."
+                    dataTestid="owner-place-of-birth"
+                  />
+                </div>
+                <div><Label>Provincia di Nascita</Label><Input value={formData.province_of_birth} onChange={e => setFormData({ ...formData, province_of_birth: e.target.value.toUpperCase() })} className="luxury-input" placeholder="PD" maxLength={2} /></div>
                 <div>
                   <Label>Paese di Nascita</Label>
                   <Combobox options={COUNTRIES} value={formData.country_of_birth} onChange={v => setFormData({ ...formData, country_of_birth: v })} placeholder="Es: Italia..." />

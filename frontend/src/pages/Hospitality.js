@@ -8,6 +8,7 @@ import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
+import { fmtDate } from '../lib/format';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -88,12 +89,22 @@ const Hospitality = () => {
       if (data.status === 'completed' && data.extracted_data) {
         setOcrResult(data.extracted_data);
         setOcrStatus('completed');
-        // Auto-fill form from OCR
+        // Auto-fill all hospitality fields the OCR can supply.
         const d = data.extracted_data;
+        const surname = d.surname || (d.full_name ? d.full_name.split(' ')[0] : '');
+        const name = d.name || (d.full_name ? d.full_name.split(' ').slice(1).join(' ') : '');
         setForm(prev => ({
           ...prev,
-          // Try to find matching tenant by name or passport
-          ...(d.full_name ? {} : {}),
+          // Guest section will be filled when tenant is selected; here we focus on host/declarant fields
+          // when the OCR doc is the OWNER's ID (typical Hospitality flow scans the host's CI).
+          host_surname: prev.host_surname || surname,
+          host_name: prev.host_name || name,
+          host_dob: prev.host_dob || d.date_of_birth || '',
+          host_birth_place: prev.host_birth_place || d.place_of_birth || '',
+          host_province: prev.host_province || d.province_of_birth || '',
+          host_residence: prev.host_residence || d.residence || '',
+          // doc-related
+          guest_doc_authority: d.issuing_authority || prev.guest_doc_authority || '',
         }));
         toast.success('Documento scansionato! Rivedi i dati e seleziona inquilino.');
       } else {
@@ -188,8 +199,39 @@ const Hospitality = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Inquilino (Ospitato) *</Label>
-                  <Select value={form.tenant_id} onValueChange={v => setForm({ ...form, tenant_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona inquilino" /></SelectTrigger>
+                  <Select value={form.tenant_id} onValueChange={async v => {
+                    setForm(prev => ({ ...prev, tenant_id: v }));
+                    // Auto-fill dates from active contract + property from tenant.property_id
+                    try {
+                      const tenant = tenants.find(t => t.id === v);
+                      if (tenant) {
+                        // Find active contract for this tenant
+                        const cr = await axios.get(`${API}/contracts`, { withCredentials: true });
+                        const contract = cr.data.find(c => c.tenant_id === v && c.status === 'active');
+                        const start = contract?.start_date || '';
+                        const end = contract?.end_date || (start ? (() => { const d = new Date(start); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; })() : '');
+                        const prop = tenant.property_id ? properties.find(p => p.id === tenant.property_id) : null;
+                        const ll = prop ? landlords.find(l => l.id === prop.landlord_id) : null;
+                        const llName = ll?.full_name || '';
+                        const llParts = llName.includes(' ') ? llName.split(' ') : [llName, ''];
+                        setForm(prev => ({
+                          ...prev, tenant_id: v,
+                          property_id: prop?.id || prev.property_id,
+                          check_in_date: start || prev.check_in_date,
+                          check_out_date: end || prev.check_out_date,
+                          host_surname: llParts[0] || prev.host_surname,
+                          host_name: llParts.slice(1).join(' ') || prev.host_name,
+                          host_dob: ll?.date_of_birth || prev.host_dob,
+                          host_birth_place: ll?.place_of_birth || prev.host_birth_place,
+                          host_province: ll?.province_of_birth || prev.host_province,
+                          host_residence: ll?.residence || prev.host_residence,
+                          property_comune: prop?.city || prev.property_comune,
+                          property_provincia: prop?.province || prev.property_provincia,
+                        }));
+                      }
+                    } catch {}
+                  }}>
+                    <SelectTrigger data-testid="hospitality-tenant-select"><SelectValue placeholder="Seleziona inquilino" /></SelectTrigger>
                     <SelectContent>
                       {tenants.map(t => (
                         <SelectItem key={t.id} value={t.id}>
@@ -292,11 +334,32 @@ const Hospitality = () => {
               <div key={r.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-rose-50/20" style={{ border: '1px solid rgba(184,134,11,0.08)' }}>
                 <div>
                   <span className="font-medium text-sm" style={{ color: '#2C1810' }}>{r.tenant_name}</span>
-                  <span className="text-xs ml-3" style={{ color: '#8B7355' }}>{r.property_address} | {r.check_in_date} → {r.check_out_date || 'Indeterminato'}</span>
+                  <span className="text-xs ml-3" style={{ color: '#8B7355' }}>{r.property_address} | {fmtDate(r.check_in_date)} → {r.check_out_date ? fmtDate(r.check_out_date) : 'Indeterminato'}</span>
                 </div>
-                <Button size="sm" className="btn-luxury text-xs" onClick={() => handleDownloadPdf(r.tenant_id, r.tenant_name)}>
-                  <Download size={14} className="mr-1" /> PDF
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                    // Re-open the create dialog with this record's data so the user can edit & re-save
+                    setForm({
+                      tenant_id: r.tenant_id || '',
+                      property_id: r.property_id || '',
+                      room_id: r.room_id || '',
+                      check_in_date: r.check_in_date || '',
+                      check_out_date: r.check_out_date || '',
+                      hosting_type: r.hosting_type || 'alloggio',
+                      host_surname: r.host_surname || '', host_name: r.host_name || '',
+                      host_dob: r.host_dob || '', host_birth_place: r.host_birth_place || '',
+                      host_province: r.host_province || '', host_residence: r.host_residence || '',
+                      property_comune: r.property_comune || '', property_provincia: r.property_provincia || '',
+                      property_number: r.property_number || '', property_interno: r.property_interno || '',
+                      property_piano: r.property_piano || '', notes: r.notes || '',
+                      signature_type: r.signature_type || 'owner',
+                    });
+                    setCreateOpen(true);
+                  }} data-testid={`edit-hospitality-${r.id}`}>Modifica</Button>
+                  <Button size="sm" className="btn-luxury text-xs" onClick={() => handleDownloadPdf(r.tenant_id, r.tenant_name)}>
+                    <Download size={14} className="mr-1" /> PDF
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

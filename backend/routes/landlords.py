@@ -41,17 +41,24 @@ async def upload_landlord_signature(
         try:
             from PIL import Image
             img = Image.open(BytesIO(raw)).convert("RGBA")
-            data = img.getdata()
             new_data = []
-            for r, g, b, a in data:
-                # Treat near-white pixels as transparent. Threshold tuned for scanned signatures.
-                if r > 235 and g > 235 and b > 235:
+            # Smarter algorithm: for each pixel, treat brightness as inverse alpha.
+            # Pure white (255,255,255) -> transparent; pure black -> opaque black;
+            # Light grey -> partial transparency. Also threshold near-white as fully transparent.
+            for r, g, b, a in img.getdata():
+                lum = (0.2126 * r + 0.7152 * g + 0.0722 * b)
+                if lum > 235:
                     new_data.append((255, 255, 255, 0))
+                elif lum > 200:
+                    # Soft fade for near-white anti-aliasing
+                    alpha = max(0, int((235 - lum) * 7))
+                    new_data.append((0, 0, 0, alpha))
                 else:
-                    new_data.append((r, g, b, a))
+                    # Anything darker becomes solid black (clean signature ink)
+                    new_data.append((0, 0, 0, 255))
             img.putdata(new_data)
             buf = BytesIO()
-            img.save(buf, format="PNG")
+            img.save(buf, format="PNG", optimize=True)
             out_bytes = buf.getvalue()
             out_ext = "png"
         except Exception:

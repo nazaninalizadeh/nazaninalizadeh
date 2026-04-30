@@ -44,13 +44,20 @@ const Payments = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/payments`, {
-        ...formData,
-        amount: parseFloat(formData.amount),
+      const { _receipt, ...rest } = formData;
+      const { data: created } = await axios.post(`${API}/payments`, {
+        ...rest,
+        amount: parseFloat(rest.amount),
       }, { withCredentials: true });
+      // Upload receipt if attached
+      if (_receipt && created?.id) {
+        const fd = new FormData(); fd.append('file', _receipt);
+        try { await axios.post(`${API}/payments/${created.id}/receipt`, fd, { withCredentials: true }); }
+        catch { toast.error('Pagamento creato ma upload ricevuta fallito'); }
+      }
       toast.success('Pagamento registrato');
       setDialogOpen(false);
-      setFormData({ tenant_id: '', invoice_id: '', amount: '', payment_method: 'contanti', payment_date: new Date().toISOString().slice(0, 10), notes: '' });
+      setFormData({ tenant_id: '', invoice_id: '', amount: '', payment_method: 'contanti', payment_date: new Date().toISOString().slice(0, 10), notes: '', _receipt: null });
       fetchAll();
     } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
@@ -133,6 +140,14 @@ const Payments = () => {
               </div>
               <div><Label>Data *</Label><Input type="date" value={formData.payment_date} onChange={e => setFormData({ ...formData, payment_date: e.target.value })} required className="luxury-input" /></div>
               <div><Label>Note</Label><Input value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} className="luxury-input" placeholder="Note opzionali..." /></div>
+              {/* Receipt upload — shown only for non-cash payments */}
+              {formData.payment_method !== 'contanti' && (
+                <div className="rounded-xl p-3" style={{ background: 'rgba(184,134,11,0.04)', border: '1px dashed rgba(184,134,11,0.2)' }}>
+                  <Label>Ricevuta (POS / Carta) — opzionale</Label>
+                  <Input type="file" accept="image/*,application/pdf" onChange={e => setFormData({ ...formData, _receipt: e.target.files?.[0] || null })} className="luxury-input mt-1" data-testid="payment-receipt-upload" />
+                  <p className="text-[10px] mt-1" style={{ color: '#8B7355' }}>Sarà allegata al pagamento dopo la conferma. Max 10MB.</p>
+                </div>
+              )}
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="rounded-xl">Annulla</Button>
                 <Button type="submit" className="btn-luxury">Registra Pagamento</Button>
@@ -289,6 +304,13 @@ const Payments = () => {
                     }} data-testid={`ricevuta-btn-${p.id}`}>
                     <Receipt size={14} style={{ color: '#9F1239' }} />
                   </Button>
+                  {p.receipt_url && (
+                    <a href={`${process.env.REACT_APP_BACKEND_URL}${p.receipt_url}`} target="_blank" rel="noreferrer"
+                      className="rounded-lg hover:bg-emerald-50 h-7 px-2 inline-flex items-center" title="Visualizza ricevuta caricata"
+                      data-testid={`view-receipt-${p.id}`}>
+                      <Receipt size={14} style={{ color: '#059669' }} />
+                    </a>
+                  )}
                   <Button variant="ghost" size="sm" className="rounded-lg hover:bg-red-50 h-7 px-2"
                     onClick={async () => {
                       if (!window.confirm(`Eliminare il pagamento di €${p.amount?.toFixed(2)}?`)) return;

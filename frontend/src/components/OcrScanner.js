@@ -65,18 +65,22 @@ const OcrScanner = ({ onDataExtracted }) => {
 
   const handleApply = () => {
     if (result && onDataExtracted) {
+      // Prefer explicit surname/name from the model, fall back to splitting full_name.
+      const surname = result.surname || (result.full_name ? result.full_name.split(' ')[0] : '');
+      const name = result.name || (result.full_name ? result.full_name.split(' ').slice(1).join(' ') : '');
       onDataExtracted({
-        full_name: result.full_name || '',
-        // Also pass surname/name (split by first space) so forms with separate fields can use them.
-        surname: result.full_name ? result.full_name.split(' ')[0] : '',
-        name: result.full_name ? result.full_name.split(' ').slice(1).join(' ') : '',
+        full_name: `${surname} ${name}`.trim() || result.full_name || '',
+        surname, name,
         passport_number: result.passport_number || '',
         nationality: result.nationality || '',
         date_of_birth: result.date_of_birth || '',
         place_of_birth: result.place_of_birth || '',
+        province_of_birth: result.province_of_birth || '',
         country_of_birth: result.country_of_birth || '',
         passport_issue_date: result.issue_date || '',
         passport_expiry_date: result.expiry_date || '',
+        issuing_authority: result.issuing_authority || '',
+        residence: result.residence || '',
         codice_fiscale: result.codice_fiscale || '',
         id_type: result.document_type === 'id_card' ? "Carta d'identita" : result.document_type === 'passport' ? 'Passaporto' : '',
         id_number: result.document_type !== 'passport' ? result.passport_number || '' : '',

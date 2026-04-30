@@ -1,15 +1,20 @@
 """Payment Routes - Simplified: no deposit math, just record payments."""
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from typing import Optional
 import uuid
+import aiofiles
 from datetime import datetime, timezone
+from pathlib import Path
 
 from database import db
 from auth import get_current_user
 from models.schemas import PaymentCreate
 
 router = APIRouter(prefix="/api", tags=["Payments"])
+
+UPLOAD_DIR = Path(__file__).parent.parent / "uploads"
+ALLOWED_RECEIPT_EXTS = {"jpg", "jpeg", "png", "webp", "pdf"}
 
 
 @router.post("/payments")
@@ -94,6 +99,35 @@ async def delete_payment(payment_id: str, user: dict = Depends(get_current_user)
             await db.invoices.update_one({"id": p["invoice_id"]}, {"$set": {"paid_amount": new_paid, "payment_status": new_status}})
     await db.payments.delete_one({"id": payment_id})
     return {"message": "Pagamento eliminato"}
+
+
+@router.post("/payments/{payment_id}/receipt")
+async def upload_payment_receipt(
+    payment_id: str,
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
+    """Attach a card receipt (image or PDF) to an existing payment."""
+    if not file.filename or "." not in file.filename:
+        raise HTTPException(status_code=400, detail="File non valido")
+    ext = file.filename.rsplit(".", 1)[-1].lower()
+    if ext not in ALLOWED_RECEIPT_EXTS:
+        raise HTTPException(status_code=400, detail="Solo JPG/PNG/WEBP/PDF")
+    raw = await file.read()
+    if len(raw) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Massimo 10MB")
+    payment = await db.payments.find_one({"id": payment_id})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Pagamento non trovato")
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    (UPLOAD_DIR / "receipts").mkdir(exist_ok=True)
+    fname = f"receipt_{payment_id}_{uuid.uuid4().hex[:8]}.{ext}"
+    fpath = UPLOAD_DIR / "receipts" / fname
+    async with aiofiles.open(str(fpath), "wb") as f:
+        await f.write(raw)
+    url = f"/api/uploads/receipts/{fname}"
+    await db.payments.update_one({"id": payment_id}, {"$set": {"receipt_url": url}})
+    return {"url": url}
 
 
 @router.get("/payments/overview")
